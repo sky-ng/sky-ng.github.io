@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+
+
+<html lang="en">
+
+
+<head>
+  <meta charset="utf-8" />
+    
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>
+    后浪-下一代垃圾收集器 |  SKY技术修炼指南
+  </title>
+  <meta name="generator" content="hexo-theme-ayer">
+  
+  <link rel="shortcut icon" href="/favicon.ico" />
+  
+  
+<link rel="stylesheet" href="/dist/main.css">
+
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/css/remixicon.min.css">
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+  
+  
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+  
+  
+
+  
+
+<link rel="alternate" href="/atom.xml" title="SKY技术修炼指南" type="application/atom+xml">
+</head>
+
+</html>
+
+<body>
+  <div id="app">
+    <main class="content on">
+      <section class="outer">
+  <article id="post-后浪-下一代垃圾收集器" class="article article-type-post" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h1 class="article-title sea-center" style="border-left:0" itemprop="name">
+  后浪-下一代垃圾收集器
+</h1>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2020/06/14/%E5%90%8E%E6%B5%AA-%E4%B8%8B%E4%B8%80%E4%BB%A3%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/" class="article-date">
+  <time datetime="2020-06-14T09:08:56.000Z" itemprop="datePublished">2020-06-14</time>
+</a>
+      
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Java/">Java</a>
+  </div>
+
+      
+      
+<div class="word_count">
+    <span class="post-time">
+        <span class="post-meta-item-icon">
+            <i class="ri-quill-pen-line"></i>
+            <span class="post-meta-item-text"> Word count:</span>
+            <span class="post-count">2.2k</span>
+        </span>
+    </span>
+
+    <span class="post-time">
+        &nbsp; | &nbsp;
+        <span class="post-meta-item-icon">
+            <i class="ri-book-open-line"></i>
+            <span class="post-meta-item-text"> Reading time≈</span>
+            <span class="post-count">7 min</span>
+        </span>
+    </span>
+</div>
+
+      
+    </div>
+    
+
+    
+    
+    <div class="tocbot"></div>
+
+
+
+
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <p>随着Java虚拟机技术的不断发展，垃圾收集器也进行了大量迭代。前面介绍了7种经典的垃圾收集器，各有优缺点。Serial GC虽然是最古老的垃圾收集器，但由于设计简单，未必就是过时的收集器。CMS收集器由于自身有些算法缺陷，在JDK9中被标记为废弃，在最新版的JDK14中，CMS已经被彻底移除，进入了历史垃圾堆。我们可以发现G1收集器在JDK的各个版本中仍然在不断改进，并且成为了JDK9到JDK13的默认垃圾收集器。今天，我们要介绍的三种垃圾收集器算是垃圾收集器的前沿成果。</p>
+<a id="more"></a>
+
+<h2 id="Epsilon收集器"><a href="#Epsilon收集器" class="headerlink" title="Epsilon收集器"></a>Epsilon收集器</h2><p>我们看一下JEP 318中对于Epsilon收集器的介绍：</p>
+<blockquote>
+<p>Develop a GC that handles memory allocation but does not implement any actual memory reclamation mechanism. Once the available Java heap is exhausted, the JVM will shut down.</p>
+</blockquote>
+<p><img src="https://img-blog.csdnimg.cn/2020061419132816.jpg#pic_center" alt=""></p>
+<p>好吧，翻译成中文就是说这款垃圾收集器可以分配内存但是不实现垃圾回收机制。一旦可用的Java堆内存耗尽，JVM就会关闭。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200614191722120.jpg#pic_center" alt=""></p>
+<p>纳尼？垃圾收集器没有垃圾收集功能叫什么垃圾收集器？实际上Epsilon收集器提供有限分配限制和尽可能低的延迟开销的消极GC实现，尽管会以占用一定内存和牺牲一定内存吞吐量为代价。如果只是需要运行几分钟甚至几秒的小应用，那么JVM负责给对象分配内存，程序在堆内存消耗殆尽之前退出，这种场景下Epsilon收集器是很不错的选择。</p>
+<h2 id="Shenandoah收集器"><a href="#Shenandoah收集器" class="headerlink" title="Shenandoah收集器"></a>Shenandoah收集器</h2><p>Shenandoah收集器算是最特别的一款垃圾收集器，它是由Red Hat研发的低延迟垃圾收集器，之所以说它特别，是因为研发团队将它引入OpenJDK 12的时候，Oracle官方却不愿意将它加入HotSpot中，导致了开源版比商用版功能更多的尴尬。</p>
+<p>Red Hat团队设计这款收集器的最初目的是为了将垃圾收集的延迟降低到10毫秒以内，不管是200MB还是200GB的垃圾都要达到这样的目标，但Shenandoah开发团队的实际测试似乎并没有达到最初的目标，尽管停顿时间确实是大大降低了。停顿时间的降低必然会造成别的参数性能下降，在吞吐量方面，Shenandoah收集器比起G1、CMS等收集器还是有一定差距的。</p>
+<h3 id="工作过程"><a href="#工作过程" class="headerlink" title="工作过程"></a>工作过程</h3><p>Shenandoah收集器非常像是G1的改进版本，它的工作过程大致可以分为以下阶段：</p>
+<ul>
+<li><p>初始标记。标记和GC Roots直接关联的对象，这个过程需要STW（Stop the world），该过程停顿时间只与GC Roots的数量相关。</p>
+</li>
+<li><p>并发标记。与用户线程并发执行，遍历对象图，标记所有可达对象。</p>
+</li>
+<li><p>最终标记。同样需要STW，并扫描剩余STAB，统计最有回收价值的Region，并将这些Region组成回收集。</p>
+</li>
+<li><p>并发清理。清理没有存活对象的Region。</p>
+</li>
+<li><p>并发回收。将回收集中的存活对象复制到空白Region中，并且这个阶段是与用户线程并发执行的，用户线程有可能继续访问原来的内存地址，所以利用读屏障和Brooks Pointers转发指针。</p>
+</li>
+<li><p>初始引用更新。需要STW，建立线程集合点，确保并发回收阶段的存活对象已经移到其他Region中。</p>
+</li>
+<li><p>并发引用更新。按物理内存顺序，线性搜索引用类型，将旧值改成新值。</p>
+</li>
+<li><p>最终引用更新。短暂的STW，修正GC Roots的引用。</p>
+</li>
+<li><p>并发清理。将回收集中的内存全部回收。</p>
+</li>
+</ul>
+<h3 id="Brooks-Pointers"><a href="#Brooks-Pointers" class="headerlink" title="Brooks Pointers"></a>Brooks Pointers</h3><p>现在解释一下并发回收里的Brooks Pointers，我们知道，在并发回收的过程中可能有用户程序继续访问旧地址，但是访问旧地址势必会出错，因此提出了转发指针的概念（其实Brooks是个人名）。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020061522011670.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="Brooks Pointers示意图1"></p>
+<p>转发指针是设置在原有对象前的一个引用字段，正常情况下指向对象自身。并发回收阶段把旧对象的转发指针指向新对象的地址。</p>
+<p><img src="https://img-blog.csdnimg.cn/202006152211433.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="Brooks Pointers示意图2"></p>
+<h3 id="Shenandoah相比G1的改进"><a href="#Shenandoah相比G1的改进" class="headerlink" title="Shenandoah相比G1的改进"></a>Shenandoah相比G1的改进</h3><p>Shenandoah收集器其实可以看做是G1的继承版本，这两款收集器的工作步骤很多都是一样的，甚至还共享了代码。但是Shenandoah收集器其实还是有很多改进的地方的，以下介绍一下改进之处：</p>
+<ul>
+<li><p>Shenandoah收集器支持并发整理而G1回收内存不能与用户线程并发执行。</p>
+</li>
+<li><p>Shenandoah收集器默认不使用分代收集。</p>
+</li>
+<li><p>Shenandoah收集器不再使用记忆集记录跨Region的引用而是改用连接矩阵。</p>
+</li>
+</ul>
+<p>简单介绍一下连接矩阵，连接矩阵可理解为一个二维表格，如果Region M指向Region N则在表格的M行N列做一个标记。</p>
+<h2 id="ZGC收集器"><a href="#ZGC收集器" class="headerlink" title="ZGC收集器"></a>ZGC收集器</h2><p>和Shenandoah一样，ZGC也希望能将延迟时间压缩到10毫秒以内。它是JDK11引入的实验性质的低延迟收集器，这可是根红苗正的Oracle亲儿子。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200615223858595.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt=""></p>
+<h3 id="内存布局"><a href="#内存布局" class="headerlink" title="内存布局"></a>内存布局</h3><p>ZGC是暂时不使用分代机制的，它的内存布局主要有小型Region、中型Region和大型Region。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200616160122298.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70" alt=""></p>
+<ul>
+<li><p>小型Region：容量为2MB，存放小于256KB的对象。</p>
+</li>
+<li><p>中型Region：容量为32MB，存放小于4MB但大于256KB的对象。</p>
+</li>
+<li><p>大型Region：容量不固定，但必须是2MB的整数倍，用于存放4MB及以上大小的对象，也就是说最小容量只有4MB，比中型Region小，但是大型Region只能存放一个对象。</p>
+</li>
+</ul>
+<h3 id="染色指针"><a href="#染色指针" class="headerlink" title="染色指针"></a>染色指针</h3><p>染色指针是ZGC与其他垃圾收集器的区别之一，它将少量对象信息直接存储在指针上。以64位Linux为例，它的高18位不能用来寻址，剩下的46位中4位是标志位，用来表示引用对象的状态，剩下42位用来寻址，最大支持4TB内存。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200616171719124.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="染色指针"></p>
+<p>上面的四位标志位中Marked0和Marked1表示引用对象的三色标记状态，Remapped表示是否被移动过，Finalizable表示是否只能通过finalize()方法访问到。染色指针指向的存活对象被移走后，对象所在的Region立马就可以被释放。</p>
+<h3 id="工作过程-1"><a href="#工作过程-1" class="headerlink" title="工作过程"></a>工作过程</h3><ul>
+<li><p>并发标记。并发标记前面已经提过很多次了，遍历对象图，需要STW，但是ZGC的标记是标记在染色指针上的。也就是染色指针的Marked0和Marked1两个标志位，用来标识对象状态。</p>
+</li>
+<li><p>并发预备重分配。ZGC将所有要收集的Region组成重分配集，ZGC会扫描所有的Region来换维护记忆集的成本。</p>
+</li>
+<li><p>并发重分配。该过程将重分配集中的存活对象复制到其他Region中，并为重分配集维护一个转发表记录旧对象到新对象的迁移。从染色指针的状态位可以知道对象是否还在重分配集中，如果在的话，会被内存屏障拦截并转发到新对象，然后更新引用使其指向新对象。</p>
+</li>
+<li><p>并发重映射。该过程所做的工作就是修正所有的Region中指向重分配集的引用，但这并不是紧迫的任务，因为大不了就是第一次使用多一次转发。一旦所有引用都被修正，原来的转发表就可以释放了。</p>
+</li>
+</ul>
+<h3 id="NUMA"><a href="#NUMA" class="headerlink" title="NUMA"></a>NUMA</h3><p>ZGC支持NUMA的内存架构，NUMA的中文是非统一内存访问，介绍它之前首先介绍一下UMA（统一内存访问）。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020061615085157.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="UMA"></p>
+<p>在以前的计算机发展中，这样的总线模型保证了所有CPU对内存的访问地址还是一致的。但随着CPU核心数的增加，这样的架构显然无法适应现状。于是发展出了NUMA内存架构。在NUMA架构中，CPU和内存被划分成多个不同的节点，不同节点之间可以通过QPI（Quick Path Interconnect）进行访问。ZGC会优先在当前线程所属的CPU的本地内存中进行访问，这样可以大大加快CPU访问内存的速度。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200616151610492.jpg?x-oss-type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="NUMA"></p>
+<h2 id="写在最后的话"><a href="#写在最后的话" class="headerlink" title="写在最后的话"></a>写在最后的话</h2><p>去年我的一个学长分享了某互联网公司内部员工培训的JVM课件，已经将ZGC加入到培训内容中。可以预见的是，ZGC由于是Oracle官方推出的根红苗正的垃圾收集器，有很大概率会出现在今后甚至是今年即将到来的秋招面试大礼包中。</p>
+
+      
+      <!-- reward -->
+      
+      <div id="reward-btn">
+        Donate
+      </div>
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+        <div class="declare">
+          <ul class="post-copyright">
+            <li>
+              <i class="ri-copyright-line"></i>
+              <strong>Copyright： </strong>
+              Copyright is owned by the author. For commercial reprints, please contact the author for authorization. For non-commercial reprints, please indicate the source.
+            </li>
+          </ul>
+        </div>
+        
+    <footer class="article-footer">
+      
+          
+<div class="share-btn">
+      <span class="share-sns share-outer">
+        <i class="ri-share-forward-line"></i>
+        分享
+      </span>
+      <div class="share-wrap">
+        <i class="arrow"></i>
+        <div class="share-icons">
+          
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="ri-weibo-fill"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="ri-wechat-fill"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="ri-qq-fill"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="ri-douban-line"></i>
+          </a>
+          <!-- <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a> -->
+          
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="ri-facebook-circle-fill"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="ri-twitter-fill"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="ri-google-fill"></i>
+          </a>
+        </div>
+      </div>
+</div>
+
+<div class="wx-share-modal">
+    <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sky-ng.github.io/2020/06/14/%E5%90%8E%E6%B5%AA-%E4%B8%8B%E4%B8%80%E4%BB%A3%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div id="share-mask"></div>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java/" rel="tag">Java</a></li></ul>
+
+
+    </footer>
+
+  </div>
+
+  
+  
+  <nav class="article-nav">
+    
+      <a href="/2020/06/17/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%A4%84%E7%90%86%E6%9C%BA%E8%B0%83%E5%BA%A6/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            操作系统-处理机调度
+          
+        </div>
+      </a>
+    
+    
+      <a href="/2020/06/13/%E5%88%86%E6%B2%BB%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BD%92%E5%B9%B6%E6%8E%92%E5%BA%8F/" class="article-nav-link">
+        <strong class="article-nav-caption">下一篇</strong>
+        <div class="article-nav-title">分治算法与归并排序</div>
+      </a>
+    
+  </nav>
+
+
+  
+
+  
+  
+<!-- valine评论 -->
+<div id="vcomments-box">
+    <div id="vcomments">
+    </div>
+</div>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js'></script>
+<script>
+    new Valine({
+        el: '#vcomments',
+        app_id: 'fUrQOiCnbckVbIwhL5VdIYaz-MdYXbMMI',
+        app_key: 'PI4RISsI2EumNEjzNYjubtlY',
+        path: window.location.pathname,
+        notify: 'true',
+        verify: 'false',
+        avatar: 'monsterid',
+        placeholder: '给我的文章加点评论吧~',
+        recordIP: true
+    });
+    const infoEle = document.querySelector('#vcomments .info');
+    if (infoEle && infoEle.childNodes && infoEle.childNodes.length > 0) {
+        infoEle.childNodes.forEach(function (item) {
+            item.parentNode.removeChild(item);
+        });
+    }
+</script>
+<style>
+    #vcomments-box {
+        padding: 5px 30px;
+    }
+
+    @media screen and (max-width: 800px) {
+        #vcomments-box {
+            padding: 5px 0px;
+        }
+    }
+
+    #vcomments-box #vcomments {
+        background-color: #fff;
+    }
+
+    .v .vlist .vcard .vh {
+        padding-right: 20px;
+    }
+
+    .v .vlist .vcard {
+        padding-left: 10px;
+    }
+</style>
+
+  
+
+  
+  
+  
+  
+  
+
+</article>
+</section>
+      <footer class="footer">
+  <div class="outer">
+    <ul>
+      <li>
+        Copyrights &copy;
+        2015-2020
+        <i class="ri-heart-fill heart_icon"></i> sky-ng
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        
+        Powered by <a href="https://hexo.io" target="_blank">Hexo</a>
+        <span class="division">|</span>
+        Theme - <a href="https://github.com/Shen-Yu/hexo-theme-ayer" target="_blank">Ayer</a>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        <span>
+  <span><i class="ri-user-3-fill"></i>Visitors:<span id="busuanzi_value_site_uv"></span></s>
+  <span class="division">|</span>
+  <span><i class="ri-eye-fill"></i>Views:<span id="busuanzi_value_page_pv"></span></span>
+</span>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+        <script type="text/javascript" src='https://s9.cnzz.com/z_stat.php?id=1278069914&amp;web_id=1278069914'></script>
+        
+      </li>
+    </ul>
+  </div>
+</footer>
+      <div class="float_btns">
+        <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
+      </div>
+    </main>
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
+  
+  <div class="logo">
+    <a href="/"><img src="/images/ayer-side.svg" alt="SKY技术修炼指南"></a>
+  </div>
+  
+  <ul class="nav nav-main">
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">归档</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags">标签</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/about">关于我</a>
+    </li>
+    
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="Search">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+      <a class="nav-item-link" target="_blank" href="/atom.xml" title="RSS Feed">
+        <i class="ri-rss-line"></i>
+      </a>
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+    </aside>
+    <script>
+      if (window.matchMedia("(max-width: 768px)").matches) {
+        document.querySelector('.content').classList.remove('on');
+        document.querySelector('.sidebar').classList.remove('on');
+      }
+    </script>
+    <div id="mask"></div>
+
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯咖啡吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/alipay.png">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/wechat.png">
+      <span class="reward-type">微信</span>
+    </div>
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Subtitle -->
+
+<script>
+  try {
+    var typed = new Typed("#subtitle", {
+      strings: ['欢迎来到我的个人博客', '喜欢的请关注公众号：SKY技术修炼指南', '大家共同学习，共同进步'],
+      startDelay: 0,
+      typeSpeed: 200,
+      loop: true,
+      backSpeed: 100,
+      showCursor: true
+    });
+  } catch (err) {
+    console.log(err)
+  }
+</script>
+
+<!-- Tocbot -->
+
+
+<script src="/js/tocbot.min.js"></script>
+
+<script>
+  tocbot.init({
+    tocSelector: '.tocbot',
+    contentSelector: '.article-entry',
+    headingSelector: 'h1, h2, h3, h4, h5, h6',
+    hasInnerContainers: true,
+    scrollSmooth: true,
+    scrollContainer: 'main',
+    positionFixedSelector: '.tocbot',
+    positionFixedClass: 'is-position-fixed',
+    fixedSidebarOffset: 'auto'
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.css">
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css">
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script>
+
+<!-- MathJax -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+      tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+  });
+
+  MathJax.Hub.Queue(function() {
+      var all = MathJax.Hub.getAllJax(), i;
+      for(i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+      }
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.6/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script>
+  var ayerConfig = {
+    mathjax: true
+  }
+</script>
+
+<!-- Katex -->
+
+<!-- busuanzi  -->
+
+
+<script src="/js/busuanzi-2.3.pure.min.js"></script>
+
+
+<!-- ClickLove -->
+
+<!-- CodeCopy -->
+
+
+<link rel="stylesheet" href="/css/clipboard.css">
+
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+
+
+
+    
+    <div id="music">
+    
+    
+    
+    <iframe frameborder="no" border="1" marginwidth="0" marginheight="0" width="200" height="52"
+        src="//music.163.com/outchain/player?type=2&id=34376545&auto=1&height=32"></iframe>
+</div>
+
+<style>
+    #music {
+        position: fixed;
+        right: 15px;
+        bottom: 0;
+        z-index: 998;
+    }
+</style>
+    
+  </div>
+</body>
+
+</html>

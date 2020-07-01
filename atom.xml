@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>SKY技术修炼指南</title>
+  
+  
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="https://sky-ng.github.io/"/>
+  <updated>2020-06-30T11:24:33.705Z</updated>
+  <id>https://sky-ng.github.io/</id>
+  
+  <author>
+    <name>sky-ng</name>
+    
+  </author>
+  
+  <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>本科数据结构课程的漏网之鱼-红黑树（下）</title>
+    <link href="https://sky-ng.github.io/2020/06/26/%E6%9C%AC%E7%A7%91%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AF%BE%E7%A8%8B%E7%9A%84%E6%BC%8F%E7%BD%91%E4%B9%8B%E9%B1%BC-%E7%BA%A2%E9%BB%91%E6%A0%91%EF%BC%88%E4%B8%8B%EF%BC%89/"/>
+    <id>https://sky-ng.github.io/2020/06/26/%E6%9C%AC%E7%A7%91%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AF%BE%E7%A8%8B%E7%9A%84%E6%BC%8F%E7%BD%91%E4%B9%8B%E9%B1%BC-%E7%BA%A2%E9%BB%91%E6%A0%91%EF%BC%88%E4%B8%8B%EF%BC%89/</id>
+    <published>2020-06-26T07:21:26.000Z</published>
+    <updated>2020-06-30T11:24:33.705Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;红黑树删除节点的操作与插入操作相比难度大大提高，以至很多博客讲的很不细致，但是为了内容的完整性，还是决定尝试写一下这篇红黑树删除节点的文章。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="数据结构" scheme="https://sky-ng.github.io/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
+    
+    
+      <category term="数据结构" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>本科数据结构课程的漏网之鱼-红黑树（上）</title>
+    <link href="https://sky-ng.github.io/2020/06/22/%E6%9C%AC%E7%A7%91%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AF%BE%E7%A8%8B%E7%9A%84%E6%BC%8F%E7%BD%91%E4%B9%8B%E9%B1%BC-%E7%BA%A2%E9%BB%91%E6%A0%91%EF%BC%88%E4%B8%8A%EF%BC%89/"/>
+    <id>https://sky-ng.github.io/2020/06/22/%E6%9C%AC%E7%A7%91%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AF%BE%E7%A8%8B%E7%9A%84%E6%BC%8F%E7%BD%91%E4%B9%8B%E9%B1%BC-%E7%BA%A2%E9%BB%91%E6%A0%91%EF%BC%88%E4%B8%8A%EF%BC%89/</id>
+    <published>2020-06-22T14:01:43.000Z</published>
+    <updated>2020-06-26T09:08:22.832Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在我大学的时候，就曾经从参加面试的学长那里知道红黑树这种数据结构，但是经过我的观察，绝大部分的本科数据结构课程里都没有这部分内容。本文将介绍这种被本科教学体系遗弃，但却常常被工作面试中提到的数据结构，并且为后面的HashMap的内容做铺垫。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="数据结构" scheme="https://sky-ng.github.io/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
+    
+    
+      <category term="数据结构" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>class类文件结构（这是一篇非常枯燥的文章）</title>
+    <link href="https://sky-ng.github.io/2020/06/20/class%E7%B1%BB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%EF%BC%88%E8%BF%99%E6%98%AF%E4%B8%80%E7%AF%87%E9%9D%9E%E5%B8%B8%E6%9E%AF%E7%87%A5%E7%9A%84%E6%96%87%E7%AB%A0%EF%BC%89/"/>
+    <id>https://sky-ng.github.io/2020/06/20/class%E7%B1%BB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%EF%BC%88%E8%BF%99%E6%98%AF%E4%B8%80%E7%AF%87%E9%9D%9E%E5%B8%B8%E6%9E%AF%E7%87%A5%E7%9A%84%E6%96%87%E7%AB%A0%EF%BC%89/</id>
+    <published>2020-06-20T08:10:19.000Z</published>
+    <updated>2020-06-21T14:36:54.584Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;我们知道，Java文件编译后会产生一个字节码文件（&lt;code&gt;.class&lt;/code&gt;文件），本文介绍字节码文件的文件结构相关内容。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+      <category term="JVM" scheme="https://sky-ng.github.io/tags/JVM/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>操作系统-处理机调度</title>
+    <link href="https://sky-ng.github.io/2020/06/17/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%A4%84%E7%90%86%E6%9C%BA%E8%B0%83%E5%BA%A6/"/>
+    <id>https://sky-ng.github.io/2020/06/17/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%A4%84%E7%90%86%E6%9C%BA%E8%B0%83%E5%BA%A6/</id>
+    <published>2020-06-17T13:58:03.000Z</published>
+    <updated>2020-06-18T08:01:21.195Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;本文介绍处理机调度相关的内容，主要涉及三级调度与调度算法等知识。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="操作系统" scheme="https://sky-ng.github.io/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
+    
+    
+      <category term="操作系统" scheme="https://sky-ng.github.io/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>后浪-下一代垃圾收集器</title>
+    <link href="https://sky-ng.github.io/2020/06/14/%E5%90%8E%E6%B5%AA-%E4%B8%8B%E4%B8%80%E4%BB%A3%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/"/>
+    <id>https://sky-ng.github.io/2020/06/14/%E5%90%8E%E6%B5%AA-%E4%B8%8B%E4%B8%80%E4%BB%A3%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/</id>
+    <published>2020-06-14T09:08:56.000Z</published>
+    <updated>2020-06-16T11:38:33.090Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;随着Java虚拟机技术的不断发展，垃圾收集器也进行了大量迭代。前面介绍了7种经典的垃圾收集器，各有优缺点。Serial GC虽然是最古老的垃圾收集器，但由于设计简单，未必就是过时的收集器。CMS收集器由于自身有些算法缺陷，在JDK9中被标记为废弃，在最新版的JDK14中，CMS已经被彻底移除，进入了历史垃圾堆。我们可以发现G1收集器在JDK的各个版本中仍然在不断改进，并且成为了JDK9到JDK13的默认垃圾收集器。今天，我们要介绍的三种垃圾收集器算是垃圾收集器的前沿成果。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+      <category term="JVM" scheme="https://sky-ng.github.io/tags/JVM/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>分治算法与归并排序</title>
+    <link href="https://sky-ng.github.io/2020/06/13/%E5%88%86%E6%B2%BB%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BD%92%E5%B9%B6%E6%8E%92%E5%BA%8F/"/>
+    <id>https://sky-ng.github.io/2020/06/13/%E5%88%86%E6%B2%BB%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BD%92%E5%B9%B6%E6%8E%92%E5%BA%8F/</id>
+    <published>2020-06-13T07:21:50.000Z</published>
+    <updated>2020-06-13T13:13:11.845Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;距离上次写快排算法的文章已经过去一个半月了，和本文要提到的归并排序算法类似，快排也是分治思想的一种典型应用，如果有不熟悉快速排序的同学可以翻阅我之前写过的快速排序算法的文章。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="算法" scheme="https://sky-ng.github.io/categories/%E7%AE%97%E6%B3%95/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+      <category term="算法" scheme="https://sky-ng.github.io/tags/%E7%AE%97%E6%B3%95/"/>
+    
+      <category term="排序" scheme="https://sky-ng.github.io/tags/%E6%8E%92%E5%BA%8F/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>操作系统-进程与线程</title>
+    <link href="https://sky-ng.github.io/2020/06/10/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/"/>
+    <id>https://sky-ng.github.io/2020/06/10/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/</id>
+    <published>2020-06-10T08:19:36.000Z</published>
+    <updated>2020-06-11T11:02:12.671Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;本文是进程管理中的第一部分，进程管理的内容是操作系统的核心，也是考试和面试的重点内容，本文将对进程与线程相关的内容进行梳理。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="操作系统" scheme="https://sky-ng.github.io/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
+    
+    
+      <category term="操作系统" scheme="https://sky-ng.github.io/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>计算机网络-网络层（更新中）</title>
+    <link href="https://sky-ng.github.io/2020/06/09/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E7%BD%91%E7%BB%9C%E5%B1%82/"/>
+    <id>https://sky-ng.github.io/2020/06/09/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E7%BD%91%E7%BB%9C%E5%B1%82/</id>
+    <published>2020-06-09T13:52:53.000Z</published>
+    <updated>2020-06-18T01:16:01.486Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;网络层位于TCP/IP结构中的第三层，也是计算机网络中的重点和难点之一。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="计算机网络" scheme="https://sky-ng.github.io/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/"/>
+    
+    
+      <category term="计算机网络" scheme="https://sky-ng.github.io/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>你一定要了解的数据结构-并查集</title>
+    <link href="https://sky-ng.github.io/2020/06/09/%E4%BD%A0%E4%B8%80%E5%AE%9A%E8%A6%81%E4%BA%86%E8%A7%A3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-%E5%B9%B6%E6%9F%A5%E9%9B%86/"/>
+    <id>https://sky-ng.github.io/2020/06/09/%E4%BD%A0%E4%B8%80%E5%AE%9A%E8%A6%81%E4%BA%86%E8%A7%A3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-%E5%B9%B6%E6%9F%A5%E9%9B%86/</id>
+    <published>2020-06-09T02:02:49.000Z</published>
+    <updated>2020-06-09T08:57:39.287Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;今天要介绍一种非常重要的数据结构-并查集，这种数据结构常常被用于检测有环图的问题。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="数据结构" scheme="https://sky-ng.github.io/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
+    
+    
+      <category term="数据结构" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
+    
+      <category term="算法" scheme="https://sky-ng.github.io/tags/%E7%AE%97%E6%B3%95/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>深入理解Java虚拟机-经典垃圾收集器介绍</title>
+    <link href="https://sky-ng.github.io/2020/06/06/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E7%BB%8F%E5%85%B8%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E4%BB%8B%E7%BB%8D/"/>
+    <id>https://sky-ng.github.io/2020/06/06/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E7%BB%8F%E5%85%B8%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E4%BB%8B%E7%BB%8D/</id>
+    <published>2020-06-06T07:19:53.000Z</published>
+    <updated>2020-06-07T13:45:02.268Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在前面的文章中，我们提到了几种常见的垃圾收集算法，今天咱们来说一说商用Java虚拟机中经典的垃圾收集器。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+      <category term="JVM" scheme="https://sky-ng.github.io/tags/JVM/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>谈谈Java容器-LinkedList</title>
+    <link href="https://sky-ng.github.io/2020/06/05/%E8%B0%88%E8%B0%88Java%E5%AE%B9%E5%99%A8-LinkedList/"/>
+    <id>https://sky-ng.github.io/2020/06/05/%E8%B0%88%E8%B0%88Java%E5%AE%B9%E5%99%A8-LinkedList/</id>
+    <published>2020-06-05T07:36:22.000Z</published>
+    <updated>2020-06-05T10:53:21.155Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;之前的文章中，我们谈到了ArrayList的源码分析，在今天的文章中，我们来看一种和ArrayList非常相似的Java容器——LinkedList。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+      <category term="Java容器" scheme="https://sky-ng.github.io/tags/Java%E5%AE%B9%E5%99%A8/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>操作系统-概述</title>
+    <link href="https://sky-ng.github.io/2020/06/01/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E6%A6%82%E8%BF%B0/"/>
+    <id>https://sky-ng.github.io/2020/06/01/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E6%A6%82%E8%BF%B0/</id>
+    <published>2020-06-01T10:40:34.000Z</published>
+    <updated>2020-06-03T13:38:07.784Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;本文是操作系统系列文章的第一篇，后续将陆续更新操作系统相关的文章。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="操作系统" scheme="https://sky-ng.github.io/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
+    
+    
+      <category term="操作系统" scheme="https://sky-ng.github.io/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>深入理解Java虚拟机-垃圾收集算法</title>
+    <link href="https://sky-ng.github.io/2020/05/31/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95/"/>
+    <id>https://sky-ng.github.io/2020/05/31/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95/</id>
+    <published>2020-05-31T12:06:31.000Z</published>
+    <updated>2020-06-01T09:15:27.879Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;今天讨论的话题是垃圾收集算法，主要介绍一下标记-清除、标记-整理和标记-复制算法，还会基于这些算法讲一下分代垃圾收集算法。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+      <category term="JVM" scheme="https://sky-ng.github.io/tags/JVM/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>谈谈Java容器-ArrayList</title>
+    <link href="https://sky-ng.github.io/2020/05/27/%E8%B0%88%E8%B0%88Java%E5%AE%B9%E5%99%A8-ArrayList/"/>
+    <id>https://sky-ng.github.io/2020/05/27/%E8%B0%88%E8%B0%88Java%E5%AE%B9%E5%99%A8-ArrayList/</id>
+    <published>2020-05-27T10:17:45.000Z</published>
+    <updated>2020-05-28T10:59:16.505Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;ArrayList是面试中常见的Java容器，也算是Java中比较简单的容器，我们今天就来讲讲ArrayList的源码和常见的面试点。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+      <category term="Java容器" scheme="https://sky-ng.github.io/tags/Java%E5%AE%B9%E5%99%A8/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>深入理解Java虚拟机-判断对象是否存活算法与对象引用</title>
+    <link href="https://sky-ng.github.io/2020/05/24/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E5%88%A4%E6%96%AD%E5%AF%B9%E8%B1%A1%E6%98%AF%E5%90%A6%E5%AD%98%E6%B4%BB%E7%AE%97%E6%B3%95%E4%B8%8E%E5%AF%B9%E8%B1%A1%E5%BC%95%E7%94%A8/"/>
+    <id>https://sky-ng.github.io/2020/05/24/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E5%88%A4%E6%96%AD%E5%AF%B9%E8%B1%A1%E6%98%AF%E5%90%A6%E5%AD%98%E6%B4%BB%E7%AE%97%E6%B3%95%E4%B8%8E%E5%AF%B9%E8%B1%A1%E5%BC%95%E7%94%A8/</id>
+    <published>2020-05-24T13:47:43.000Z</published>
+    <updated>2020-05-25T05:33:00.216Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在之前的文章中我们谈到过Java内存区域的概念，我们知道Java中的对象一般存放在堆中，但是总不能让这些对象一直占着内存空间，这些对象最终都会被回收并释放内存，那么我们如何判断对象已经成为垃圾呢？这篇文章会提出两种算法解决这个问题。另外，本文还要谈一谈对象引用相关的知识，这在面试中也是经常被问到的问题。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+      <category term="JVM" scheme="https://sky-ng.github.io/tags/JVM/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>计算机网络-传输层</title>
+    <link href="https://sky-ng.github.io/2020/05/21/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E4%BC%A0%E8%BE%93%E5%B1%82/"/>
+    <id>https://sky-ng.github.io/2020/05/21/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E4%BC%A0%E8%BE%93%E5%B1%82/</id>
+    <published>2020-05-21T11:47:43.000Z</published>
+    <updated>2020-05-26T15:33:08.378Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;计算机网络的传输层是整个计算机网络体系中的关键层次，向上层的应用层提供服务，它是面向通信部分的最高层，也是用户功能中的最低层。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="计算机网络" scheme="https://sky-ng.github.io/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/"/>
+    
+    
+      <category term="计算机网络" scheme="https://sky-ng.github.io/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>深入理解Java虚拟机-运行时数据区</title>
+    <link href="https://sky-ng.github.io/2020/05/21/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA/"/>
+    <id>https://sky-ng.github.io/2020/05/21/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA/</id>
+    <published>2020-05-21T06:52:14.000Z</published>
+    <updated>2020-05-24T13:49:15.190Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在Java虚拟机的概念中，运行时数据区又被称为Java内存区域。主要由线程私有的程序计数器、虚拟机栈和本地方法栈以及线程共享的堆和方法区组成。&lt;br&gt;&lt;img src=&quot;https://img-blog.csdnimg.cn/20200521144716505.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center&quot; alt=&quot;Java虚拟机运行时数据区&quot;&gt;&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+      <category term="JVM" scheme="https://sky-ng.github.io/tags/JVM/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>快速排序Java代码简洁实现</title>
+    <link href="https://sky-ng.github.io/2020/04/29/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8FJava%E4%BB%A3%E7%A0%81%E7%AE%80%E6%B4%81%E5%AE%9E%E7%8E%B0/"/>
+    <id>https://sky-ng.github.io/2020/04/29/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8FJava%E4%BB%A3%E7%A0%81%E7%AE%80%E6%B4%81%E5%AE%9E%E7%8E%B0/</id>
+    <published>2020-04-29T08:29:11.000Z</published>
+    <updated>2020-05-21T15:01:40.956Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;学习过数据结构的同学们都知道，快速排序算法是一种时间复杂度为O(nlogn)的排序算法，在各种排序算法中算是较为高效的方法，企业面试中也经常有手撕快排的环节。本文将阐述算法的基本思想，并用Java代码的形式实现快速排序代码。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="算法" scheme="https://sky-ng.github.io/categories/%E7%AE%97%E6%B3%95/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+      <category term="算法" scheme="https://sky-ng.github.io/tags/%E7%AE%97%E6%B3%95/"/>
+    
+      <category term="排序" scheme="https://sky-ng.github.io/tags/%E6%8E%92%E5%BA%8F/"/>
+    
+  </entry>
+  
+</feed>

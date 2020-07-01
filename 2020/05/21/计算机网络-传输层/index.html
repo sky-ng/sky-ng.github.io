@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+
+
+<html lang="en">
+
+
+<head>
+  <meta charset="utf-8" />
+    
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>
+    计算机网络-传输层 |  SKY技术修炼指南
+  </title>
+  <meta name="generator" content="hexo-theme-ayer">
+  
+  <link rel="shortcut icon" href="/favicon.ico" />
+  
+  
+<link rel="stylesheet" href="/dist/main.css">
+
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Shen-Yu/cdn/css/remixicon.min.css">
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+  
+  
+<script src="https://cdn.jsdelivr.net/npm/pace-js@1.0.2/pace.min.js"></script>
+
+  
+  
+
+  
+
+<link rel="alternate" href="/atom.xml" title="SKY技术修炼指南" type="application/atom+xml">
+</head>
+
+</html>
+
+<body>
+  <div id="app">
+    <main class="content on">
+      <section class="outer">
+  <article id="post-计算机网络-传输层" class="article article-type-post" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h1 class="article-title sea-center" style="border-left:0" itemprop="name">
+  计算机网络-传输层
+</h1>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2020/05/21/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E4%BC%A0%E8%BE%93%E5%B1%82/" class="article-date">
+  <time datetime="2020-05-21T11:47:43.000Z" itemprop="datePublished">2020-05-21</time>
+</a>
+      
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/">计算机网络</a>
+  </div>
+
+      
+      
+<div class="word_count">
+    <span class="post-time">
+        <span class="post-meta-item-icon">
+            <i class="ri-quill-pen-line"></i>
+            <span class="post-meta-item-text"> Word count:</span>
+            <span class="post-count">3.6k</span>
+        </span>
+    </span>
+
+    <span class="post-time">
+        &nbsp; | &nbsp;
+        <span class="post-meta-item-icon">
+            <i class="ri-book-open-line"></i>
+            <span class="post-meta-item-text"> Reading time≈</span>
+            <span class="post-count">12 min</span>
+        </span>
+    </span>
+</div>
+
+      
+    </div>
+    
+
+    
+    
+    <div class="tocbot"></div>
+
+
+
+
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <p>计算机网络的传输层是整个计算机网络体系中的关键层次，向上层的应用层提供服务，它是面向通信部分的最高层，也是用户功能中的最低层。</p>
+<a id="more"></a>
+
+<h2 id="传输层的功能"><a href="#传输层的功能" class="headerlink" title="传输层的功能"></a>传输层的功能</h2><ul>
+<li><p>提供应用进程间的通信。我们的计算机上运行着多个应用程序，而每个程序却能够准确与对应服务器进行通信，你知道这是为什么吗？我们需要引出一个概念：端口。<br>什么是端口？当我们上网时，可能有一部分网站在输入网址后跟上<code>:(数字)</code>，这里网址后的数字就是我们的端口号。常见的端口号有web服务器的80端口，ftp服务器的21和20端口，SMTP的25端口等。这些都是服务器端的端口，当我们的客户机和服务器进行连接时，会分配一个端口号，这就是识别进程的唯一标识。传输层通过端口提供端到端的逻辑通信，传输层好像沿着水平方向传输数据，但事实上传输层之间没有水平方向上直接的物理连接。</p>
+</li>
+<li><p>复用和分用。复用是指不同应用进程可使用同一个传输层协议传输数据，分用则是指接收方的传输层在剥去报文首部以后可以将数据发送到对应的进程。</p>
+</li>
+<li><p>差错检测。</p>
+</li>
+<li><p>提供TCP和UDP两种协议。当采用TCP协议时，尽管下面的网络是不可靠的，它却能提供逻辑上的可靠信道。而当采用UDP时，逻辑信道仍是不可靠的，只是尽力保证交付数据。</p>
+</li>
+</ul>
+<h2 id="面向连接服务和无连接服务"><a href="#面向连接服务和无连接服务" class="headerlink" title="面向连接服务和无连接服务"></a>面向连接服务和无连接服务</h2><p>面向连接服务是指当通信双方在通信前首先建立连接，通信过程中连接一直保持，通信完毕后会释放连接。TCP就是面向连接的传输协议，向上提供可靠的逻辑信道。<br>无连接服务是指通信双方在通信时无需建立连接，发送方直接将信息发送到网络中，只是尽力交付信息。UDP是无连接的传输协议，向上提供的则是不可靠的逻辑信道。</p>
+<h2 id="UDP协议"><a href="#UDP协议" class="headerlink" title="UDP协议"></a>UDP协议</h2><h3 id="UDP协议的特点"><a href="#UDP协议的特点" class="headerlink" title="UDP协议的特点"></a>UDP协议的特点</h3><ul>
+<li><p>无需建立连接。与TCP不同的是，UDP不需要提前建立连接，这意味着UDP协议比TCP协议更快，因此对于一些对速度要求较高的应用（如DNS，网络音视频通话等）常常选用UDP协议。</p>
+</li>
+<li><p>传输不可靠。省去了建立连接的过程，UDP直接将数据发送到网络，无法保证传输的可靠性。</p>
+</li>
+<li><p>UDP是面向报文的。应用程序交付的报文，UDP既不合并，也不拆分，直接添加首部以后交给网络层添加首部。</p>
+</li>
+<li><p>分组首部开销小。UDP首部只有8B，而TCP有20B的首部开销。</p>
+</li>
+<li><p>应用层可以控制发送时间和发送的数据。UDP没有拥塞控制，所以网络中的拥塞不影响主机发送效率。</p>
+</li>
+</ul>
+<h3 id="UDP数据报"><a href="#UDP数据报" class="headerlink" title="UDP数据报"></a>UDP数据报</h3><p>UDP数据报主要由用户数据和UDP首部组成，其中UDP首部由源端口、目的端口、UDP长度和UDP校验和组成。其中UDP长度的最小值为8，表示只有UDP首部而没有数据部分。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200522165926646.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="UDP数据包格式"></p>
+<h2 id="TCP协议"><a href="#TCP协议" class="headerlink" title="TCP协议"></a>TCP协议</h2><h3 id="TCP协议的特点"><a href="#TCP协议的特点" class="headerlink" title="TCP协议的特点"></a>TCP协议的特点</h3><ul>
+<li><p>TCP是面向连接的传输层协议。</p>
+</li>
+<li><p>TCP提供可靠交付服务，能保证数据有序、无差错、不重复且无丢失。</p>
+</li>
+<li><p>允许全双工通信，通信双方能够同时发送和接受数据。因此通信双方都有发送缓存和接收缓存。</p>
+</li>
+<li><p>TCP协议面向字节流。TCP协议将应用层传递下来的数据视为一串无结构的字节流。</p>
+</li>
+</ul>
+<h3 id="TCP报文段"><a href="#TCP报文段" class="headerlink" title="TCP报文段"></a>TCP报文段</h3><p><img src="https://img-blog.csdnimg.cn/2020052318234629.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="TCP报文段格式"></p>
+<ul>
+<li><p>源端口和目的端口各占2B，前面UDP数据报也有。</p>
+</li>
+<li><p>序号字段占4B，是该报文段第一个字节的序号，比如当前报文段的序号是101，报文段的长度是100B，说明当前报文段的最后一个字节的序号是200，则下一个报文段序号是201。</p>
+</li>
+<li><p>确认号字段占4B，是指期望收到的下一个报文段的第一个字节的序号。例如B收到A发送的报文段，这个报文段的序号是101，报文段长度是100B，B期望收到的下一个报文段是第一个字节序号是201，所以确认号就是201。</p>
+</li>
+<li><p>数据偏移占4bit，用于表示首部长度。数据偏移的单位是32位（4B），因此当数据偏移的值是15时，达到首部长度最大值60B。</p>
+</li>
+<li><p>保留字段占6bit，用作保留今后使用，全为0，可忽略不计。</p>
+</li>
+<li><p>紧急位URG占1bit，当URG=1时表示有紧急数据传送，相当于提高了优先级。</p>
+</li>
+<li><p>确认位ACK占1bit，当ACK=1时表示确认号字段有效，若该值为0时表示确认号字段无效。TCP规定在连接建立以后所有报文段的ACK都要置为1。</p>
+</li>
+<li><p>推送位PSH占1bit，当PSH=1时表示尽快交付应用程序，而不需要等到缓存满了以后再向上交付。</p>
+</li>
+<li><p>复位位RST占1bit，当RST=1时表示TCP连接过程中出现严重错误（如主机崩溃等）需要释放当前连接，然后重新建立连接。</p>
+</li>
+<li><p>同步位SYN占1bit，当SYN=1时表示这是连接请求或连接接收报文。当SYN=1且ACK=0时，则表明是连接请求报文。若对方同意建立连接，则在响应报文中设置SYN=1和ACK=1。</p>
+</li>
+<li><p>终止位FIN占1bit，当FIN=1时表示传输完毕，准备释放连接。</p>
+</li>
+<li><p>窗口字段占2B，接收方的缓存空间有限，该字段用于指定发送方允许发送的数据的长度，单位为字节。举个例子，当确认号为701，窗口字段为1000，表示从701号算起，接收方还有1000B的缓存接收空间。</p>
+</li>
+<li><p>校验和占2B，和UDP一样用于数据校验。</p>
+</li>
+<li><p>紧急指针字段占2B，指出该报文段有多少字节的紧急数据，其中紧急数据在报文段数据的最前面。</p>
+</li>
+<li><p>选项字段长度可变，TCP最初只规定了一种选项，即最大报文段长度（MSS），MSS是TCP报文段中数据字段的最大长度。</p>
+</li>
+<li><p>填充字段是为了使首部长度是4B的整数倍而存在。</p>
+</li>
+</ul>
+<h3 id="三次握手"><a href="#三次握手" class="headerlink" title="三次握手"></a>三次握手</h3><p>三次握手在面试中属于及其高频的面试点，几乎是问到计算机网络的知识就会问三次握手。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200524154116793.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="三次握手"></p>
+<p>三次握手的第一步是客户端向服务器发起连接请求，这个请求中不携带数据。第一次握手的首部SYN设置为1，客户端还会随机分配一个起始序号seq=x。<br>第二步是当服务器收到客户端发送的报文段后，若同意建立连接，就向客户端返回一个确认报文段，并为该连接分配缓存和变量。确认报文段将SYN和ACK设置为1，设置确认号ack=x+1，服务器随机产生一个起始序号seq=y。这个确认报文段同样也不携带数据。<br>第三步是客户端收到了来自服务器的确认建立连接报文段后，向服务器发送确认信息，并为连接分配缓存和变量。此时的报文段ACK被设置为1，序号seq被设置为x+1，确认号ack被设置为y+1。该报文段可以携带数据，若不携带数据则不消耗序号。</p>
+<h3 id="四次挥手"><a href="#四次挥手" class="headerlink" title="四次挥手"></a>四次挥手</h3><p>与三次握手建立连接相对的，四次挥手是TCP断开连接的方式。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200525145942799.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="四次挥手"></p>
+<p>四次挥手第一步是客户机主动关闭连接，向服务器发送一个释放连接报文段，并停止发送数据。这个报文段的FIN终止位被置为1，并设置序号seq=u。此时客户机关闭了数据通路，但是由于TCP是全双工的，所以服务器仍然可以发送数据。<br>第二步是服务器接收到客户机发送的连接释放请求，向客户端发送确认报文段。将ACK设置为1，确认号ack=u+1，序号seq=v。此时客户机到服务器的连接释放了，但是服务器到客户端的数据通路仍然是连接的。<br>第三步是服务器已经没有需要传输的数据，则向客户机发送FIN=1的报文段释放连接。<br>第四步是客户机收到服务器的释放连接报文段后，向服务器发送确认报文段，报文段的ACK被置为1。此时还需要再等2MSL后，客户机才进入连接关闭状态。</p>
+<h3 id="TCP可靠连接"><a href="#TCP可靠连接" class="headerlink" title="TCP可靠连接"></a>TCP可靠连接</h3><p>我们知道，TCP和UDP的不同点之一就是TCP是可靠连接而UDP是不可靠连接。下面就介绍一下TCP保证可靠连接的措施。<br>TCP确认机制是建立在报文段序号之上的，当接收方收到了发送方发来的0-2字节和6-8字节，而一直未收到3-5的字节，此时接收方向发送方返回的报文段中确认号设置为3，表示期待序号为3的报文段。重传有超时和冗余ACK两种实现机制，超时重传很容易理解，冗余ACK从字面上理解就是发送冗余的ACK。举个例子，A向B发送了序号为1、2、3、4、5、6的六个报文段，但B只收到了1、2、4、5、6号的报文段，此时B期望收到的报文段是3号，而4-6号报文段却先于3号送达，所以B向A发送3个ack=3的冗余ACK。根据TCP规定，当冗余ACK达到3个时，就视为那个报文段已经丢失，发送方A将重新发送3号报文。因为冗余ACK比起超时重传用时更短，因此又被称为快速重传。</p>
+<h3 id="TCP流量控制"><a href="#TCP流量控制" class="headerlink" title="TCP流量控制"></a>TCP流量控制</h3><p>什么是流量控制？为什么需要流量控制？我们知道，发送方发送分组和接收方接收分组的速率并不完全一致，很可能存在发送方发送分组过快导致丢包的现象。这时候就需要一种机制来实现制约发送方发送速率的情况，TCP流量控制就是解决这个问题的方法。<br>当发送方向接收方发送数据时，接收方会向发送方返回一个接收窗口值，这个接收窗口配合确认号ack可以控制发送方发送速率。以下是窗口机制实现流量控制实例。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020052618230555.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="可变窗口实现流量控制实例"></p>
+<p>上图中主机A向主机B发送数据刚开始建立连接时，窗口大小是400，后来随着发送方发送数据的增加，窗口也在动态调整大小。值得一提的是，TCP窗口单位是字节不是报文段。</p>
+<h3 id="TCP拥塞控制"><a href="#TCP拥塞控制" class="headerlink" title="TCP拥塞控制"></a>TCP拥塞控制</h3><p>拥塞控制和流量控制不同，拥塞控制是指TCP通过控制数据传输速率防止因数据过多造成网络阻塞。TCP规定发送方不仅要维护一个拥塞窗口，这个拥塞窗口的大小是发送方根据网络拥塞情况进行判断从而确定的。所以发送方发送速率不仅取决于接收窗口的大小，也取决于拥塞窗口的大小，发送上限取这两个窗口的较小值。<br>TCP维护拥塞窗口的算法主要包括四个：慢开始、拥塞避免、快重传和快恢复。</p>
+<ul>
+<li><p>慢开始。慢开始的“慢”不是指拥塞窗口cwnd的发送速率慢，而是TCP在初始设置的拥塞窗口较小，慢慢增大进行网络拥塞试探。算法最初设置窗口大小cwnd=1，每次接收到一个确认报文段后，都会将窗口值加一。于是一次往返延迟时间（RTT）以后，接收方对那个报文进行确认，拥塞窗口cwnd=2。再经过一次RTT以后，接收方对两个报文进行确认，cwnd=4。以此类推，我们可以发现，拥塞窗口大小是呈指数增长的，这印证了前面说的慢开始的“慢”不是发送速率慢。当拥塞窗口超过了一个阈值ssthresh之后，开始使用拥塞避免算法。</p>
+</li>
+<li><p>拥塞避免。拥塞控制算法的思想是当慢开始使拥塞窗口大小达到阈值ssthresh时，每次经过一个RTT时，窗口大小增加1，而不是像慢开始一样，每次都是成倍增长。当出现一次拥塞时，将阈值ssthresh设置成为当前拥塞窗口cwnd的大小的一半（但阈值不能小于2）。然后拥塞窗口cwnd重新设置为1，重新进行慢开始算法。</p>
+</li>
+</ul>
+<p><img src="https://img-blog.csdnimg.cn/20200526230338111.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="TCP拥塞窗口cwnd在拥塞控制时的变化情况"></p>
+<p>从上图可以看出当窗口cwnd达到24时，出现网络拥塞，阈值ssthresh被降为此时cwnd的一半即为24，并重新进入慢开始阶段。</p>
+<ul>
+<li><p>快重传。前面的TCP可靠传输中我们提到了冗余ACK可以保证TCP的可靠性，在这里的快重传中我们同样使用冗余ACK来完成丢包检测。一旦接收方收到了失序的报文，立马发送一个ACK给发送方。当发送方收到三个同样的ACK报文时，就可以认为发生了丢包，需要进行重传。</p>
+</li>
+<li><p>快恢复。快恢复的思想是一旦发送方接受到三个重复的ACK报文时，将阈值ssthresh设置为当前拥塞窗口cwnd的一半，然后跳过慢开始的步骤，直接将拥塞窗口的值设置为ssthresh，使拥塞窗口大小线性增加。</p>
+</li>
+</ul>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>2020王道计算机网络<br>计算机网络（第7版）-谢希仁<br><a href="https://www.cnblogs.com/kubidemanong/p/9987810.html" target="_blank" rel="noopener">通俗易懂讲解TCP流量控制机制，了解一下</a></p>
+
+      
+      <!-- reward -->
+      
+      <div id="reward-btn">
+        Donate
+      </div>
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+        <div class="declare">
+          <ul class="post-copyright">
+            <li>
+              <i class="ri-copyright-line"></i>
+              <strong>Copyright： </strong>
+              Copyright is owned by the author. For commercial reprints, please contact the author for authorization. For non-commercial reprints, please indicate the source.
+            </li>
+          </ul>
+        </div>
+        
+    <footer class="article-footer">
+      
+          
+<div class="share-btn">
+      <span class="share-sns share-outer">
+        <i class="ri-share-forward-line"></i>
+        分享
+      </span>
+      <div class="share-wrap">
+        <i class="arrow"></i>
+        <div class="share-icons">
+          
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="ri-weibo-fill"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="ri-wechat-fill"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="ri-qq-fill"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="ri-douban-line"></i>
+          </a>
+          <!-- <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a> -->
+          
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="ri-facebook-circle-fill"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="ri-twitter-fill"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="ri-google-fill"></i>
+          </a>
+        </div>
+      </div>
+</div>
+
+<div class="wx-share-modal">
+    <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sky-ng.github.io/2020/05/21/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E4%BC%A0%E8%BE%93%E5%B1%82/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div id="share-mask"></div>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag">计算机网络</a></li></ul>
+
+
+    </footer>
+
+  </div>
+
+  
+  
+  <nav class="article-nav">
+    
+      <a href="/2020/05/24/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E5%88%A4%E6%96%AD%E5%AF%B9%E8%B1%A1%E6%98%AF%E5%90%A6%E5%AD%98%E6%B4%BB%E7%AE%97%E6%B3%95%E4%B8%8E%E5%AF%B9%E8%B1%A1%E5%BC%95%E7%94%A8/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            深入理解Java虚拟机-判断对象是否存活算法与对象引用
+          
+        </div>
+      </a>
+    
+    
+      <a href="/2020/05/21/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA/" class="article-nav-link">
+        <strong class="article-nav-caption">下一篇</strong>
+        <div class="article-nav-title">深入理解Java虚拟机-运行时数据区</div>
+      </a>
+    
+  </nav>
+
+
+  
+
+  
+  
+<!-- valine评论 -->
+<div id="vcomments-box">
+    <div id="vcomments">
+    </div>
+</div>
+<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/valine@1.3.10/dist/Valine.min.js'></script>
+<script>
+    new Valine({
+        el: '#vcomments',
+        app_id: 'fUrQOiCnbckVbIwhL5VdIYaz-MdYXbMMI',
+        app_key: 'PI4RISsI2EumNEjzNYjubtlY',
+        path: window.location.pathname,
+        notify: 'true',
+        verify: 'false',
+        avatar: 'monsterid',
+        placeholder: '给我的文章加点评论吧~',
+        recordIP: true
+    });
+    const infoEle = document.querySelector('#vcomments .info');
+    if (infoEle && infoEle.childNodes && infoEle.childNodes.length > 0) {
+        infoEle.childNodes.forEach(function (item) {
+            item.parentNode.removeChild(item);
+        });
+    }
+</script>
+<style>
+    #vcomments-box {
+        padding: 5px 30px;
+    }
+
+    @media screen and (max-width: 800px) {
+        #vcomments-box {
+            padding: 5px 0px;
+        }
+    }
+
+    #vcomments-box #vcomments {
+        background-color: #fff;
+    }
+
+    .v .vlist .vcard .vh {
+        padding-right: 20px;
+    }
+
+    .v .vlist .vcard {
+        padding-left: 10px;
+    }
+</style>
+
+  
+
+  
+  
+  
+  
+  
+
+</article>
+</section>
+      <footer class="footer">
+  <div class="outer">
+    <ul>
+      <li>
+        Copyrights &copy;
+        2015-2020
+        <i class="ri-heart-fill heart_icon"></i> sky-ng
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        
+        Powered by <a href="https://hexo.io" target="_blank">Hexo</a>
+        <span class="division">|</span>
+        Theme - <a href="https://github.com/Shen-Yu/hexo-theme-ayer" target="_blank">Ayer</a>
+        
+      </li>
+    </ul>
+    <ul>
+      <li>
+        
+        
+        <span>
+  <span><i class="ri-user-3-fill"></i>Visitors:<span id="busuanzi_value_site_uv"></span></s>
+  <span class="division">|</span>
+  <span><i class="ri-eye-fill"></i>Views:<span id="busuanzi_value_page_pv"></span></span>
+</span>
+        
+      </li>
+    </ul>
+    <ul>
+      
+    </ul>
+    <ul>
+      <li>
+        <!-- cnzz统计 -->
+        
+        <script type="text/javascript" src='https://s9.cnzz.com/z_stat.php?id=1278069914&amp;web_id=1278069914'></script>
+        
+      </li>
+    </ul>
+  </div>
+</footer>
+      <div class="float_btns">
+        <div class="totop" id="totop">
+  <i class="ri-arrow-up-line"></i>
+</div>
+
+<div class="todark" id="todark">
+  <i class="ri-moon-line"></i>
+</div>
+
+      </div>
+    </main>
+    <aside class="sidebar on">
+      <button class="navbar-toggle"></button>
+<nav class="navbar">
+  
+  <div class="logo">
+    <a href="/"><img src="/images/ayer-side.svg" alt="SKY技术修炼指南"></a>
+  </div>
+  
+  <ul class="nav nav-main">
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/">主页</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/archives">归档</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/categories">分类</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/tags">标签</a>
+    </li>
+    
+    <li class="nav-item">
+      <a class="nav-item-link" href="/about">关于我</a>
+    </li>
+    
+  </ul>
+</nav>
+<nav class="navbar navbar-bottom">
+  <ul class="nav">
+    <li class="nav-item">
+      
+      <a class="nav-item-link nav-item-search"  title="Search">
+        <i class="ri-search-line"></i>
+      </a>
+      
+      
+      <a class="nav-item-link" target="_blank" href="/atom.xml" title="RSS Feed">
+        <i class="ri-rss-line"></i>
+      </a>
+      
+    </li>
+  </ul>
+</nav>
+<div class="search-form-wrap">
+  <div class="local-search local-search-plugin">
+  <input type="search" id="local-search-input" class="local-search-input" placeholder="Search...">
+  <div id="local-search-result" class="local-search-result"></div>
+</div>
+</div>
+    </aside>
+    <script>
+      if (window.matchMedia("(max-width: 768px)").matches) {
+        document.querySelector('.content').classList.remove('on');
+        document.querySelector('.sidebar').classList.remove('on');
+      }
+    </script>
+    <div id="mask"></div>
+
+<!-- #reward -->
+<div id="reward">
+  <span class="close"><i class="ri-close-line"></i></span>
+  <p class="reward-p"><i class="ri-cup-line"></i>请我喝杯咖啡吧~</p>
+  <div class="reward-box">
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/alipay.png">
+      <span class="reward-type">支付宝</span>
+    </div>
+    
+    
+    <div class="reward-item">
+      <img class="reward-img" src="/images/wechat.png">
+      <span class="reward-type">微信</span>
+    </div>
+    
+  </div>
+</div>
+    
+<script src="/js/jquery-2.0.3.min.js"></script>
+
+
+<script src="/js/lazyload.min.js"></script>
+
+<!-- Subtitle -->
+
+<script>
+  try {
+    var typed = new Typed("#subtitle", {
+      strings: ['欢迎来到我的个人博客', '喜欢的请关注公众号：SKY技术修炼指南', '大家共同学习，共同进步'],
+      startDelay: 0,
+      typeSpeed: 200,
+      loop: true,
+      backSpeed: 100,
+      showCursor: true
+    });
+  } catch (err) {
+    console.log(err)
+  }
+</script>
+
+<!-- Tocbot -->
+
+
+<script src="/js/tocbot.min.js"></script>
+
+<script>
+  tocbot.init({
+    tocSelector: '.tocbot',
+    contentSelector: '.article-entry',
+    headingSelector: 'h1, h2, h3, h4, h5, h6',
+    hasInnerContainers: true,
+    scrollSmooth: true,
+    scrollContainer: 'main',
+    positionFixedSelector: '.tocbot',
+    positionFixedClass: 'is-position-fixed',
+    fixedSidebarOffset: 'auto'
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery-modal@0.9.2/jquery.modal.min.css">
+<script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.7.0/dist/js/jquery.justifiedGallery.min.js"></script>
+
+<script src="/dist/main.js"></script>
+
+<!-- ImageViewer -->
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+                <button class="pswp__button pswp__button--share" style="display:none" title="Share"></button>
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css">
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"></script>
+
+<script>
+    function viewer_init() {
+        let pswpElement = document.querySelectorAll('.pswp')[0];
+        let $imgArr = document.querySelectorAll(('.article-entry img:not(.reward-img)'))
+
+        $imgArr.forEach(($em, i) => {
+            $em.onclick = () => {
+                // slider展开状态
+                // todo: 这样不好，后面改成状态
+                if (document.querySelector('.left-col.show')) return
+                let items = []
+                $imgArr.forEach(($em2, i2) => {
+                    let img = $em2.getAttribute('data-idx', i2)
+                    let src = $em2.getAttribute('data-target') || $em2.getAttribute('src')
+                    let title = $em2.getAttribute('alt')
+                    // 获得原图尺寸
+                    const image = new Image()
+                    image.src = src
+                    items.push({
+                        src: src,
+                        w: image.width || $em2.width,
+                        h: image.height || $em2.height,
+                        title: title
+                    })
+                })
+                var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, items, {
+                    index: parseInt(i)
+                });
+                gallery.init()
+            }
+        })
+    }
+    viewer_init()
+</script>
+
+<!-- MathJax -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+      tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+  });
+
+  MathJax.Hub.Queue(function() {
+      var all = MathJax.Hub.getAllJax(), i;
+      for(i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+      }
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/mathjax@2.7.6/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script>
+  var ayerConfig = {
+    mathjax: true
+  }
+</script>
+
+<!-- Katex -->
+
+<!-- busuanzi  -->
+
+
+<script src="/js/busuanzi-2.3.pure.min.js"></script>
+
+
+<!-- ClickLove -->
+
+<!-- CodeCopy -->
+
+
+<link rel="stylesheet" href="/css/clipboard.css">
+
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+<script>
+  function wait(callback, seconds) {
+    var timelag = null;
+    timelag = window.setTimeout(callback, seconds);
+  }
+  !function (e, t, a) {
+    var initCopyCode = function(){
+      var copyHtml = '';
+      copyHtml += '<button class="btn-copy" data-clipboard-snippet="">';
+      copyHtml += '<i class="ri-file-copy-2-line"></i><span>COPY</span>';
+      copyHtml += '</button>';
+      $(".highlight .code pre").before(copyHtml);
+      $(".article pre code").before(copyHtml);
+      var clipboard = new ClipboardJS('.btn-copy', {
+        target: function(trigger) {
+          return trigger.nextElementSibling;
+        }
+      });
+      clipboard.on('success', function(e) {
+        let $btn = $(e.trigger);
+        $btn.addClass('copied');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-checkbox-circle-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPIED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-checkbox-circle-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+      clipboard.on('error', function(e) {
+        e.clearSelection();
+        let $btn = $(e.trigger);
+        $btn.addClass('copy-failed');
+        let $icon = $($btn.find('i'));
+        $icon.removeClass('ri-file-copy-2-line');
+        $icon.addClass('ri-time-line');
+        let $span = $($btn.find('span'));
+        $span[0].innerText = 'COPY FAILED';
+        
+        wait(function () { // 等待两秒钟后恢复
+          $icon.removeClass('ri-time-line');
+          $icon.addClass('ri-file-copy-2-line');
+          $span[0].innerText = 'COPY';
+        }, 2000);
+      });
+    }
+    initCopyCode();
+  }(window, document);
+</script>
+
+
+
+    
+    <div id="music">
+    
+    
+    
+    <iframe frameborder="no" border="1" marginwidth="0" marginheight="0" width="200" height="52"
+        src="//music.163.com/outchain/player?type=2&id=34376545&auto=1&height=32"></iframe>
+</div>
+
+<style>
+    #music {
+        position: fixed;
+        right: 15px;
+        bottom: 0;
+        z-index: 998;
+    }
+</style>
+    
+  </div>
+</body>
+
+</html>
