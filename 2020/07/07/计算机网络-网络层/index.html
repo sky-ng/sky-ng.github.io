@@ -59,8 +59,8 @@
 
     
     <div class="article-meta">
-      <a href="/2020/06/09/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E7%BD%91%E7%BB%9C%E5%B1%82/" class="article-date">
-  <time datetime="2020-06-09T13:52:53.000Z" itemprop="datePublished">2020-06-09</time>
+      <a href="/2020/07/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E7%BD%91%E7%BB%9C%E5%B1%82/" class="article-date">
+  <time datetime="2020-07-07T13:52:53.000Z" itemprop="datePublished">2020-07-07</time>
 </a>
       
   <div class="article-category">
@@ -74,7 +74,7 @@
         <span class="post-meta-item-icon">
             <i class="ri-quill-pen-line"></i>
             <span class="post-meta-item-text"> Word count:</span>
-            <span class="post-count">440</span>
+            <span class="post-count">1.3k</span>
         </span>
     </span>
 
@@ -83,7 +83,7 @@
         <span class="post-meta-item-icon">
             <i class="ri-book-open-line"></i>
             <span class="post-meta-item-text"> Reading time≈</span>
-            <span class="post-count">1 min</span>
+            <span class="post-count">4 min</span>
         </span>
     </span>
 </div>
@@ -112,14 +112,23 @@
 <a id="more"></a>
 
 <h2 id="网络层功能"><a href="#网络层功能" class="headerlink" title="网络层功能"></a>网络层功能</h2><ul>
-<li><p>异构网络互联。异构网络互联是指将多个计算机网络通过中继系统连接起来，这些网络在物理上是异构的。物理层和数据链路层的设备只是进行网络的扩大，而不是网络互联。</p>
-</li>
-<li><p>路由与转发。路由与转发实际上是两个部分：路由选择、分组转发。路由选择是根据特定路由选择算法从相邻路由器获得网络拓扑变化从而动态更新路由。路由转发是选择合适的端口将分组转发出去。</p>
-</li>
-<li><p>拥塞控制。随着网络负载的增大，如果吞吐量明显小于正常的吞吐量，那么网络可能就进入了拥塞状态。与流量控制不同的是，拥塞控制是一个全局性问题，涉及到网络中的所有主机、路由器等设备，而流量控制只需要控制发送端和接收端的通信量，保证接收端来得及接收发送端发来的数据。拥塞控制的方法主要有两种：开环控制和闭环控制。开环控制是一种静态方法，在系统启动之前决定何时接收新流量、丢弃分组，丢弃哪些分组等问题。而闭环控制是一种静态方法，无需提前考虑拥塞因素，一旦发现网络发生拥塞，将拥塞信息发送到合适的地方，动态调整网络系统。</p>
-</li>
+<li><strong>异构网络互联</strong>。异构网络互联是指将多个计算机网络通过中继系统连接起来，这些网络在物理上是异构的。物理层和数据链路层的设备只是进行网络的扩大，而不是网络互联。</li>
+<li><strong>路由与转发</strong>。路由与转发实际上是两个部分：路由选择、分组转发。路由选择是根据特定路由选择算法从相邻路由器获得网络拓扑变化从而动态更新路由。路由转发是选择合适的端口将分组转发出去。</li>
+<li><strong>拥塞控制</strong>。随着网络负载的增大，如果吞吐量明显小于正常的吞吐量，那么网络可能就进入了拥塞状态。与流量控制不同的是，拥塞控制是一个全局性问题，涉及到网络中的所有主机、路由器等设备，而流量控制只需要控制发送端和接收端的通信量，保证接收端来得及接收发送端发来的数据。拥塞控制的方法主要有两种：开环控制和闭环控制。开环控制是一种静态方法，在系统启动之前决定何时接收新流量、丢弃分组，丢弃哪些分组等问题。而闭环控制是一种动态方法，无需提前考虑拥塞因素，一旦发现网络发生拥塞，将拥塞信息发送到合适的地方，动态调整网络系统。</li>
 </ul>
-<h2 id="路由算法"><a href="#路由算法" class="headerlink" title="路由算法"></a>路由算法</h2><h2 id="IPv4"><a href="#IPv4" class="headerlink" title="IPv4"></a>IPv4</h2><h2 id="IPv6"><a href="#IPv6" class="headerlink" title="IPv6"></a>IPv6</h2><h2 id="路由协议"><a href="#路由协议" class="headerlink" title="路由协议"></a>路由协议</h2><h2 id="IP组播"><a href="#IP组播" class="headerlink" title="IP组播"></a>IP组播</h2><h2 id="移动IP"><a href="#移动IP" class="headerlink" title="移动IP"></a>移动IP</h2><h2 id="网络层设备"><a href="#网络层设备" class="headerlink" title="网络层设备"></a>网络层设备</h2>
+<h2 id="路由算法"><a href="#路由算法" class="headerlink" title="路由算法"></a>路由算法</h2><p>在介绍路由算法之前，需要先介绍一下<strong>静态路由</strong>和<strong>动态路由</strong>的概念。静态路由需要网络管理员手动配置路由信息，一旦链路状态或拓扑结构发生变化，网络管理员就要去修改路由表中的静态路由信息。动态路由是路由器之间相互交换路由表信息，通过一定算法优化得出的最优寻路方式。静态路由比较适合于拓扑变化不大的小型网络或需要保证安全性和稳定性的军事系统，而动态路由适合复杂的大型网络。常见的动态路由算法有距离向量路由算法和链路状态路由算法。</p>
+<h3 id="距离向量路由算法"><a href="#距离向量路由算法" class="headerlink" title="距离向量路由算法"></a>距离向量路由算法</h3><p>距离向量路由算法中，节点之间定期向相邻节点发送路由表，路由表的内容包括每条路径的目的地和路径的距离。</p>
+<blockquote>
+<p>这里说的距离不是物理上说的距离，而是一个抽象概念，在RIP算法中将距离定义为“跳数”，也就是指从源端口到目的端口经过的路由器数量。</p>
+</blockquote>
+<p>距离向量路由算法的所有节点都在监听相邻节点的路由更新信息，并在以下两种情况下更新路由选择表信息：</p>
+<p>1.被通知有一条新的路由，这个路由在当前节点的路由表中并不存在。<br>2.到达某一目的地有比当前使用路由更短距离的路由，就用较短路由代替当前路由。</p>
+<h3 id="链路状态路由算法"><a href="#链路状态路由算法" class="headerlink" title="链路状态路由算法"></a>链路状态路由算法</h3><p>使用链路状态路由算法的网络中的节点会主动测试相邻节点的状态并在链路发生变化时将链路状态发送给网络中的<strong>全部节点</strong>。在这里每次链路状态更新时，节点都会利用迪杰斯特拉算法更新最短路径。链路状态路由算法具有以下三个特征：</p>
+<p>1.使用泛洪法向本自治系统所有的路由器发送信息，即向相邻所有节点发送信息，每个相邻节点又向除刚刚发送信息的节点继续发送信息。<br>2.发送的信息是与路由器相连的所有路由器的链路状态。<br>3.当链路状态发生改变时，路由器才会向所有路由器发送信息。</p>
+<p>与距离向量路由算法相比，链路状态路由算法不依赖中间节点的计算，并且节点通过广播的方式与所有节点交谈。</p>
+<h3 id="层次路由"><a href="#层次路由" class="headerlink" title="层次路由"></a>层次路由</h3><p>随着网络规模的逐渐扩大，路由表中的信息越来越多，因此层次路由的概念被提了出来。层次路由是将互联网划分为多个自治系统，每个自治系统又包含很多局域网。一个自治系统内部使用内部网关协议（IGP），具体的协议有RIP和OSPF等。OSPF会将一个自治系统划分成若干个区域，路由器并不知道区域内的结构细节。</p>
+<p>自治系统之间采用外部网关协议（EGP），用于不同自治系统的路由器交换路由信息，并选择最优路径，具体协议有BGP。</p>
+<h2 id="IPv4"><a href="#IPv4" class="headerlink" title="IPv4"></a>IPv4</h2><h2 id="IPv6"><a href="#IPv6" class="headerlink" title="IPv6"></a>IPv6</h2><h2 id="路由协议"><a href="#路由协议" class="headerlink" title="路由协议"></a>路由协议</h2><h2 id="IP组播"><a href="#IP组播" class="headerlink" title="IP组播"></a>IP组播</h2><h2 id="移动IP"><a href="#移动IP" class="headerlink" title="移动IP"></a>移动IP</h2><h2 id="网络层设备"><a href="#网络层设备" class="headerlink" title="网络层设备"></a>网络层设备</h2>
       
       <!-- reward -->
       
@@ -187,7 +196,7 @@
     <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sky-ng.github.io/2020/06/09/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E7%BD%91%E7%BB%9C%E5%B1%82/" alt="微信分享二维码">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sky-ng.github.io/2020/07/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E7%BD%91%E7%BB%9C%E5%B1%82/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -205,19 +214,19 @@
   
   <nav class="article-nav">
     
-      <a href="/2020/06/10/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/" class="article-nav-link">
+      <a href="/2020/07/08/%E5%85%B3%E4%BA%8EHashMap%EF%BC%8C%E4%BD%A0%E6%83%B3%E7%9F%A5%E9%81%93%E7%9A%84%E5%8F%AF%E8%83%BD%E9%83%BD%E6%9C%89/" class="article-nav-link">
         <strong class="article-nav-caption">上一篇</strong>
         <div class="article-nav-title">
           
-            操作系统-进程与线程
+            关于HashMap，你想知道的可能都有
           
         </div>
       </a>
     
     
-      <a href="/2020/06/09/%E4%BD%A0%E4%B8%80%E5%AE%9A%E8%A6%81%E4%BA%86%E8%A7%A3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-%E5%B9%B6%E6%9F%A5%E9%9B%86/" class="article-nav-link">
+      <a href="/2020/06/26/%E6%9C%AC%E7%A7%91%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AF%BE%E7%A8%8B%E7%9A%84%E6%BC%8F%E7%BD%91%E4%B9%8B%E9%B1%BC-%E7%BA%A2%E9%BB%91%E6%A0%91%EF%BC%88%E4%B8%8B%EF%BC%89/" class="article-nav-link">
         <strong class="article-nav-caption">下一篇</strong>
-        <div class="article-nav-title">你一定要了解的数据结构-并查集</div>
+        <div class="article-nav-title">本科数据结构课程的漏网之鱼-红黑树（下）</div>
       </a>
     
   </nav>
@@ -686,7 +695,7 @@
     
     
     <iframe frameborder="no" border="1" marginwidth="0" marginheight="0" width="200" height="52"
-        src="//music.163.com/outchain/player?type=2&id=276294&auto=1&height=32"></iframe>
+        src="//music.163.com/outchain/player?type=2&id=25714332&auto=1&height=32"></iframe>
 </div>
 
 <style>

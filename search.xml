@@ -1,6 +1,166 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>关于HashMap，你想知道的可能都有</title>
+    <url>/2020/07/08/%E5%85%B3%E4%BA%8EHashMap%EF%BC%8C%E4%BD%A0%E6%83%B3%E7%9F%A5%E9%81%93%E7%9A%84%E5%8F%AF%E8%83%BD%E9%83%BD%E6%9C%89/</url>
+    <content><![CDATA[<p>在现在的互联网大厂面试中，HashMap几乎是必问的知识点。因此本文对HashMap进行系统性的总结，将HashMap常见的知识点都整理出来。</p>
+<a id="more"></a>
+
+<p>前面铺垫了两篇红黑树的文章，终于进入这篇HashMap了。如果有不知道什么是红黑树的同学，先去看一下我前面讲红黑树的文章。<br><a href="https://mp.weixin.qq.com/s/znClfHriql7LOUi_eRq5lA" target="_blank" rel="noopener">本科数据结构课程的漏网之鱼-红黑树（上）</a><br><a href="https://mp.weixin.qq.com/s/38M5RAFaYTIabIU3ovK0Ew" target="_blank" rel="noopener">本科数据结构课程的漏网之鱼-红黑树（下）</a></p>
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>相信大家之前或多或少都接触过HashMap，这是一种用来存放键值对的数据结构。它实现了Map接口，是最常用的Java容器之一。在JDK7及之前版本中，HashMap实现方式都是通过<code>数组+链表</code>，而JDK8开始，HashMap底层通过<code>数组+链表+红黑树</code>的数据结构实现。下面就将开始详细介绍这部分内容。</p>
+<h2 id="底层数据结构"><a href="#底层数据结构" class="headerlink" title="底层数据结构"></a>底层数据结构</h2><p>在JDK7及之前的版本中，HashMap都是通过数组+链表实现的，大致结构如下图。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020070817345065.png#pic_center" alt="JDK7及之前的HashMap底层结构"></p>
+<p>然而这种数据结构有一定局限性，当某个链表特别长的话，搜索效率就大大降低，因此，JDK8中引入了红黑树，目的就是减少查找次数。当链表长度大于阈值（默认为8）时，就会转换成红黑树。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200708172215166.png#pic_center" alt="JDK8的HashMap底层结构"></p>
+<p>在JDK7中，插入结点都叫Entry，这结构就是散列表中常见的“拉链法”。而在JDK8中，结点变成了Node。</p>
+<h2 id="插入结点"><a href="#插入结点" class="headerlink" title="插入结点"></a>插入结点</h2><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> V <span class="title">put</span><span class="params">(K key, V value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> putVal(hash(key), key, value, <span class="keyword">false</span>, <span class="keyword">true</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">hash</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> h;</span><br><span class="line">    <span class="keyword">return</span> (key == <span class="keyword">null</span>) ? <span class="number">0</span> : (h = key.hashCode()) ^ (h &gt;&gt;&gt; <span class="number">16</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">final</span> V <span class="title">putVal</span><span class="params">(<span class="keyword">int</span> hash, K key, V value, <span class="keyword">boolean</span> onlyIfAbsent,</span></span></span><br><span class="line"><span class="function"><span class="params">               <span class="keyword">boolean</span> evict)</span> </span>&#123;</span><br><span class="line">    Node&lt;K,V&gt;[] tab; Node&lt;K,V&gt; p; <span class="keyword">int</span> n, i;</span><br><span class="line">    <span class="keyword">if</span> ((tab = table) == <span class="keyword">null</span> || (n = tab.length) == <span class="number">0</span>)</span><br><span class="line">        n = (tab = resize()).length;</span><br><span class="line">    <span class="keyword">if</span> ((p = tab[i = (n - <span class="number">1</span>) &amp; hash]) == <span class="keyword">null</span>)</span><br><span class="line">        tab[i] = newNode(hash, key, value, <span class="keyword">null</span>);</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        Node&lt;K,V&gt; e; K k;</span><br><span class="line">        <span class="keyword">if</span> (p.hash == hash &amp;&amp;</span><br><span class="line">            ((k = p.key) == key || (key != <span class="keyword">null</span> &amp;&amp; key.equals(k))))</span><br><span class="line">            e = p;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (p <span class="keyword">instanceof</span> TreeNode)</span><br><span class="line">            e = ((TreeNode&lt;K,V&gt;)p).putTreeVal(<span class="keyword">this</span>, tab, hash, key, value);</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> binCount = <span class="number">0</span>; ; ++binCount) &#123;</span><br><span class="line">                <span class="keyword">if</span> ((e = p.next) == <span class="keyword">null</span>) &#123;</span><br><span class="line">                    p.next = newNode(hash, key, value, <span class="keyword">null</span>);</span><br><span class="line">                    <span class="keyword">if</span> (binCount &gt;= TREEIFY_THRESHOLD - <span class="number">1</span>) <span class="comment">// -1 for 1st</span></span><br><span class="line">                        treeifyBin(tab, hash);</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (e.hash == hash &amp;&amp;</span><br><span class="line">                    ((k = e.key) == key || (key != <span class="keyword">null</span> &amp;&amp; key.equals(k))))</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                p = e;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (e != <span class="keyword">null</span>) &#123; <span class="comment">// existing mapping for key</span></span><br><span class="line">            V oldValue = e.value;</span><br><span class="line">            <span class="keyword">if</span> (!onlyIfAbsent || oldValue == <span class="keyword">null</span>)</span><br><span class="line">                e.value = value;</span><br><span class="line">            afterNodeAccess(e);</span><br><span class="line">            <span class="keyword">return</span> oldValue;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    ++modCount;</span><br><span class="line">    <span class="keyword">if</span> (++size &gt; threshold)</span><br><span class="line">        resize();</span><br><span class="line">    afterNodeInsertion(evict);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面是JDK8中截取的插入结点的核心源码，我们一步一步分解上面的源码。首先看到<code>put</code>方法里面对key进行了一次hash运算，传入到<code>putVal</code>中帮助计算下标值，接着往下看<code>putVal</code>方法。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Node&lt;K,V&gt;[] tab; Node&lt;K,V&gt; p; <span class="keyword">int</span> n, i;</span><br><span class="line"><span class="keyword">if</span> ((tab = table) == <span class="keyword">null</span> || (n = tab.length) == <span class="number">0</span>)</span><br><span class="line">    n = (tab = resize()).length;</span><br></pre></td></tr></table></figure>
+
+<p>tab是数组名，p是待插入结点，n是数组长度，这就很明朗了。如果是空数组，那么会进入这个判断语句中，此时tab被<code>resize</code>方法赋值后，取tab的长度给n。这里先不展开介绍<code>resize</code>方法，只需知道tab被赋的初始长度是16。接着往下看。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> ((p = tab[i = (n - <span class="number">1</span>) &amp; hash]) == <span class="keyword">null</span>)</span><br><span class="line">    tab[i] = newNode(hash, key, value, <span class="keyword">null</span>);</span><br></pre></td></tr></table></figure>
+
+<p>上面这段代码就有意思了，重点在<code>(n - 1) &amp; hash</code>。我们前面说到hash是通过<code>hash(key)</code>计算得到的，这里和<code>n-1</code>进行按位与运算实际上等同于<code>hash % n</code>。在HashMap中，数组的长度n一定是2的幂。以n=16为例，n-1的值就是15。我们随便写一个hash值与15进行按位与运算，如下图。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200709190427437.jpg#pic_center" alt="(n - 1) &amp; hash运算"></p>
+<p>我们可以发现15的二进制只有后四位是1，前面全部都是0，进行按位与运算后的结果只与hash的后四位相关，前面全部都是0，也就验证了我们前面所说的<code>(n - 1) &amp; hash</code>等效于<code>hash % n</code>，并由此计算出数组下标值i。很显然如果在数组中下表为i的位置为空，就创建一个新结点放入数组中。</p>
+<p>源码继续往下看是一个else语句，也就是数组的下标i位置已经有值了，我们需要解决hash冲突。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Node&lt;K,V&gt; e; K k;</span><br><span class="line"><span class="keyword">if</span> (p.hash == hash &amp;&amp;</span><br><span class="line">    ((k = p.key) == key || (key != <span class="keyword">null</span> &amp;&amp; key.equals(k))))</span><br><span class="line">    e = p;</span><br></pre></td></tr></table></figure>
+
+<p>上面这段代码描述了存入一个已存在的key值将会将原来的结点替换成新的结点。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">else</span> <span class="keyword">if</span> (p <span class="keyword">instanceof</span> TreeNode)</span><br><span class="line">    e = ((TreeNode&lt;K,V&gt;)p).putTreeVal(<span class="keyword">this</span>, tab, hash, key, value);</span><br></pre></td></tr></table></figure>
+
+<p>这段代码是指如果当前这个下标的结点是红黑树结点，那么就按照红黑树的插入方式插入结点。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> binCount = <span class="number">0</span>; ; ++binCount) &#123;</span><br><span class="line">        <span class="keyword">if</span> ((e = p.next) == <span class="keyword">null</span>) &#123;</span><br><span class="line">            p.next = newNode(hash, key, value, <span class="keyword">null</span>);</span><br><span class="line">            <span class="keyword">if</span> (binCount &gt;= TREEIFY_THRESHOLD - <span class="number">1</span>) <span class="comment">// -1 for 1st</span></span><br><span class="line">                treeifyBin(tab, hash);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (e.hash == hash &amp;&amp;</span><br><span class="line">            ((k = e.key) == key || (key != <span class="keyword">null</span> &amp;&amp; key.equals(k))))</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        p = e;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>还剩这一种情况就是当结点是链表结点时，顺着链表从头开始往后找，如果找到最后没有相同key值的结点，就将结点插到链表末尾，插入后大于等于8个结点，就把链表转成红黑树；如果在链表中找到了key相同的结点，就替换原来的结点。在JDK8中，插入链表的方式是采用尾插法，而在JDK7中是采用头插法。而在多线程环境下，头插法有可能会出现环形链表。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200709212719737.png#pic_center" alt="头插法导致环形链表"></p>
+<p>但是这并不意味着使用尾插法在多线程环境下就是安全的，因为<code>put/get</code>方法没有加同步锁，因此无法确保线程安全。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (e != <span class="keyword">null</span>) &#123; <span class="comment">// existing mapping for key</span></span><br><span class="line">    V oldValue = e.value;</span><br><span class="line">    <span class="keyword">if</span> (!onlyIfAbsent || oldValue == <span class="keyword">null</span>)</span><br><span class="line">        e.value = value;</span><br><span class="line">    afterNodeAccess(e);</span><br><span class="line">    <span class="keyword">return</span> oldValue;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这段代码用于替换结点后返回原结点的值。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">++modCount;</span><br><span class="line"><span class="keyword">if</span> (++size &gt; threshold)</span><br><span class="line">    resize();</span><br><span class="line">afterNodeInsertion(evict);</span><br><span class="line"><span class="keyword">return</span> <span class="keyword">null</span>;</span><br></pre></td></tr></table></figure>
+
+<p>最后这段代码主要用于收尾，修改次数+1，如果键值对个数超过了阈值就进行扩容。</p>
+<h2 id="扩容机制"><a href="#扩容机制" class="headerlink" title="扩容机制"></a>扩容机制</h2><p>当HashMap中键值对个数超过了阈值时，就会启动扩容机制，而这里的所谓“阈值”指的就是数组长度与负载因子的乘积。扩容机制的核心源码是通过<code>resize</code>方法实现的，前面我们提到过这个方法，但是没有展开讲它的细节，我们这里讲一下具体的代码细节。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">final</span> Node&lt;K,V&gt;[] resize() &#123;</span><br><span class="line">    Node&lt;K,V&gt;[] oldTab = table;</span><br><span class="line">    <span class="keyword">int</span> oldCap = (oldTab == <span class="keyword">null</span>) ? <span class="number">0</span> : oldTab.length;</span><br><span class="line">    <span class="keyword">int</span> oldThr = threshold;</span><br><span class="line">    <span class="keyword">int</span> newCap, newThr = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (oldCap &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (oldCap &gt;= MAXIMUM_CAPACITY) &#123;</span><br><span class="line">            threshold = Integer.MAX_VALUE;</span><br><span class="line">            <span class="keyword">return</span> oldTab;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> ((newCap = oldCap &lt;&lt; <span class="number">1</span>) &lt; MAXIMUM_CAPACITY &amp;&amp;</span><br><span class="line">                 oldCap &gt;= DEFAULT_INITIAL_CAPACITY)</span><br><span class="line">            newThr = oldThr &lt;&lt; <span class="number">1</span>; <span class="comment">// double threshold</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (oldThr &gt; <span class="number">0</span>) <span class="comment">// initial capacity was placed in threshold</span></span><br><span class="line">        newCap = oldThr;</span><br><span class="line">    <span class="keyword">else</span> &#123;               <span class="comment">// zero initial threshold signifies using defaults</span></span><br><span class="line">        newCap = DEFAULT_INITIAL_CAPACITY;</span><br><span class="line">        newThr = (<span class="keyword">int</span>)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (newThr == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">float</span> ft = (<span class="keyword">float</span>)newCap * loadFactor;</span><br><span class="line">        newThr = (newCap &lt; MAXIMUM_CAPACITY &amp;&amp; ft &lt; (<span class="keyword">float</span>)MAXIMUM_CAPACITY ?</span><br><span class="line">                  (<span class="keyword">int</span>)ft : Integer.MAX_VALUE);</span><br><span class="line">    &#125;</span><br><span class="line">    threshold = newThr;</span><br><span class="line">    <span class="meta">@SuppressWarnings</span>(&#123;<span class="string">"rawtypes"</span>,<span class="string">"unchecked"</span>&#125;)</span><br><span class="line">    Node&lt;K,V&gt;[] newTab = (Node&lt;K,V&gt;[])<span class="keyword">new</span> Node[newCap];</span><br><span class="line">    table = newTab;</span><br><span class="line">    <span class="keyword">if</span> (oldTab != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; oldCap; ++j) &#123;</span><br><span class="line">            Node&lt;K,V&gt; e;</span><br><span class="line">            <span class="keyword">if</span> ((e = oldTab[j]) != <span class="keyword">null</span>) &#123;</span><br><span class="line">                oldTab[j] = <span class="keyword">null</span>;</span><br><span class="line">                <span class="keyword">if</span> (e.next == <span class="keyword">null</span>)</span><br><span class="line">                    newTab[e.hash &amp; (newCap - <span class="number">1</span>)] = e;</span><br><span class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (e <span class="keyword">instanceof</span> TreeNode)</span><br><span class="line">                    ((TreeNode&lt;K,V&gt;)e).split(<span class="keyword">this</span>, newTab, j, oldCap);</span><br><span class="line">                <span class="keyword">else</span> &#123; <span class="comment">// preserve order</span></span><br><span class="line">                    Node&lt;K,V&gt; loHead = <span class="keyword">null</span>, loTail = <span class="keyword">null</span>;</span><br><span class="line">                    Node&lt;K,V&gt; hiHead = <span class="keyword">null</span>, hiTail = <span class="keyword">null</span>;</span><br><span class="line">                    Node&lt;K,V&gt; next;</span><br><span class="line">                    <span class="keyword">do</span> &#123;</span><br><span class="line">                        next = e.next;</span><br><span class="line">                        <span class="keyword">if</span> ((e.hash &amp; oldCap) == <span class="number">0</span>) &#123;</span><br><span class="line">                            <span class="keyword">if</span> (loTail == <span class="keyword">null</span>)</span><br><span class="line">                                loHead = e;</span><br><span class="line">                            <span class="keyword">else</span></span><br><span class="line">                                loTail.next = e;</span><br><span class="line">                            loTail = e;</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="keyword">else</span> &#123;</span><br><span class="line">                            <span class="keyword">if</span> (hiTail == <span class="keyword">null</span>)</span><br><span class="line">                                hiHead = e;</span><br><span class="line">                            <span class="keyword">else</span></span><br><span class="line">                                hiTail.next = e;</span><br><span class="line">                            hiTail = e;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125; <span class="keyword">while</span> ((e = next) != <span class="keyword">null</span>);</span><br><span class="line">                    <span class="keyword">if</span> (loTail != <span class="keyword">null</span>) &#123;</span><br><span class="line">                        loTail.next = <span class="keyword">null</span>;</span><br><span class="line">                        newTab[j] = loHead;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span> (hiTail != <span class="keyword">null</span>) &#123;</span><br><span class="line">                        hiTail.next = <span class="keyword">null</span>;</span><br><span class="line">                        newTab[j + oldCap] = hiHead;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> newTab;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这段代码比之前的代码片段更长，我们还是一部分一部分地看。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Node&lt;K,V&gt;[] oldTab = table;</span><br><span class="line"><span class="keyword">int</span> oldCap = (oldTab == <span class="keyword">null</span>) ? <span class="number">0</span> : oldTab.length;</span><br><span class="line"><span class="keyword">int</span> oldThr = threshold;</span><br><span class="line"><span class="keyword">int</span> newCap, newThr = <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
+
+<p>这部分没什么好说的，oldTab就是扩容前的数组，oldCap和oldThr分别是扩容前的容量和扩容前的阈值，如果是之前没有存放过元素，那么这两个属性的初始值都是0，newCap和newThr是扩容后的数组长度和阈值。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (oldCap &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (oldCap &gt;= MAXIMUM_CAPACITY) &#123;</span><br><span class="line">        threshold = Integer.MAX_VALUE;</span><br><span class="line">        <span class="keyword">return</span> oldTab;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> ((newCap = oldCap &lt;&lt; <span class="number">1</span>) &lt; MAXIMUM_CAPACITY &amp;&amp;</span><br><span class="line">             oldCap &gt;= DEFAULT_INITIAL_CAPACITY)</span><br><span class="line">        newThr = oldThr &lt;&lt; <span class="number">1</span>; <span class="comment">// double threshold</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里就是扩容前数组容量大于0的情况下，如果扩容前的数组容量已经达到了最大限制，那么无法继续扩容，否则新数组容量是原来的两倍，若是扩容后的容量满足要求则阈值也变为原来的二倍。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">else</span> <span class="keyword">if</span> (oldThr &gt; <span class="number">0</span>) <span class="comment">// initial capacity was placed in threshold</span></span><br><span class="line">    newCap = oldThr;</span><br><span class="line"><span class="keyword">else</span> &#123;               <span class="comment">// zero initial threshold signifies using defaults</span></span><br><span class="line">    newCap = DEFAULT_INITIAL_CAPACITY;</span><br><span class="line">    newThr = (<span class="keyword">int</span>)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果扩容前容量不大于0，而扩容前的阈值大于0，那么将新的容量设为旧的阈值。如果阈值和容量都不大于0（如HashMap初始状态）那么将新的容量设置为16，新的阈值设置为12。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (newThr == <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">float</span> ft = (<span class="keyword">float</span>)newCap * loadFactor;</span><br><span class="line">    newThr = (newCap &lt; MAXIMUM_CAPACITY &amp;&amp; ft &lt; (<span class="keyword">float</span>)MAXIMUM_CAPACITY ?</span><br><span class="line">              (<span class="keyword">int</span>)ft : Integer.MAX_VALUE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里就是给新阈值赋值，也没什么好说的。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">threshold = newThr;</span><br><span class="line"><span class="meta">@SuppressWarnings</span>(&#123;<span class="string">"rawtypes"</span>,<span class="string">"unchecked"</span>&#125;)</span><br><span class="line">Node&lt;K,V&gt;[] newTab = (Node&lt;K,V&gt;[])<span class="keyword">new</span> Node[newCap];</span><br><span class="line">table = newTab;</span><br></pre></td></tr></table></figure>
+
+<p>这段代码就是为扩容以后做准备了，申请一段新的内存空间，赋值给数组。</p>
+<p>最后一部分的代码比较长，我们说一下基本思路。遍历扩容前的所有结点，并对其进行ReHash。为什么要进行ReHash呢？我们回顾一下算出插入位置的方法：<code>(n - 1) &amp; hash(key)</code>。数组长度变了，那么插入的位置自然也就变了，因此我们需要进行ReHash。</p>
+<h2 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h2><h3 id="线程安全"><a href="#线程安全" class="headerlink" title="线程安全"></a>线程安全</h3><p>HashMap是线程不安全的，尽管JDK8改进了之前JDK7在多线程环境下可能出现循环链表的问题，但这并不意味着HashMap就线程安全了。常见的替代HashMap的线程安全方案有HashTable和ConcurrentHashMap两种集合。但是HashTable在并发能力方面并不理想，因此使用很少。</p>
+<h3 id="负载因子"><a href="#负载因子" class="headerlink" title="负载因子"></a>负载因子</h3><p>为什么开发人员要把默认负载因子设置为0.75呢？因为根据泊松分布，使用0.75作为负载因子，链表元素达到8个是极小的概率。</p>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>Java容器</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>分治算法与归并排序</title>
+    <url>/2020/06/13/%E5%88%86%E6%B2%BB%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BD%92%E5%B9%B6%E6%8E%92%E5%BA%8F/</url>
+    <content><![CDATA[<p>距离上次写快排算法的文章已经过去一个半月了，和本文要提到的归并排序算法类似，快排也是分治思想的一种典型应用，如果有不熟悉快速排序的同学可以翻阅我之前写过的快速排序算法的文章。</p>
+<a id="more"></a>
+
+<h2 id="分治算法"><a href="#分治算法" class="headerlink" title="分治算法"></a>分治算法</h2><p>首先为大家介绍一下什么是分治，分治是将一个大问题分割成若干个和原来问题形式相同但规模更小的子问题，然后处理这些小问题，最终实现整个大问题的过程。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200613153944675.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt=""></p>
+<p>额…上面说的概念确实很难理解，我们换一个生活中的场景来介绍一下什么是分治吧。</p>
+<p>小明手里有8枚硬币，其中有1枚是假币，已知假币比真币轻，现在我们有一架天平，那么我们该怎么找出假币呢？</p>
+<p>首先我们将硬币分成两组，每组4枚硬币，分别放到天平上称，硬币一定在轻的那一组里，再次将轻的那一边的硬币分成两组，每组2枚硬币，然后再取轻的那一边在进行二分，直到最后将2枚硬币放在天平上，轻的那一枚就是假币。这里用的就是简单的分治思想，每次把问题规模缩小一半，这里不仅是分治思想，其实也是用到了二分法的思想。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200613155043295.jpg#pic_center" alt=""></p>
+<h2 id="归并排序"><a href="#归并排序" class="headerlink" title="归并排序"></a>归并排序</h2><p>归并排序是分治算法的一种典型应用，基本思路如下：</p>
+<ul>
+<li><p>将数组的前一半进行排序</p>
+</li>
+<li><p>将数组的后一半进行排序</p>
+</li>
+<li><p>将两半数据归并成为一个有序的数组，并拷贝回原数组</p>
+</li>
+</ul>
+<p><img src="https://img-blog.csdnimg.cn/20200613164330511.jpg#pic_center" alt=""></p>
+<p>不多逼逼，直接给你们看代码。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">mergeSort</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span> s, <span class="keyword">int</span> e, <span class="keyword">int</span>[] tmp)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (s &lt; e) &#123;</span><br><span class="line">		<span class="keyword">int</span> m = s + ((e - s) &gt;&gt; <span class="number">1</span>);</span><br><span class="line">		mergeSort(arr, s, m, tmp);</span><br><span class="line">		mergeSort(arr, m + <span class="number">1</span>, e, tmp);</span><br><span class="line">		merge(arr, s, m, e, tmp);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">merge</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span> s, <span class="keyword">int</span> m, <span class="keyword">int</span> e, <span class="keyword">int</span>[] tmp)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> p = <span class="number">0</span>;	<span class="comment">//指向tmp数组当前位置的指针</span></span><br><span class="line">	<span class="keyword">int</span> p1 = s, p2 = m + <span class="number">1</span>; <span class="comment">//p1和p2分别指向分成两组后两边数组的首位置</span></span><br><span class="line">	<span class="keyword">while</span> (p1 &lt;= m &amp;&amp; p2 &lt;= e) &#123;</span><br><span class="line">		<span class="keyword">if</span> (arr[p1] &gt; arr[p2]) &#123;</span><br><span class="line">			tmp[p++] = arr[p2++];</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			tmp[p++] = arr[p1++];</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">while</span> (p1 &lt;= m) &#123;</span><br><span class="line">		tmp[p++] = arr[p1++];</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">while</span> (p2 &lt;= e) &#123;</span><br><span class="line">		tmp[p++] = arr[p2++];</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; e - s + <span class="number">1</span>; ++i) &#123;</span><br><span class="line">		arr[s + i] = tmp[i];</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>咱们来梳理一下上面的代码，首先是<code>mergeSort</code>方法，当起始位置小于终止位置的时候才会执行代码，否则直接结束这个方法。再看看这个判断语句里的内容，首先是求出数组的中点，对数组一分为二进行分治，然后这两个数组又递归调用这个方法，最后对两个已经排好序的数组执行<code>merge</code>方法，进行归并操作。我们可以知道的是，当分到一定程度（s和e指向相同的元素）时，会结束递归，进行归并。我们用一组数据来模拟这个过程。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200613171107537.jpg#pic_center" alt="待排序数组"></p>
+<p>以上是一个待排序的数组，数组长度为10，因此传入的s和e分别为0和9，求出的m值为4，于是将数组分为下标0<del>4和下标5</del>9的两个数组再分别进行归并排序。</p>
+<p>为了简化内容，我们尝试对前一个数组进行递归。此时传入的s和e分别是0和4，则m是2，再对前一个数组进行递归，s和e是0和2，m是1，继续递归，s和e是0和1，m是0，这时候两个数组都只有一个数了，这时候就需要对这两个数进行<code>merge</code>操作。所谓的<code>merge</code>操作，就是将两个数组中的元素按从小到大的顺序复制到tmp数组中，然后复制回arr数组中。咱们下面用图片来展示一下上面的代码到底对这个数组干了些什么。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200613184701300.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="归并排序过程"></p>
+<p>实际上，上述过程只是逻辑上的切分和归并，事实上由于递归需要不断压栈以及以上代码需要顺序执行，切分和归并的次数还要更多一些。</p>
+<p>最后需要提到的是，归并排序是一种稳定的排序算法，时间复杂度为$O(nlogn)$。</p>
+]]></content>
+      <categories>
+        <category>算法</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>算法</tag>
+        <tag>排序</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>你一定要了解的数据结构-并查集</title>
+    <url>/2020/06/09/%E4%BD%A0%E4%B8%80%E5%AE%9A%E8%A6%81%E4%BA%86%E8%A7%A3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-%E5%B9%B6%E6%9F%A5%E9%9B%86/</url>
+    <content><![CDATA[<p>今天要介绍一种非常重要的数据结构-并查集，这种数据结构常常被用于检测有环图的问题。</p>
+<a id="more"></a>
+
+<h2 id="问题引入"><a href="#问题引入" class="headerlink" title="问题引入"></a>问题引入</h2><p>给定一些节点，我们想要确定这些节点哪些属于同一个子集，该怎么做？现在假定这些节点之间通过边来连接，我们尝试用图片来表示一下。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200609133102467.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="节点通过边相连"></p>
+<p>我们可以看到一共有6个节点，其中0、1、2、3这几个节点之间是连通的，4和5也是连通的。所以我们可以把上面6个节点分为两个集合，集合1包含0、1、2、3共4个节点，集合2包含4和5两个节点。</p>
+<p>通过图片表示很直观，但是，我们如何用代码实现呢？</p>
+<h2 id="思路分析"><a href="#思路分析" class="headerlink" title="思路分析"></a>思路分析</h2><p>由上面的内容我们很容易知道，两个节点如果属于同一集合就能够找到一条路径连通这两个节点，但是怎么才能找到这条路径呢？我们需要对这些节点进行等级划分，每个节点只需要记住自己的上级节点即可，这样的话两个节点分别向上查找，一直找到顶层的节点，如果顶层节点相同，我们就判定这两个节点属于同一子集，否则不是同一子集。等等，这不就是树吗？说的没错，维基百科中这样定义并查集：在计算机科学中，并查集是一种树型的数据结构，用于处理一些不交集（Disjoint Sets）的合并及查询问题。怎么样，是不是感觉并查集的设计思路很精妙。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200609142805355.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt=""></p>
+<p>我们来思考一下并查集的代码怎么写，首先咱们需要设置一个<code>parent</code>数组用来存储上级节点，初始时数组中的所有值均为-1，表示没有上级节点，我们先来写一下这个方法。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">(<span class="keyword">int</span>[] parent)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; VERTICES; ++i) &#123;</span><br><span class="line">		parent[i] = -<span class="number">1</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>下一个问题，怎么寻找根节点？咱们看一下刚刚那个<code>parent</code>数组是怎么用的。前面我们说过节点之间用边来相连，<code>parent</code>数组用来存储上级节点的下标。如下图所示，2和3的上级节点是1，1的上级节点是0，0是根节点。同理，5的上级节点是4，4也是根节点，所以一共有两个集合。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200609151257787.jpg#pic_center" alt="parent数组结构"></p>
+<p>很容易发现，当<code>parent</code>存储的值为-1时表示这个节点就是根节点，我们用代码实现一下寻找根节点的算法。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">findRoot</span><span class="params">(<span class="keyword">int</span>[] parent, <span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> x_root = x;</span><br><span class="line">	<span class="keyword">while</span> (parent[x_root] != -<span class="number">1</span>) &#123;</span><br><span class="line">		x_root = parent[x_root];</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> x_root;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面说到寻找根节点的方法，下面咱们谈谈节点之间的边是怎么构建的。还是上面那幅图，我们现在要把上面的两个集合合并为一个集合该怎么做？很简单，把其中一个根节点的父节点设置为另一个根节点，比如像下面这样，把4的父节点设置为0。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200609154843602.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="合并两棵树以后的状态"></p>
+<p>在下面的代码实现中，如果两个要构建边的节点在同一集合中就返回false，且不会建立这条边，如果不是在同一集合中就返回true，然后它们就成了同一集合。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">//返回true则合并成功，返回false则合并失败</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">unionVertices</span><span class="params">(<span class="keyword">int</span>[] parent, <span class="keyword">int</span> x, <span class="keyword">int</span> y)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> x_root = findRoot(parent, x);</span><br><span class="line">	<span class="keyword">int</span> y_root = findRoot(parent, y);</span><br><span class="line">	<span class="keyword">if</span> (x_root == y_root) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		parent[y_root] = x_root;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>咱们看一下完整的代码实现。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DisjointSets</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">int</span> VERTICES = <span class="number">6</span>;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">(<span class="keyword">int</span>[] parent)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; VERTICES; ++i) &#123;</span><br><span class="line">			parent[i] = -<span class="number">1</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">findRoot</span><span class="params">(<span class="keyword">int</span>[] parent, <span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">int</span> x_root = x;</span><br><span class="line">		<span class="keyword">while</span> (parent[x_root] != -<span class="number">1</span>) &#123;</span><br><span class="line">			x_root = parent[x_root];</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> x_root;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">//返回true则合并成功，返回false则合并失败</span></span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">unionVertices</span><span class="params">(<span class="keyword">int</span>[] parent, <span class="keyword">int</span> x, <span class="keyword">int</span> y)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">int</span> x_root = findRoot(parent, x);</span><br><span class="line">		<span class="keyword">int</span> y_root = findRoot(parent, y);</span><br><span class="line">		<span class="keyword">if</span> (x_root == y_root) &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			parent[y_root] = x_root;</span><br><span class="line">			<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		DisjointSets d = <span class="keyword">new</span> DisjointSets();</span><br><span class="line">		<span class="keyword">int</span>[] parent = <span class="keyword">new</span> <span class="keyword">int</span>[d.VERTICES];</span><br><span class="line">		<span class="keyword">int</span>[] rank = <span class="keyword">new</span> <span class="keyword">int</span>[d.VERTICES];</span><br><span class="line">		<span class="keyword">int</span>[][] edges = &#123;&#123;<span class="number">0</span>, <span class="number">1</span>&#125;, &#123;<span class="number">1</span>, <span class="number">2</span>&#125;, &#123;<span class="number">1</span>, <span class="number">3</span>&#125;, &#123;<span class="number">3</span>, <span class="number">4</span>&#125;, &#123;<span class="number">2</span>, <span class="number">5</span>&#125;, &#123;<span class="number">0</span>, <span class="number">2</span>&#125;&#125;;</span><br><span class="line">		d.init(parent);</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; edges.length; ++i) &#123;</span><br><span class="line">			<span class="keyword">int</span> x = edges[i][<span class="number">0</span>];</span><br><span class="line">			<span class="keyword">int</span> y = edges[i][<span class="number">1</span>];</span><br><span class="line">			<span class="keyword">if</span> (!d.unionVertices(parent, x, y)) &#123;</span><br><span class="line">				System.out.println(<span class="string">"Cycle detected!"</span>);</span><br><span class="line">				<span class="keyword">return</span>;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		System.out.println(<span class="string">"No cycles found!"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="优化分析"><a href="#优化分析" class="headerlink" title="优化分析"></a>优化分析</h2><p>下面请大家考虑一个问题，假设我们有10000个点，边连接是<code>{0, 1}, {1, 2}, {2, 3}...</code>以此类推，那么用上面的算法我们将得到一条长长的链，也就是每次寻找根节点的时间复杂度为$O(n)$，这时候我们就需要对算法进行优化了。</p>
+<p>我们来思考一下，当两棵树的高度不同时，应该怎么进行合并呢？还是最上面两棵树的合并，咱们看一下下面两种合并方式。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200609163743218.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="两种合并方式"></p>
+<p>大家觉得第一种和第二种哪个更好？显然第一种优于第二种，因为第一种是将高度较小的树合并到高度较大的树上的，这样合并后的树的高度仍然是原来较大的树的高度，而相反树的高度则会变大。简单地说，如果使用第二种方式进行合并则会导致高度越来越大。</p>
+<p>进行算法优化时，我们需要设置另一个数组<code>rank</code>，然后用这个数组来储存当前节点高度。实际需要修改的代码只有<code>init</code>和<code>unionVertices</code>两个方法，将原始的高度都设置为0，还有就是需要判断两棵树的高度并进行比较。贴一下优化之后的代码供大家与之前的代码进行比较。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DisjointSets</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">int</span> VERTICES = <span class="number">6</span>;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">(<span class="keyword">int</span>[] parent, <span class="keyword">int</span>[] rank)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; VERTICES; ++i) &#123;</span><br><span class="line">			parent[i] = -<span class="number">1</span>;</span><br><span class="line">			rank[i] = <span class="number">0</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">findRoot</span><span class="params">(<span class="keyword">int</span>[] parent, <span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">int</span> x_root = x;</span><br><span class="line">		<span class="keyword">while</span> (parent[x_root] != -<span class="number">1</span>) &#123;</span><br><span class="line">			x_root = parent[x_root];</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> x_root;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">//返回true则合并成功，返回false则合并失败</span></span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">unionVertices</span><span class="params">(<span class="keyword">int</span>[] parent, <span class="keyword">int</span>[] rank, <span class="keyword">int</span> x, <span class="keyword">int</span> y)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">int</span> x_root = findRoot(parent, x);</span><br><span class="line">		<span class="keyword">int</span> y_root = findRoot(parent, y);</span><br><span class="line">		<span class="keyword">if</span> (x_root == y_root) &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">if</span> (rank[x_root] &gt; rank[y_root]) &#123;</span><br><span class="line">				parent[y_root] = x_root;</span><br><span class="line">			&#125; <span class="keyword">else</span> <span class="keyword">if</span> (rank[x_root] &lt; rank[y_root]) &#123;</span><br><span class="line">				parent[x_root] = y_root;</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				parent[x_root] = y_root;</span><br><span class="line">				rank[y_root]++;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		DisjointSets d = <span class="keyword">new</span> DisjointSets();</span><br><span class="line">		<span class="keyword">int</span>[] parent = <span class="keyword">new</span> <span class="keyword">int</span>[d.VERTICES];</span><br><span class="line">		<span class="keyword">int</span>[] rank = <span class="keyword">new</span> <span class="keyword">int</span>[d.VERTICES];</span><br><span class="line">		<span class="keyword">int</span>[][] edges = &#123;&#123;<span class="number">0</span>, <span class="number">1</span>&#125;, &#123;<span class="number">1</span>, <span class="number">2</span>&#125;, &#123;<span class="number">1</span>, <span class="number">3</span>&#125;, &#123;<span class="number">3</span>, <span class="number">4</span>&#125;, &#123;<span class="number">2</span>, <span class="number">5</span>&#125;, &#123;<span class="number">0</span>, <span class="number">2</span>&#125;&#125;;</span><br><span class="line">		d.init(parent, rank);</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; edges.length; ++i) &#123;</span><br><span class="line">			<span class="keyword">int</span> x = edges[i][<span class="number">0</span>];</span><br><span class="line">			<span class="keyword">int</span> y = edges[i][<span class="number">1</span>];</span><br><span class="line">			<span class="keyword">if</span> (!d.unionVertices(parent, rank, x, y)) &#123;</span><br><span class="line">				System.out.println(<span class="string">"Cycle detected!"</span>);</span><br><span class="line">				<span class="keyword">return</span>;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		System.out.println(<span class="string">"No cycles found!"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以上是本文的全部内容，并查集的算法需要仔细研究，在leetcode中会出现一些并查集相关的问题，能够掌握相关的知识并灵活运行就能迎刃而解。</p>
+]]></content>
+      <categories>
+        <category>数据结构</category>
+      </categories>
+      <tags>
+        <tag>算法</tag>
+        <tag>数据结构</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>class类文件结构（这是一篇非常枯燥的文章）</title>
     <url>/2020/06/20/class%E7%B1%BB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%EF%BC%88%E8%BF%99%E6%98%AF%E4%B8%80%E7%AF%87%E9%9D%9E%E5%B8%B8%E6%9E%AF%E7%87%A5%E7%9A%84%E6%96%87%E7%AB%A0%EF%BC%89/</url>
     <content><![CDATA[<p>我们知道，Java文件编译后会产生一个字节码文件（<code>.class</code>文件），本文介绍字节码文件的文件结构相关内容。</p>
@@ -155,51 +315,6 @@
       </tags>
   </entry>
   <entry>
-    <title>你一定要了解的数据结构-并查集</title>
-    <url>/2020/06/09/%E4%BD%A0%E4%B8%80%E5%AE%9A%E8%A6%81%E4%BA%86%E8%A7%A3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-%E5%B9%B6%E6%9F%A5%E9%9B%86/</url>
-    <content><![CDATA[<p>今天要介绍一种非常重要的数据结构-并查集，这种数据结构常常被用于检测有环图的问题。</p>
-<a id="more"></a>
-
-<h2 id="问题引入"><a href="#问题引入" class="headerlink" title="问题引入"></a>问题引入</h2><p>给定一些节点，我们想要确定这些节点哪些属于同一个子集，该怎么做？现在假定这些节点之间通过边来连接，我们尝试用图片来表示一下。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200609133102467.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="节点通过边相连"></p>
-<p>我们可以看到一共有6个节点，其中0、1、2、3这几个节点之间是连通的，4和5也是连通的。所以我们可以把上面6个节点分为两个集合，集合1包含0、1、2、3共4个节点，集合2包含4和5两个节点。</p>
-<p>通过图片表示很直观，但是，我们如何用代码实现呢？</p>
-<h2 id="思路分析"><a href="#思路分析" class="headerlink" title="思路分析"></a>思路分析</h2><p>由上面的内容我们很容易知道，两个节点如果属于同一集合就能够找到一条路径连通这两个节点，但是怎么才能找到这条路径呢？我们需要对这些节点进行等级划分，每个节点只需要记住自己的上级节点即可，这样的话两个节点分别向上查找，一直找到顶层的节点，如果顶层节点相同，我们就判定这两个节点属于同一子集，否则不是同一子集。等等，这不就是树吗？说的没错，维基百科中这样定义并查集：在计算机科学中，并查集是一种树型的数据结构，用于处理一些不交集（Disjoint Sets）的合并及查询问题。怎么样，是不是感觉并查集的设计思路很精妙。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200609142805355.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt=""></p>
-<p>我们来思考一下并查集的代码怎么写，首先咱们需要设置一个<code>parent</code>数组用来存储上级节点，初始时数组中的所有值均为-1，表示没有上级节点，我们先来写一下这个方法。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">(<span class="keyword">int</span>[] parent)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; VERTICES; ++i) &#123;</span><br><span class="line">		parent[i] = -<span class="number">1</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>下一个问题，怎么寻找根节点？咱们看一下刚刚那个<code>parent</code>数组是怎么用的。前面我们说过节点之间用边来相连，<code>parent</code>数组用来存储上级节点的下标。如下图所示，2和3的上级节点是1，1的上级节点是0，0是根节点。同理，5的上级节点是4，4也是根节点，所以一共有两个集合。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200609151257787.jpg#pic_center" alt="parent数组结构"></p>
-<p>很容易发现，当<code>parent</code>存储的值为-1时表示这个节点就是根节点，我们用代码实现一下寻找根节点的算法。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">findRoot</span><span class="params">(<span class="keyword">int</span>[] parent, <span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> x_root = x;</span><br><span class="line">	<span class="keyword">while</span> (parent[x_root] != -<span class="number">1</span>) &#123;</span><br><span class="line">		x_root = parent[x_root];</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> x_root;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面说到寻找根节点的方法，下面咱们谈谈节点之间的边是怎么构建的。还是上面那幅图，我们现在要把上面的两个集合合并为一个集合该怎么做？很简单，把其中一个根节点的父节点设置为另一个根节点，比如像下面这样，把4的父节点设置为0。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200609154843602.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="合并两棵树以后的状态"></p>
-<p>在下面的代码实现中，如果两个要构建边的节点在同一集合中就返回false，且不会建立这条边，如果不是在同一集合中就返回true，然后它们就成了同一集合。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">//返回true则合并成功，返回false则合并失败</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">unionVertices</span><span class="params">(<span class="keyword">int</span>[] parent, <span class="keyword">int</span> x, <span class="keyword">int</span> y)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> x_root = findRoot(parent, x);</span><br><span class="line">	<span class="keyword">int</span> y_root = findRoot(parent, y);</span><br><span class="line">	<span class="keyword">if</span> (x_root == y_root) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		parent[y_root] = x_root;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>咱们看一下完整的代码实现。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DisjointSets</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">int</span> VERTICES = <span class="number">6</span>;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">(<span class="keyword">int</span>[] parent)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; VERTICES; ++i) &#123;</span><br><span class="line">			parent[i] = -<span class="number">1</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">findRoot</span><span class="params">(<span class="keyword">int</span>[] parent, <span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">int</span> x_root = x;</span><br><span class="line">		<span class="keyword">while</span> (parent[x_root] != -<span class="number">1</span>) &#123;</span><br><span class="line">			x_root = parent[x_root];</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> x_root;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">//返回true则合并成功，返回false则合并失败</span></span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">unionVertices</span><span class="params">(<span class="keyword">int</span>[] parent, <span class="keyword">int</span> x, <span class="keyword">int</span> y)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">int</span> x_root = findRoot(parent, x);</span><br><span class="line">		<span class="keyword">int</span> y_root = findRoot(parent, y);</span><br><span class="line">		<span class="keyword">if</span> (x_root == y_root) &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			parent[y_root] = x_root;</span><br><span class="line">			<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		DisjointSets d = <span class="keyword">new</span> DisjointSets();</span><br><span class="line">		<span class="keyword">int</span>[] parent = <span class="keyword">new</span> <span class="keyword">int</span>[d.VERTICES];</span><br><span class="line">		<span class="keyword">int</span>[] rank = <span class="keyword">new</span> <span class="keyword">int</span>[d.VERTICES];</span><br><span class="line">		<span class="keyword">int</span>[][] edges = &#123;&#123;<span class="number">0</span>, <span class="number">1</span>&#125;, &#123;<span class="number">1</span>, <span class="number">2</span>&#125;, &#123;<span class="number">1</span>, <span class="number">3</span>&#125;, &#123;<span class="number">3</span>, <span class="number">4</span>&#125;, &#123;<span class="number">2</span>, <span class="number">5</span>&#125;, &#123;<span class="number">0</span>, <span class="number">2</span>&#125;&#125;;</span><br><span class="line">		d.init(parent);</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; edges.length; ++i) &#123;</span><br><span class="line">			<span class="keyword">int</span> x = edges[i][<span class="number">0</span>];</span><br><span class="line">			<span class="keyword">int</span> y = edges[i][<span class="number">1</span>];</span><br><span class="line">			<span class="keyword">if</span> (!d.unionVertices(parent, x, y)) &#123;</span><br><span class="line">				System.out.println(<span class="string">"Cycle detected!"</span>);</span><br><span class="line">				<span class="keyword">return</span>;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		System.out.println(<span class="string">"No cycles found!"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="优化分析"><a href="#优化分析" class="headerlink" title="优化分析"></a>优化分析</h2><p>下面请大家考虑一个问题，假设我们有10000个点，边连接是<code>{0, 1}, {1, 2}, {2, 3}...</code>以此类推，那么用上面的算法我们将得到一条长长的链，也就是每次寻找根节点的时间复杂度为$O(n)$，这时候我们就需要对算法进行优化了。</p>
-<p>我们来思考一下，当两棵树的高度不同时，应该怎么进行合并呢？还是最上面两棵树的合并，咱们看一下下面两种合并方式。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200609163743218.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="两种合并方式"></p>
-<p>大家觉得第一种和第二种哪个更好？显然第一种优于第二种，因为第一种是将高度较小的树合并到高度较大的树上的，这样合并后的树的高度仍然是原来较大的树的高度，而相反树的高度则会变大。简单地说，如果使用第二种方式进行合并则会导致高度越来越大。</p>
-<p>进行算法优化时，我们需要设置另一个数组<code>rank</code>，然后用这个数组来储存当前节点高度。实际需要修改的代码只有<code>init</code>和<code>unionVertices</code>两个方法，将原始的高度都设置为0，还有就是需要判断两棵树的高度并进行比较。贴一下优化之后的代码供大家与之前的代码进行比较。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DisjointSets</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">int</span> VERTICES = <span class="number">6</span>;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">(<span class="keyword">int</span>[] parent, <span class="keyword">int</span>[] rank)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; VERTICES; ++i) &#123;</span><br><span class="line">			parent[i] = -<span class="number">1</span>;</span><br><span class="line">			rank[i] = <span class="number">0</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">findRoot</span><span class="params">(<span class="keyword">int</span>[] parent, <span class="keyword">int</span> x)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">int</span> x_root = x;</span><br><span class="line">		<span class="keyword">while</span> (parent[x_root] != -<span class="number">1</span>) &#123;</span><br><span class="line">			x_root = parent[x_root];</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> x_root;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">//返回true则合并成功，返回false则合并失败</span></span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">boolean</span> <span class="title">unionVertices</span><span class="params">(<span class="keyword">int</span>[] parent, <span class="keyword">int</span>[] rank, <span class="keyword">int</span> x, <span class="keyword">int</span> y)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">int</span> x_root = findRoot(parent, x);</span><br><span class="line">		<span class="keyword">int</span> y_root = findRoot(parent, y);</span><br><span class="line">		<span class="keyword">if</span> (x_root == y_root) &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">if</span> (rank[x_root] &gt; rank[y_root]) &#123;</span><br><span class="line">				parent[y_root] = x_root;</span><br><span class="line">			&#125; <span class="keyword">else</span> <span class="keyword">if</span> (rank[x_root] &lt; rank[y_root]) &#123;</span><br><span class="line">				parent[x_root] = y_root;</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				parent[x_root] = y_root;</span><br><span class="line">				rank[y_root]++;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		DisjointSets d = <span class="keyword">new</span> DisjointSets();</span><br><span class="line">		<span class="keyword">int</span>[] parent = <span class="keyword">new</span> <span class="keyword">int</span>[d.VERTICES];</span><br><span class="line">		<span class="keyword">int</span>[] rank = <span class="keyword">new</span> <span class="keyword">int</span>[d.VERTICES];</span><br><span class="line">		<span class="keyword">int</span>[][] edges = &#123;&#123;<span class="number">0</span>, <span class="number">1</span>&#125;, &#123;<span class="number">1</span>, <span class="number">2</span>&#125;, &#123;<span class="number">1</span>, <span class="number">3</span>&#125;, &#123;<span class="number">3</span>, <span class="number">4</span>&#125;, &#123;<span class="number">2</span>, <span class="number">5</span>&#125;, &#123;<span class="number">0</span>, <span class="number">2</span>&#125;&#125;;</span><br><span class="line">		d.init(parent, rank);</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; edges.length; ++i) &#123;</span><br><span class="line">			<span class="keyword">int</span> x = edges[i][<span class="number">0</span>];</span><br><span class="line">			<span class="keyword">int</span> y = edges[i][<span class="number">1</span>];</span><br><span class="line">			<span class="keyword">if</span> (!d.unionVertices(parent, rank, x, y)) &#123;</span><br><span class="line">				System.out.println(<span class="string">"Cycle detected!"</span>);</span><br><span class="line">				<span class="keyword">return</span>;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		System.out.println(<span class="string">"No cycles found!"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>以上是本文的全部内容，并查集的算法需要仔细研究，在leetcode中会出现一些并查集相关的问题，能够掌握相关的知识并灵活运行就能迎刃而解。</p>
-]]></content>
-      <categories>
-        <category>数据结构</category>
-      </categories>
-      <tags>
-        <tag>数据结构</tag>
-        <tag>算法</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>后浪-下一代垃圾收集器</title>
     <url>/2020/06/14/%E5%90%8E%E6%B5%AA-%E4%B8%8B%E4%B8%80%E4%BB%A3%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/</url>
     <content><![CDATA[<p>随着Java虚拟机技术的不断发展，垃圾收集器也进行了大量迭代。前面介绍了7种经典的垃圾收集器，各有优缺点。Serial GC虽然是最古老的垃圾收集器，但由于设计简单，未必就是过时的收集器。CMS收集器由于自身有些算法缺陷，在JDK9中被标记为废弃，在最新版的JDK14中，CMS已经被彻底移除，进入了历史垃圾堆。我们可以发现G1收集器在JDK的各个版本中仍然在不断改进，并且成为了JDK9到JDK13的默认垃圾收集器。今天，我们要介绍的三种垃圾收集器算是垃圾收集器的前沿成果。</p>
@@ -290,48 +405,6 @@
       </tags>
   </entry>
   <entry>
-    <title>分治算法与归并排序</title>
-    <url>/2020/06/13/%E5%88%86%E6%B2%BB%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BD%92%E5%B9%B6%E6%8E%92%E5%BA%8F/</url>
-    <content><![CDATA[<p>距离上次写快排算法的文章已经过去一个半月了，和本文要提到的归并排序算法类似，快排也是分治思想的一种典型应用，如果有不熟悉快速排序的同学可以翻阅我之前写过的快速排序算法的文章。</p>
-<a id="more"></a>
-
-<h2 id="分治算法"><a href="#分治算法" class="headerlink" title="分治算法"></a>分治算法</h2><p>首先为大家介绍一下什么是分治，分治是将一个大问题分割成若干个和原来问题形式相同但规模更小的子问题，然后处理这些小问题，最终实现整个大问题的过程。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200613153944675.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt=""></p>
-<p>额…上面说的概念确实很难理解，我们换一个生活中的场景来介绍一下什么是分治吧。</p>
-<p>小明手里有8枚硬币，其中有1枚是假币，已知假币比真币轻，现在我们有一架天平，那么我们该怎么找出假币呢？</p>
-<p>首先我们将硬币分成两组，每组4枚硬币，分别放到天平上称，硬币一定在轻的那一组里，再次将轻的那一边的硬币分成两组，每组2枚硬币，然后再取轻的那一边在进行二分，直到最后将2枚硬币放在天平上，轻的那一枚就是假币。这里用的就是简单的分治思想，每次把问题规模缩小一半，这里不仅是分治思想，其实也是用到了二分法的思想。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200613155043295.jpg#pic_center" alt=""></p>
-<h2 id="归并排序"><a href="#归并排序" class="headerlink" title="归并排序"></a>归并排序</h2><p>归并排序是分治算法的一种典型应用，基本思路如下：</p>
-<ul>
-<li><p>将数组的前一半进行排序</p>
-</li>
-<li><p>将数组的后一半进行排序</p>
-</li>
-<li><p>将两半数据归并成为一个有序的数组，并拷贝回原数组</p>
-</li>
-</ul>
-<p><img src="https://img-blog.csdnimg.cn/20200613164330511.jpg#pic_center" alt=""></p>
-<p>不多逼逼，直接给你们看代码。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">mergeSort</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span> s, <span class="keyword">int</span> e, <span class="keyword">int</span>[] tmp)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (s &lt; e) &#123;</span><br><span class="line">		<span class="keyword">int</span> m = s + ((e - s) &gt;&gt; <span class="number">1</span>);</span><br><span class="line">		mergeSort(arr, s, m, tmp);</span><br><span class="line">		mergeSort(arr, m + <span class="number">1</span>, e, tmp);</span><br><span class="line">		merge(arr, s, m, e, tmp);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">merge</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span> s, <span class="keyword">int</span> m, <span class="keyword">int</span> e, <span class="keyword">int</span>[] tmp)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> p = <span class="number">0</span>;	<span class="comment">//指向tmp数组当前位置的指针</span></span><br><span class="line">	<span class="keyword">int</span> p1 = s, p2 = m + <span class="number">1</span>; <span class="comment">//p1和p2分别指向分成两组后两边数组的首位置</span></span><br><span class="line">	<span class="keyword">while</span> (p1 &lt;= m &amp;&amp; p2 &lt;= e) &#123;</span><br><span class="line">		<span class="keyword">if</span> (arr[p1] &gt; arr[p2]) &#123;</span><br><span class="line">			tmp[p++] = arr[p2++];</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			tmp[p++] = arr[p1++];</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">while</span> (p1 &lt;= m) &#123;</span><br><span class="line">		tmp[p++] = arr[p1++];</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">while</span> (p2 &lt;= e) &#123;</span><br><span class="line">		tmp[p++] = arr[p2++];</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; e - s + <span class="number">1</span>; ++i) &#123;</span><br><span class="line">		arr[s + i] = tmp[i];</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>咱们来梳理一下上面的代码，首先是<code>mergeSort</code>方法，当起始位置小于终止位置的时候才会执行代码，否则直接结束这个方法。再看看这个判断语句里的内容，首先是求出数组的中点，对数组一分为二进行分治，然后这两个数组又递归调用这个方法，最后对两个已经排好序的数组执行<code>merge</code>方法，进行归并操作。我们可以知道的是，当分到一定程度（s和e指向相同的元素）时，会结束递归，进行归并。我们用一组数据来模拟这个过程。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200613171107537.jpg#pic_center" alt="待排序数组"></p>
-<p>以上是一个待排序的数组，数组长度为10，因此传入的s和e分别为0和9，求出的m值为4，于是将数组分为下标0<del>4和下标5</del>9的两个数组再分别进行归并排序。</p>
-<p>为了简化内容，我们尝试对前一个数组进行递归。此时传入的s和e分别是0和4，则m是2，再对前一个数组进行递归，s和e是0和2，m是1，继续递归，s和e是0和1，m是0，这时候两个数组都只有一个数了，这时候就需要对这两个数进行<code>merge</code>操作。所谓的<code>merge</code>操作，就是将两个数组中的元素按从小到大的顺序复制到tmp数组中，然后复制回arr数组中。咱们下面用图片来展示一下上面的代码到底对这个数组干了些什么。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200613184701300.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="归并排序过程"></p>
-<p>实际上，上述过程只是逻辑上的切分和归并，事实上由于递归需要不断压栈以及以上代码需要顺序执行，切分和归并的次数还要更多一些。</p>
-<p>最后需要提到的是，归并排序是一种稳定的排序算法，时间复杂度为$O(nlogn)$。</p>
-]]></content>
-      <categories>
-        <category>算法</category>
-      </categories>
-      <tags>
-        <tag>Java</tag>
-        <tag>算法</tag>
-        <tag>排序</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>快速排序Java代码简洁实现</title>
     <url>/2020/04/29/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8FJava%E4%BB%A3%E7%A0%81%E7%AE%80%E6%B4%81%E5%AE%9E%E7%8E%B0/</url>
     <content><![CDATA[<p>学习过数据结构的同学们都知道，快速排序算法是一种时间复杂度为O(nlogn)的排序算法，在各种排序算法中算是较为高效的方法，企业面试中也经常有手撕快排的环节。本文将阐述算法的基本思想，并用Java代码的形式实现快速排序代码。</p>
@@ -373,147 +446,6 @@
         <tag>Java</tag>
         <tag>算法</tag>
         <tag>排序</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>操作系统-处理机调度</title>
-    <url>/2020/06/17/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%A4%84%E7%90%86%E6%9C%BA%E8%B0%83%E5%BA%A6/</url>
-    <content><![CDATA[<p>本文介绍处理机调度相关的内容，主要涉及三级调度与调度算法等知识。</p>
-<a id="more"></a>
-
-<h2 id="三级调度"><a href="#三级调度" class="headerlink" title="三级调度"></a>三级调度</h2><p>作业从提交到完成一般需要经历三级调度：<strong>作业调度</strong>（高级调度）、<strong>内存调度</strong>（中级调度）和<strong>进程调度</strong>（低级调度），调度的频率依次递增。</p>
-<ul>
-<li><p><strong>作业调度</strong>：作业调度一般是将一个作业从外存调入内存，为其分配内存、外设等资源，使其能够竞争处理机资源。对每个作业来说，每个作业一般只调入一次、调出一次。</p>
-</li>
-<li><p><strong>内存调度</strong>：内存调度是为了<strong>提高内存利用率</strong>和<strong>系统吞吐量</strong>，一般会将暂时无法运行的进程挂起，当具备运行条件且内存有空闲时，会将这些进程调回，挂在就绪队列上等待调度。</p>
-</li>
-<li><p><strong>进程调度</strong>：最频繁的调度方式，一般从就绪队列中调出一个进程，为它分配处理机资源。</p>
-</li>
-</ul>
-<h2 id="进程调度方式"><a href="#进程调度方式" class="headerlink" title="进程调度方式"></a>进程调度方式</h2><ul>
-<li><p><strong>非剥夺调度方式</strong>：当一个进程处于运行状态时，即使有更紧急或优先级更高的进程进入就绪队列，也不会抢占正在运行进程的处理机资源，只有当前运行进程结束运行或进入阻塞状态时才会从就绪队列将更紧迫的进程调出并分配处理机资源。</p>
-</li>
-<li><p><strong>剥夺调度方式</strong>：当有一个更紧急或优先级更高的进程需要使用处理机，当前进程会被暂停，执行更紧迫进程的调度方式。</p>
-</li>
-</ul>
-<h2 id="调度基本准则"><a href="#调度基本准则" class="headerlink" title="调度基本准则"></a>调度基本准则</h2><ul>
-<li><p>CPU利用率：当CPU一直处于忙碌状态时，CPU利用率最高。</p>
-</li>
-<li><p>系统吞吐量：表示单位时间内完成的作业数量，当作业都是短作业时，系统吞吐量会比较大。</p>
-</li>
-<li><p>周转时间：是作业从提交到完成的时间，包括作业等待、在就绪队列排队、运行、IO操作的时间总和。</p>
-</li>
-<li><p>平均周转时间：是多个作业的周转时间的平均值。</p>
-</li>
-<li><p>带权周转时间：$带权周转时间=\frac{作业周转时间作业}{实际运行时间}$</p>
-</li>
-<li><p>平均带权周转时间：是多个带权周转时间的平均值。</p>
-</li>
-<li><p>等待时间：进程等待处理机的时间之和。</p>
-</li>
-<li><p>响应时间：从用户提交到首次响应所花费的时间。</p>
-</li>
-</ul>
-<h2 id="调度算法"><a href="#调度算法" class="headerlink" title="调度算法"></a>调度算法</h2><p>调度算法是本文的重点，也是很常见的考点，以下介绍常见的调度算法。</p>
-<h3 id="先来先服务（FCFS）调度算法"><a href="#先来先服务（FCFS）调度算法" class="headerlink" title="先来先服务（FCFS）调度算法"></a>先来先服务（FCFS）调度算法</h3><p>从名字就可以知道这是一种“先来后到”的调度算法，这种调度算法支持作业调度和进程调度。FCFS调度算法每次挑选队列中最先到达的进程或作业，依次进行调度。<br>这是一种<strong>非剥夺调度算法</strong>，直观来看，非常公平，但是还是有缺点的。</p>
-<p>特点：算法简单，但效率低，对长作业有利，短作业可能要等待很长时间。有利于CPU密集型作业，不利于IO密集型作业。</p>
-<h3 id="短作业-进程优先（SJF-SPF）调度算法"><a href="#短作业-进程优先（SJF-SPF）调度算法" class="headerlink" title="短作业/进程优先（SJF/SPF）调度算法"></a>短作业/进程优先（SJF/SPF）调度算法</h3><p>短作业/进程优先算法是一种优先调度短作业（进程）的调度算法，同样也是一种<strong>非剥夺调度算法</strong>。</p>
-<p>特点：对短作业有利，对长作业不利，如果一直有短作业进来，可能长作业会一直得不到执行。不考虑作业紧迫程度，有些紧迫的作业可能不能及时处理。有利于IO密集型作业，不利于CPU密集型作业。</p>
-<h3 id="优先级调度算法"><a href="#优先级调度算法" class="headerlink" title="优先级调度算法"></a>优先级调度算法</h3><p>优先级调度算法既可以用于作业调度也可以用于进程调度。当用于作业调度时，会从后备作业队列中选出一个或多个优先级最高的作业，将它们调入内存中，并分配相应资源；当用于进程调度时，会从就绪队列中选出优先级最高的进程，将处理机分配给这个进程，使它能够运行。</p>
-<p>根据高优先级进程能否抢占处理机还可以将这种算法分为非剥夺式优先级调度算法和剥夺式优先级调度算法。</p>
-<p>在进程创建后进程优先级能否改变又可以将进程优先级分为静态优先级和动态优先级。</p>
-<ul>
-<li><p>静态优先级。静态优先级是进程在创建时就已经确定好的，在进程运行期间不能改变。</p>
-</li>
-<li><p>动态优先级。动态优先级是指进程运行期间优先级根据进程实际运行情况动态变化的。</p>
-</li>
-</ul>
-<h3 id="高响应比优先调度算法"><a href="#高响应比优先调度算法" class="headerlink" title="高响应比优先调度算法"></a>高响应比优先调度算法</h3><p>高响应比优先调度算法适用于作业调度，是短作业优先调度算法和先来先服务算法的折中。我们先来看一下什么是响应比吧。</p>
-<p>$$响应比=\frac{等待时间+要求服务时间}{要求服务时间}$$</p>
-<p>高响应比优先调度算法具有以下特点：</p>
-<ul>
-<li><p>短作业的要求服务时间很短，因此在相同等待时间的情况下，短作业的响应比也更高，会被优先执行。</p>
-</li>
-<li><p>当要求服务时间相同时，等待时间长的作业会被优先服务。</p>
-</li>
-<li><p>长作业的要求服务时间比较长，但是随着等待时间的增加，长作业的响应比也会增加，然后可以分配处理机。</p>
-</li>
-</ul>
-<h3 id="时间片轮转调度算法"><a href="#时间片轮转调度算法" class="headerlink" title="时间片轮转调度算法"></a>时间片轮转调度算法</h3><p>时间片轮转调度算法一般在分时系统上使用，每个进程被分配固定大小的时间片，当时间片用完以后，无论进程是否执行结束，处理机都将被剥夺给下一个进程。</p>
-<p>特点：时间片轮转调度算法的时间片大小选择很讲究，如果时间片过大，该调度算法会退化成为先来先服务调度算法，而时间片设置过小，处理机会频繁切换，进程真正使用处理机的时间减少，系统吞吐量下降。</p>
-<h3 id="多级反馈队列调度算法"><a href="#多级反馈队列调度算法" class="headerlink" title="多级反馈队列调度算法"></a>多级反馈队列调度算法</h3><p>多级反馈队列调度算法是这些调度算法中最复杂的，也是整合了前面一些调度算法而形成的算法，我们来看一下它的工作过程。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200618151104803.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="多级反馈队列调度算法"></p>
-<p>多级反馈队列调度算法工作过程有以下这些特点：</p>
-<ul>
-<li><p>每一级队列从上至下的优先级逐渐递减，优先级越高的队列时间片越小。也就是说，最顶层的队列的时间片最小。</p>
-</li>
-<li><p>最新的进程进入内存会被放入最上层的队列末尾，当执行到这个进程时，如果能在分配的时间片内完成则会出队列，如果不能在时间片内完成就进入下一级队列末尾，等待处理机资源。</p>
-</li>
-<li><p>如果高优先级队列有进程存在，则处理机会优先处理上级队列中的进程。如果处理机正在执行某一队列中的进程，此时更高优先级队列中有进程进入，那么当前正在执行的进程会回到当前队列的队尾，处理机执行新进入队列的进程。</p>
-</li>
-</ul>
-<p>最后要提一点，多级反馈队列调度算法兼顾短作业优先的同时，不会让长作业长期处于等待状态最终出现饥饿。</p>
-]]></content>
-      <categories>
-        <category>操作系统</category>
-      </categories>
-      <tags>
-        <tag>操作系统</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>操作系统-概述</title>
-    <url>/2020/06/01/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E6%A6%82%E8%BF%B0/</url>
-    <content><![CDATA[<p>本文是操作系统系列文章的第一篇，后续将陆续更新操作系统相关的文章。</p>
-<a id="more"></a>
-
-<h2 id="什么是操作系统？"><a href="#什么是操作系统？" class="headerlink" title="什么是操作系统？"></a>什么是操作系统？</h2><p>计算机系统自底向上大致可分为四个部分：硬件、操作系统、应用程序和用户，我们这里比较关心位于硬件之上的操作系统。操作系统是控制和管理硬件和软件资源，组织调度计算机工作和资源分配，并为用户提供接口与环境的程序集合。</p>
-<h3 id="操作系统的特征"><a href="#操作系统的特征" class="headerlink" title="操作系统的特征"></a>操作系统的特征</h3><ul>
-<li><p>并发。并发是指多个事件在同一时间段内发生，当我们一边在QQ上聊天，一边听着音乐，此时操作系统同时处理着多个程序，我们可以说QQ和播放器是并发执行的。需要注意的是，与并发容易混淆的概念——并行，并行是指多个事件在同一时刻同时执行。</p>
-</li>
-<li><p>共享。系统中某些资源是可以允许多个进程使用的，共享分为互斥共享与同时访问方式。互斥共享典型代表如打印机，每次只允许一个进程使用。同时访问的“同时”体现在宏观层面上，而微观层面上是“分时共享”的。</p>
-</li>
-<li><p>虚拟。虚拟是指将一个物理上的实体对应变为多个逻辑上的实体，常见的虚拟技术有虚拟处理器、虚拟内存和虚拟外设等。</p>
-</li>
-<li><p>异步。多道程序系统允许多程序并发执行，多个程序并非一次执行到底，而是走走停停，以为止速度向前推进。</p>
-</li>
-</ul>
-<h3 id="操作系统的功能"><a href="#操作系统的功能" class="headerlink" title="操作系统的功能"></a>操作系统的功能</h3><ul>
-<li><p>处理机管理</p>
-</li>
-<li><p>存储器管理</p>
-</li>
-<li><p>文件管理</p>
-</li>
-<li><p>设备管理</p>
-</li>
-<li><p>为用户提供接口</p>
-</li>
-</ul>
-<h2 id="操作系统的发展与分类"><a href="#操作系统的发展与分类" class="headerlink" title="操作系统的发展与分类"></a>操作系统的发展与分类</h2><h3 id="手工操作阶段"><a href="#手工操作阶段" class="headerlink" title="手工操作阶段"></a>手工操作阶段</h3><p>这种方式是最早的操作方式，由人工直接使用计算机硬件系统，这种方式主要有两个缺点：</p>
-<ul>
-<li><p>用户独占全机。此时的计算机由操作人员一个人独占。</p>
-</li>
-<li><p>CPU等待用户操作。由于手工操作较慢，CPU资源长时间是空闲的。</p>
-</li>
-</ul>
-<p>也正是因为上述缺点的存在，人机矛盾原来越严重，此时唯一的解决方法是用机器代替手工进行作业控制。</p>
-<h3 id="批处理阶段"><a href="#批处理阶段" class="headerlink" title="批处理阶段"></a>批处理阶段</h3><p>为了解决人机矛盾扩大的问题，批处理系统很快被提出。批处理阶段又分为单道批处理系统和多道批处理系统。单道批处理系统允许内存中保持一道作业，当遇到IO操作时，CPU会等待IO操作完成。为了提高系统吞吐量，又提出了多道批处理系统。多道批处理系统允许多个程序进入内存并且能在CPU中交替运行，当一个程序执行IO操作时，CPU立马运行另一个程序。</p>
-<h3 id="分时操作系统"><a href="#分时操作系统" class="headerlink" title="分时操作系统"></a>分时操作系统</h3><p>分时是将处理器运行时间划分成为时间片，每个作业分别分配到这些时间片。当一个时间片用完时，某个作业会暂停，CPU会执行下一个程序。由于作业轮转很快，所以用户会感觉独占了计算机。</p>
-<h3 id="实时操作系统"><a href="#实时操作系统" class="headerlink" title="实时操作系统"></a>实时操作系统</h3><p>实时操作系统是需要在规定时间内完成特定任务的系统，又可以分为硬实时系统和软实时系统。硬实时系统要求某个动作在某一时刻（或某一时间段）必须完成，例如无人机的飞控系统。软实时系统能够接受偶尔的超时但又不会造成严重后果，例如12306订票系统。</p>
-<h3 id="网络操作系统和分布式计算机系统"><a href="#网络操作系统和分布式计算机系统" class="headerlink" title="网络操作系统和分布式计算机系统"></a>网络操作系统和分布式计算机系统</h3><p>网络操作系统将网络中的计算机连接起来，实现计算机之间的数据通信。分布式计算机有多台计算机组成，每台计算机拥有相同的地位，没有主从关系。分布式操作系统与网络操作系统之间的不同之处在于分布式操作系统是协同完成同一任务的计算机集群。</p>
-<h3 id="个人计算机操作系统"><a href="#个人计算机操作系统" class="headerlink" title="个人计算机操作系统"></a>个人计算机操作系统</h3><p>常见的个人操作系统有Windows和Linux等。</p>
-<h2 id="操作系统运行环境"><a href="#操作系统运行环境" class="headerlink" title="操作系统运行环境"></a>操作系统运行环境</h2><h3 id="内核态和用户态"><a href="#内核态和用户态" class="headerlink" title="内核态和用户态"></a>内核态和用户态</h3><p>内核态又称核心态、管态，通常是系统内核执行特权指令时的状态，特权指令是指不能由应用程序直接执行的指令，如IO指令、置中断指令等。用户态又称目态，是上层应用程序运行时CPU的状态。</p>
-<h3 id="原语"><a href="#原语" class="headerlink" title="原语"></a>原语</h3><p>原语是一些位于操作系统底层，最接近硬件的小程序。这些程序具有原子性，运行时间短且频繁执行。</p>
-<h3 id="系统调用"><a href="#系统调用" class="headerlink" title="系统调用"></a>系统调用</h3><p>系统调用是操作系统为应用程序提供的接口，是为了避免应用程序直接访问内核态而采取的保护措施。</p>
-<h3 id="中断和异常"><a href="#中断和异常" class="headerlink" title="中断和异常"></a>中断和异常</h3><p>中断一般与当前运行的程序无关，比如当设备完成IO操作时向处理机发出的结束中断，时间片用完发出的时钟中断。异常一般与程序相关，如地址越界、算术溢出等事件。</p>
-<h2 id="操作系统体系结构"><a href="#操作系统体系结构" class="headerlink" title="操作系统体系结构"></a>操作系统体系结构</h2><p>现代操作系统的体系结构主要分为两种：大内核和微内核。大内核是将系统主要模块集中在内核态，提供高性能的系统服务。但随着系统日益复杂，操作系统规模也急剧增大，为此又提出了微内核，微内核在内核态中只保留了最基本的功能，其他不需要内核态关注的功能都移到了用户态中，降低了内核的复杂性。被移出内核的功能借助微内核进行通信，但微内核的一个问题是性能不如大内核，因为需要在内核态和用户态之间频繁切换，系统开销比较大。</p>
-]]></content>
-      <categories>
-        <category>操作系统</category>
-      </categories>
-      <tags>
-        <tag>操作系统</tag>
       </tags>
   </entry>
   <entry>
@@ -656,66 +588,140 @@
       </tags>
   </entry>
   <entry>
-    <title>本科数据结构课程的漏网之鱼-红黑树（上）</title>
-    <url>/2020/06/22/%E6%9C%AC%E7%A7%91%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AF%BE%E7%A8%8B%E7%9A%84%E6%BC%8F%E7%BD%91%E4%B9%8B%E9%B1%BC-%E7%BA%A2%E9%BB%91%E6%A0%91%EF%BC%88%E4%B8%8A%EF%BC%89/</url>
-    <content><![CDATA[<p>在我大学的时候，就曾经从参加面试的学长那里知道红黑树这种数据结构，但是经过我的观察，绝大部分的本科数据结构课程里都没有这部分内容。本文将介绍这种被本科教学体系遗弃，但却常常被工作面试中提到的数据结构，并且为后面的HashMap的内容做铺垫。</p>
+    <title>深入理解Java虚拟机-判断对象是否存活算法与对象引用</title>
+    <url>/2020/05/24/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E5%88%A4%E6%96%AD%E5%AF%B9%E8%B1%A1%E6%98%AF%E5%90%A6%E5%AD%98%E6%B4%BB%E7%AE%97%E6%B3%95%E4%B8%8E%E5%AF%B9%E8%B1%A1%E5%BC%95%E7%94%A8/</url>
+    <content><![CDATA[<p>在之前的文章中我们谈到过Java内存区域的概念，我们知道Java中的对象一般存放在堆中，但是总不能让这些对象一直占着内存空间，这些对象最终都会被回收并释放内存，那么我们如何判断对象已经成为垃圾呢？这篇文章会提出两种算法解决这个问题。另外，本文还要谈一谈对象引用相关的知识，这在面试中也是经常被问到的问题。</p>
 <a id="more"></a>
 
-<h2 id="定义与性质"><a href="#定义与性质" class="headerlink" title="定义与性质"></a>定义与性质</h2><p>首先需要明确的是，红黑树是一棵<strong>二叉搜索树</strong>，如果不了解二叉搜索树的朋友可以先去了解一下。这里想到了本人在研究生复试的时候被问到什么是二叉搜索树，一时竟然没想起来。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200623144444818.png#pic_center" alt=""></p>
-<p>下面是一棵典型的红黑树，我们可以看到这颗红黑树的确是一棵二叉搜索树。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200623155717535.jpg#pic_center" alt="红黑树"></p>
-<p>一般来说，红黑树具有以下5个性质：</p>
+<h2 id="判断对象是否存活算法"><a href="#判断对象是否存活算法" class="headerlink" title="判断对象是否存活算法"></a>判断对象是否存活算法</h2><h3 id="引用计数算法"><a href="#引用计数算法" class="headerlink" title="引用计数算法"></a>引用计数算法</h3><p>引用计数算法的原理比较简单，<strong>在对象中添加一个引用计数器，当有一个引用指向一个对象时，这个对象的引用计数器会加1，当引用不再指向对象时，引用计数器便减1。当引用计数器的值为0时，说明对象已经成为垃圾。</strong><br>引用计数算法的优点是算法非常简单，效率也比较高。但是Java并没有使用这种算法管理内存，这是为什么呢？我们先来看看下面这段代码。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Demo</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		Obj obj1 = <span class="keyword">new</span> Obj();</span><br><span class="line">		Obj obj2 = <span class="keyword">new</span> Obj();</span><br><span class="line">		obj1.instance = obj2;</span><br><span class="line">		obj2.instance = obj1;</span><br><span class="line">		obj1 = <span class="keyword">null</span>;</span><br><span class="line">		obj2 = <span class="keyword">null</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Obj</span> </span>&#123;</span><br><span class="line">	<span class="keyword">public</span> Obj instance;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">Obj</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">super</span>();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们看一下上面这段代码，两个对象<code>obj1</code>和<code>obj2</code>的<code>instance</code>分别指向对方，造成了循环引用。即便最后<code>obj1</code>和<code>obj2</code>都置为空，但它们的<code>instance</code>还是指向对方，如果我们使用这种算法，这两个对象势必无法回收，最终造成内存泄漏。因此，Java没有选择使用引用计数算法管理内存。</p>
+<h3 id="可达性分析算法（根搜索算法）"><a href="#可达性分析算法（根搜索算法）" class="headerlink" title="可达性分析算法（根搜索算法）"></a>可达性分析算法（根搜索算法）</h3><p>主流的商用编程语言（Java、C#以及上古语言Lisp）都是用这种算法进行对象是否存活的判断。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020052511014842.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="利用可达性分析算法判定对象是否可回收"></p>
+<p>根搜索算法<strong>利用GC Roots作为起始节点集，从这些节点开始向下搜索，凡是能够到达的节点都是存活节点，不能到达的节点都不再会被使用，这些节点的对象都可以被回收。</strong><br>Java技术体系中可以作为GC Roots的对象有以下几种：</p>
 <ul>
-<li><p>节点由红色和黑色组成</p>
+<li><p>虚拟机栈（栈帧的本地变量表）中引用的对象</p>
 </li>
-<li><p>且根节点是黑色</p>
+<li><p>方法区中类静态属性引用的对象</p>
 </li>
-<li><p>所有的叶子节点都是黑色</p>
+<li><p>方法区中常量引用的对象</p>
 </li>
-<li><p>根节点到叶子节点的路径上不可能出现两个连续的红色节点</p>
+<li><p>本地方法栈中JNI（及native方法）引用的对象</p>
 </li>
-<li><p>从任一节点出发到每个叶子节点都包含相同数量的黑色节点</p>
+<li><p>虚拟机内部的引用，比如基本数据类型对应的Class对象，一些常驻的异常对象（如NullPointerException、OutOfMemoryError）等，还有类加载器。</p>
+</li>
+<li><p>被同步锁（synchronized）持有的对象</p>
+</li>
+<li><p>反映Java虚拟机内部情况的JMXBean、JVMTI注册的回调，本地代码缓存等</p>
 </li>
 </ul>
-<h2 id="红黑树的查找"><a href="#红黑树的查找" class="headerlink" title="红黑树的查找"></a>红黑树的查找</h2><p>因为红黑树是一棵二叉搜索树，所以同样具有二叉树的性质：左子树的所有节点都小于当前节点的值，右子树的所有节点都大于当前节点的值。所以，查找节点的算法就很简单了，我们来了解一下查找的流程。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200623151509296.png#pic_center" alt="红黑树查找流程"></p>
-<h2 id="红黑树的插入"><a href="#红黑树的插入" class="headerlink" title="红黑树的插入"></a>红黑树的插入</h2><p>介绍红黑树的插入之前，先讲一下红黑树的三种调整方式：<strong>变色</strong>、<strong>左旋</strong>和<strong>右旋</strong>。变色很好理解，红色变黑色，黑色变红色，主要是左旋和右旋，我在网上找到一张图，很好的解释了左旋和右旋的含义。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200623161819607.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="左旋与右旋"></p>
-<p>下面开始进入难点——红黑树的插入。待插入的节点是红色的，因为如果插入的节点是黑色，原来已经平衡的红黑树一定会不平衡，也就一定会进行调整。</p>
-<p><strong>情况一：红黑树为空</strong></p>
-<p>当红黑树为空的情况下，一目了然，直接插入，然后将节点变成黑色，是不是就符合5个性质了？</p>
-<p><strong>情况二：插入节点的父节点是黑色</strong></p>
-<p>直接插入节点即可，因为插入的节点是红色的，所以并不影响红黑树的平衡。</p>
-<p><strong>情况三：插入节点的父节点和叔叔节点是红色</strong></p>
-<p>分析一下这种情形，由于插入节点的父节点和叔叔节点都是红色，所以插入节点的祖父节点一定是黑色，因为不可能出现父子节点均为红色的情形。以前面的那棵红黑树为例，我们试着向里面插入一个值为21的节点。插入后的情形：</p>
-<p><img src="https://img-blog.csdnimg.cn/20200623222028640.jpg#pic_center" alt="情况三的第一次调整"></p>
-<p>结束了吗？没有。22和21是两个连续的红色节点，需要进行调整。插入节点的父节点和叔叔节点都是红色，因此将这两个节点变黑。</p>
-<p><img src="https://img-blog.csdnimg.cn/2020062322291227.jpg#pic_center" alt="情况三的第二次调整"></p>
-<p>再仔细观察一下，好像是可以了，但是尝试从根节点到叶子节点，不是每条路径上的黑色节点数都是相同的。再把插入节点的祖父节点25改成红色。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200624091332271.jpg#pic_center" alt="情况三的第三次调整"></p>
-<p>17和25又是连续的红色节点了，这时把25当作新插入的节点，是不是回到了这种情况开始的状态？这时，给8和17变成黑色就可以满足所有的性质。</p>
-<p><img src="https://img-blog.csdnimg.cn/2020062414045744.jpg#pic_center" alt="情况三的第四次调整"></p>
-<p><strong>情况四：插入节点的父节点是红色，叔叔节点是黑色或缺少，插入节点是父节点的左子节点，父节点是祖父节点的左子节点</strong></p>
-<p><img src="https://img-blog.csdnimg.cn/20200624152342709.jpg#pic_center" alt="情况四"></p>
-<p>要在上图插入一个值为1的节点，这时会满足情况四。我们看一下插入这个节点以后的情况。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200624152830533.jpg#pic_center" alt="情况四插入节点后"></p>
-<p>显然这里不满足不能有两个连续红色节点的性质，我们绕节点13进行右旋。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200624153529403.jpg#pic_center" alt="情况四的第一次调整"></p>
-<p>接下来对8和13变色，就调整完成了。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200624153742773.jpg#pic_center" alt="情况四的第二次调整"></p>
-<p><strong>情况五：插入节点的父节点是红色，叔叔节点是黑色或缺少，插入节点是父节点的右子节点，父节点是祖父节点的左子节点</strong></p>
-<p>最后一种情况了，我们还是使用情况四的初始状态，往里面插入一个值为10的新节点。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200624154816264.jpg#pic_center" alt="情况五插入节点后"></p>
-<p>我们对节点8通过一次左旋交换插入节点和其父节点的位置，大家看一下是不是变成了情况四？然后我们按照情况四的方式进行调整即可。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200624160013634.jpg#pic_center" alt="情况五的第一次调整"></p>
-<p>以上是本文的内容，红黑树的删除操作将在下一篇文章中进行介绍。</p>
+<p>另外，需要补充的是，即便被可达性分析算法标记为不可达对象，这些对象也未必一定会被回收。事实上，被标记为不可达对象后，这个对象还需要经历第二次标记才可能会被宣布正式死亡。当第一次标记以后，会判断对象有没有必要执行<code>finalize()</code>方法。当对象没有覆盖<code>finalize()</code>方法或已经被虚拟机调用过的话，就被判定没有必要再继续执行了。当有必要执行<code>finalize()</code>方法时，这些对象会被放在名为<code>F-Queue</code>的队列中，随后虚拟机会创建一个线程去执行队列中的对象的<code>finalize()</code>方法。如果这些对象在收集器对<code>F-Queue</code>中对象标记前在<code>finalize()</code>方法中重新与引用链上的对象建立关系，比如将自己赋值给某个类变量就可以移出回收集合，免除被回收的命运。</p>
+<h2 id="对象引用"><a href="#对象引用" class="headerlink" title="对象引用"></a>对象引用</h2><p>谈到引用，不得不提到前几天的考研复试，我的一位学弟在复试过程中被问到Java中有哪些引用，这几种引用有什么区别。被问到这道题时，他一时语塞，没有回答上来。不过好在没有因为这道题受到影响。今天我们就来谈一谈Java中的四种引用。</p>
+<ul>
+<li><p>强引用。强引用是我们平时使用最多的引用方法。<code>Object obj = new Object()</code>这就是一个典型的强引用实例，只要强引用关系还存在，即使系统内存不足，也不会回收这些对象。</p>
+</li>
+<li><p>软引用。软引用用来描述一些还有用，但不是必须的对象，使用<code>SoftReference</code>类来实现软引用。当系统内存不足时，会回收软引用关联的对象。</p>
+</li>
+<li><p>弱引用。弱引用通过<code>WeakReference</code>类来实现，即使内存充足，下一次垃圾收集时，弱引用对象也会被回收。</p>
+</li>
+<li><p>虚引用。虚引用又称“幽灵引用”或“幻影引用”，是最弱的一种对象引用，它使用<code>PhantomReference</code>类来实现。虚引用的作用是在关联的对象被回收时能收到一个系统通知。</p>
+</li>
+</ul>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>深入理解Java虚拟机：JVM高级特性与最佳实践（第3版）<br><a href="https://next.xuetangx.com/learn/THU08091000252/THU08091000252/1511981/video/1318509" target="_blank" rel="noopener">学堂在线-JAVA程序设计进阶</a></p>
 ]]></content>
       <categories>
-        <category>数据结构</category>
+        <category>Java</category>
       </categories>
       <tags>
-        <tag>数据结构</tag>
+        <tag>Java</tag>
+        <tag>JVM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>操作系统-处理机调度</title>
+    <url>/2020/06/17/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%A4%84%E7%90%86%E6%9C%BA%E8%B0%83%E5%BA%A6/</url>
+    <content><![CDATA[<p>本文介绍处理机调度相关的内容，主要涉及三级调度与调度算法等知识。</p>
+<a id="more"></a>
+
+<h2 id="三级调度"><a href="#三级调度" class="headerlink" title="三级调度"></a>三级调度</h2><p>作业从提交到完成一般需要经历三级调度：<strong>作业调度</strong>（高级调度）、<strong>内存调度</strong>（中级调度）和<strong>进程调度</strong>（低级调度），调度的频率依次递增。</p>
+<ul>
+<li><p><strong>作业调度</strong>：作业调度一般是将一个作业从外存调入内存，为其分配内存、外设等资源，使其能够竞争处理机资源。对每个作业来说，每个作业一般只调入一次、调出一次。</p>
+</li>
+<li><p><strong>内存调度</strong>：内存调度是为了<strong>提高内存利用率</strong>和<strong>系统吞吐量</strong>，一般会将暂时无法运行的进程挂起，当具备运行条件且内存有空闲时，会将这些进程调回，挂在就绪队列上等待调度。</p>
+</li>
+<li><p><strong>进程调度</strong>：最频繁的调度方式，一般从就绪队列中调出一个进程，为它分配处理机资源。</p>
+</li>
+</ul>
+<h2 id="进程调度方式"><a href="#进程调度方式" class="headerlink" title="进程调度方式"></a>进程调度方式</h2><ul>
+<li><p><strong>非剥夺调度方式</strong>：当一个进程处于运行状态时，即使有更紧急或优先级更高的进程进入就绪队列，也不会抢占正在运行进程的处理机资源，只有当前运行进程结束运行或进入阻塞状态时才会从就绪队列将更紧迫的进程调出并分配处理机资源。</p>
+</li>
+<li><p><strong>剥夺调度方式</strong>：当有一个更紧急或优先级更高的进程需要使用处理机，当前进程会被暂停，执行更紧迫进程的调度方式。</p>
+</li>
+</ul>
+<h2 id="调度基本准则"><a href="#调度基本准则" class="headerlink" title="调度基本准则"></a>调度基本准则</h2><ul>
+<li><p>CPU利用率：当CPU一直处于忙碌状态时，CPU利用率最高。</p>
+</li>
+<li><p>系统吞吐量：表示单位时间内完成的作业数量，当作业都是短作业时，系统吞吐量会比较大。</p>
+</li>
+<li><p>周转时间：是作业从提交到完成的时间，包括作业等待、在就绪队列排队、运行、IO操作的时间总和。</p>
+</li>
+<li><p>平均周转时间：是多个作业的周转时间的平均值。</p>
+</li>
+<li><p>带权周转时间：$带权周转时间=\frac{作业周转时间作业}{实际运行时间}$</p>
+</li>
+<li><p>平均带权周转时间：是多个带权周转时间的平均值。</p>
+</li>
+<li><p>等待时间：进程等待处理机的时间之和。</p>
+</li>
+<li><p>响应时间：从用户提交到首次响应所花费的时间。</p>
+</li>
+</ul>
+<h2 id="调度算法"><a href="#调度算法" class="headerlink" title="调度算法"></a>调度算法</h2><p>调度算法是本文的重点，也是很常见的考点，以下介绍常见的调度算法。</p>
+<h3 id="先来先服务（FCFS）调度算法"><a href="#先来先服务（FCFS）调度算法" class="headerlink" title="先来先服务（FCFS）调度算法"></a>先来先服务（FCFS）调度算法</h3><p>从名字就可以知道这是一种“先来后到”的调度算法，这种调度算法支持作业调度和进程调度。FCFS调度算法每次挑选队列中最先到达的进程或作业，依次进行调度。<br>这是一种<strong>非剥夺调度算法</strong>，直观来看，非常公平，但是还是有缺点的。</p>
+<p>特点：算法简单，但效率低，对长作业有利，短作业可能要等待很长时间。有利于CPU密集型作业，不利于IO密集型作业。</p>
+<h3 id="短作业-进程优先（SJF-SPF）调度算法"><a href="#短作业-进程优先（SJF-SPF）调度算法" class="headerlink" title="短作业/进程优先（SJF/SPF）调度算法"></a>短作业/进程优先（SJF/SPF）调度算法</h3><p>短作业/进程优先算法是一种优先调度短作业（进程）的调度算法，同样也是一种<strong>非剥夺调度算法</strong>。</p>
+<p>特点：对短作业有利，对长作业不利，如果一直有短作业进来，可能长作业会一直得不到执行。不考虑作业紧迫程度，有些紧迫的作业可能不能及时处理。有利于IO密集型作业，不利于CPU密集型作业。</p>
+<h3 id="优先级调度算法"><a href="#优先级调度算法" class="headerlink" title="优先级调度算法"></a>优先级调度算法</h3><p>优先级调度算法既可以用于作业调度也可以用于进程调度。当用于作业调度时，会从后备作业队列中选出一个或多个优先级最高的作业，将它们调入内存中，并分配相应资源；当用于进程调度时，会从就绪队列中选出优先级最高的进程，将处理机分配给这个进程，使它能够运行。</p>
+<p>根据高优先级进程能否抢占处理机还可以将这种算法分为非剥夺式优先级调度算法和剥夺式优先级调度算法。</p>
+<p>在进程创建后进程优先级能否改变又可以将进程优先级分为静态优先级和动态优先级。</p>
+<ul>
+<li><p>静态优先级。静态优先级是进程在创建时就已经确定好的，在进程运行期间不能改变。</p>
+</li>
+<li><p>动态优先级。动态优先级是指进程运行期间优先级根据进程实际运行情况动态变化的。</p>
+</li>
+</ul>
+<h3 id="高响应比优先调度算法"><a href="#高响应比优先调度算法" class="headerlink" title="高响应比优先调度算法"></a>高响应比优先调度算法</h3><p>高响应比优先调度算法适用于作业调度，是短作业优先调度算法和先来先服务算法的折中。我们先来看一下什么是响应比吧。</p>
+<p>$$响应比=\frac{等待时间+要求服务时间}{要求服务时间}$$</p>
+<p>高响应比优先调度算法具有以下特点：</p>
+<ul>
+<li><p>短作业的要求服务时间很短，因此在相同等待时间的情况下，短作业的响应比也更高，会被优先执行。</p>
+</li>
+<li><p>当要求服务时间相同时，等待时间长的作业会被优先服务。</p>
+</li>
+<li><p>长作业的要求服务时间比较长，但是随着等待时间的增加，长作业的响应比也会增加，然后可以分配处理机。</p>
+</li>
+</ul>
+<h3 id="时间片轮转调度算法"><a href="#时间片轮转调度算法" class="headerlink" title="时间片轮转调度算法"></a>时间片轮转调度算法</h3><p>时间片轮转调度算法一般在分时系统上使用，每个进程被分配固定大小的时间片，当时间片用完以后，无论进程是否执行结束，处理机都将被剥夺给下一个进程。</p>
+<p>特点：时间片轮转调度算法的时间片大小选择很讲究，如果时间片过大，该调度算法会退化成为先来先服务调度算法，而时间片设置过小，处理机会频繁切换，进程真正使用处理机的时间减少，系统吞吐量下降。</p>
+<h3 id="多级反馈队列调度算法"><a href="#多级反馈队列调度算法" class="headerlink" title="多级反馈队列调度算法"></a>多级反馈队列调度算法</h3><p>多级反馈队列调度算法是这些调度算法中最复杂的，也是整合了前面一些调度算法而形成的算法，我们来看一下它的工作过程。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200618151104803.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="多级反馈队列调度算法"></p>
+<p>多级反馈队列调度算法工作过程有以下这些特点：</p>
+<ul>
+<li><p>每一级队列从上至下的优先级逐渐递减，优先级越高的队列时间片越小。也就是说，最顶层的队列的时间片最小。</p>
+</li>
+<li><p>最新的进程进入内存会被放入最上层的队列末尾，当执行到这个进程时，如果能在分配的时间片内完成则会出队列，如果不能在时间片内完成就进入下一级队列末尾，等待处理机资源。</p>
+</li>
+<li><p>如果高优先级队列有进程存在，则处理机会优先处理上级队列中的进程。如果处理机正在执行某一队列中的进程，此时更高优先级队列中有进程进入，那么当前正在执行的进程会回到当前队列的队尾，处理机执行新进入队列的进程。</p>
+</li>
+</ul>
+<p>最后要提一点，多级反馈队列调度算法兼顾短作业优先的同时，不会让长作业长期处于等待状态最终出现饥饿。</p>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>操作系统</tag>
       </tags>
   </entry>
   <entry>
@@ -799,54 +805,121 @@
       </tags>
   </entry>
   <entry>
-    <title>深入理解Java虚拟机-判断对象是否存活算法与对象引用</title>
-    <url>/2020/05/24/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E5%88%A4%E6%96%AD%E5%AF%B9%E8%B1%A1%E6%98%AF%E5%90%A6%E5%AD%98%E6%B4%BB%E7%AE%97%E6%B3%95%E4%B8%8E%E5%AF%B9%E8%B1%A1%E5%BC%95%E7%94%A8/</url>
-    <content><![CDATA[<p>在之前的文章中我们谈到过Java内存区域的概念，我们知道Java中的对象一般存放在堆中，但是总不能让这些对象一直占着内存空间，这些对象最终都会被回收并释放内存，那么我们如何判断对象已经成为垃圾呢？这篇文章会提出两种算法解决这个问题。另外，本文还要谈一谈对象引用相关的知识，这在面试中也是经常被问到的问题。</p>
+    <title>本科数据结构课程的漏网之鱼-红黑树（上）</title>
+    <url>/2020/06/22/%E6%9C%AC%E7%A7%91%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AF%BE%E7%A8%8B%E7%9A%84%E6%BC%8F%E7%BD%91%E4%B9%8B%E9%B1%BC-%E7%BA%A2%E9%BB%91%E6%A0%91%EF%BC%88%E4%B8%8A%EF%BC%89/</url>
+    <content><![CDATA[<p>在我大学的时候，就曾经从参加面试的学长那里知道红黑树这种数据结构，但是经过我的观察，绝大部分的本科数据结构课程里都没有这部分内容。本文将介绍这种被本科教学体系遗弃，但却常常被工作面试中提到的数据结构，并且为后面的HashMap的内容做铺垫。</p>
 <a id="more"></a>
 
-<h2 id="判断对象是否存活算法"><a href="#判断对象是否存活算法" class="headerlink" title="判断对象是否存活算法"></a>判断对象是否存活算法</h2><h3 id="引用计数算法"><a href="#引用计数算法" class="headerlink" title="引用计数算法"></a>引用计数算法</h3><p>引用计数算法的原理比较简单，<strong>在对象中添加一个引用计数器，当有一个引用指向一个对象时，这个对象的引用计数器会加1，当引用不再指向对象时，引用计数器便减1。当引用计数器的值为0时，说明对象已经成为垃圾。</strong><br>引用计数算法的优点是算法非常简单，效率也比较高。但是Java并没有使用这种算法管理内存，这是为什么呢？我们先来看看下面这段代码。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Demo</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		Obj obj1 = <span class="keyword">new</span> Obj();</span><br><span class="line">		Obj obj2 = <span class="keyword">new</span> Obj();</span><br><span class="line">		obj1.instance = obj2;</span><br><span class="line">		obj2.instance = obj1;</span><br><span class="line">		obj1 = <span class="keyword">null</span>;</span><br><span class="line">		obj2 = <span class="keyword">null</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Obj</span> </span>&#123;</span><br><span class="line">	<span class="keyword">public</span> Obj instance;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">Obj</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">super</span>();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>我们看一下上面这段代码，两个对象<code>obj1</code>和<code>obj2</code>的<code>instance</code>分别指向对方，造成了循环引用。即便最后<code>obj1</code>和<code>obj2</code>都置为空，但它们的<code>instance</code>还是指向对方，如果我们使用这种算法，这两个对象势必无法回收，最终造成内存泄漏。因此，Java没有选择使用引用计数算法管理内存。</p>
-<h3 id="可达性分析算法（根搜索算法）"><a href="#可达性分析算法（根搜索算法）" class="headerlink" title="可达性分析算法（根搜索算法）"></a>可达性分析算法（根搜索算法）</h3><p>主流的商用编程语言（Java、C#以及上古语言Lisp）都是用这种算法进行对象是否存活的判断。</p>
-<p><img src="https://img-blog.csdnimg.cn/2020052511014842.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="利用可达性分析算法判定对象是否可回收"></p>
-<p>根搜索算法<strong>利用GC Roots作为起始节点集，从这些节点开始向下搜索，凡是能够到达的节点都是存活节点，不能到达的节点都不再会被使用，这些节点的对象都可以被回收。</strong><br>Java技术体系中可以作为GC Roots的对象有以下几种：</p>
+<h2 id="定义与性质"><a href="#定义与性质" class="headerlink" title="定义与性质"></a>定义与性质</h2><p>首先需要明确的是，红黑树是一棵<strong>二叉搜索树</strong>，如果不了解二叉搜索树的朋友可以先去了解一下。这里想到了本人在研究生复试的时候被问到什么是二叉搜索树，一时竟然没想起来。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200623144444818.png#pic_center" alt=""></p>
+<p>下面是一棵典型的红黑树，我们可以看到这颗红黑树的确是一棵二叉搜索树。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200623155717535.jpg#pic_center" alt="红黑树"></p>
+<p>一般来说，红黑树具有以下5个性质：</p>
 <ul>
-<li><p>虚拟机栈（栈帧的本地变量表）中引用的对象</p>
+<li><p>节点由红色和黑色组成</p>
 </li>
-<li><p>方法区中类静态属性引用的对象</p>
+<li><p>且根节点是黑色</p>
 </li>
-<li><p>方法区中常量引用的对象</p>
+<li><p>所有的叶子节点都是黑色</p>
 </li>
-<li><p>本地方法栈中JNI（及native方法）引用的对象</p>
+<li><p>根节点到叶子节点的路径上不可能出现两个连续的红色节点</p>
 </li>
-<li><p>虚拟机内部的引用，比如基本数据类型对应的Class对象，一些常驻的异常对象（如NullPointerException、OutOfMemoryError）等，还有类加载器。</p>
-</li>
-<li><p>被同步锁（synchronized）持有的对象</p>
-</li>
-<li><p>反映Java虚拟机内部情况的JMXBean、JVMTI注册的回调，本地代码缓存等</p>
+<li><p>从任一节点出发到每个叶子节点都包含相同数量的黑色节点</p>
 </li>
 </ul>
-<p>另外，需要补充的是，即便被可达性分析算法标记为不可达对象，这些对象也未必一定会被回收。事实上，被标记为不可达对象后，这个对象还需要经历第二次标记才可能会被宣布正式死亡。当第一次标记以后，会判断对象有没有必要执行<code>finalize()</code>方法。当对象没有覆盖<code>finalize()</code>方法或已经被虚拟机调用过的话，就被判定没有必要再继续执行了。当有必要执行<code>finalize()</code>方法时，这些对象会被放在名为<code>F-Queue</code>的队列中，随后虚拟机会创建一个线程去执行队列中的对象的<code>finalize()</code>方法。如果这些对象在收集器对<code>F-Queue</code>中对象标记前在<code>finalize()</code>方法中重新与引用链上的对象建立关系，比如将自己赋值给某个类变量就可以移出回收集合，免除被回收的命运。</p>
-<h2 id="对象引用"><a href="#对象引用" class="headerlink" title="对象引用"></a>对象引用</h2><p>谈到引用，不得不提到前几天的考研复试，我的一位学弟在复试过程中被问到Java中有哪些引用，这几种引用有什么区别。被问到这道题时，他一时语塞，没有回答上来。不过好在没有因为这道题受到影响。今天我们就来谈一谈Java中的四种引用。</p>
-<ul>
-<li><p>强引用。强引用是我们平时使用最多的引用方法。<code>Object obj = new Object()</code>这就是一个典型的强引用实例，只要强引用关系还存在，即使系统内存不足，也不会回收这些对象。</p>
-</li>
-<li><p>软引用。软引用用来描述一些还有用，但不是必须的对象，使用<code>SoftReference</code>类来实现软引用。当系统内存不足时，会回收软引用关联的对象。</p>
-</li>
-<li><p>弱引用。弱引用通过<code>WeakReference</code>类来实现，即使内存充足，下一次垃圾收集时，弱引用对象也会被回收。</p>
-</li>
-<li><p>虚引用。虚引用又称“幽灵引用”或“幻影引用”，是最弱的一种对象引用，它使用<code>PhantomReference</code>类来实现。虚引用的作用是在关联的对象被回收时能收到一个系统通知。</p>
-</li>
-</ul>
-<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>深入理解Java虚拟机：JVM高级特性与最佳实践（第3版）<br><a href="https://next.xuetangx.com/learn/THU08091000252/THU08091000252/1511981/video/1318509" target="_blank" rel="noopener">学堂在线-JAVA程序设计进阶</a></p>
+<h2 id="红黑树的查找"><a href="#红黑树的查找" class="headerlink" title="红黑树的查找"></a>红黑树的查找</h2><p>因为红黑树是一棵二叉搜索树，所以同样具有二叉树的性质：左子树的所有节点都小于当前节点的值，右子树的所有节点都大于当前节点的值。所以，查找节点的算法就很简单了，我们来了解一下查找的流程。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200623151509296.png#pic_center" alt="红黑树查找流程"></p>
+<h2 id="红黑树的插入"><a href="#红黑树的插入" class="headerlink" title="红黑树的插入"></a>红黑树的插入</h2><p>介绍红黑树的插入之前，先讲一下红黑树的三种调整方式：<strong>变色</strong>、<strong>左旋</strong>和<strong>右旋</strong>。变色很好理解，红色变黑色，黑色变红色，主要是左旋和右旋，我在网上找到一张图，很好的解释了左旋和右旋的含义。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200623161819607.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="左旋与右旋"></p>
+<p>下面开始进入难点——红黑树的插入。待插入的节点是红色的，因为如果插入的节点是黑色，原来已经平衡的红黑树一定会不平衡，也就一定会进行调整。</p>
+<p><strong>情况一：红黑树为空</strong></p>
+<p>当红黑树为空的情况下，一目了然，直接插入，然后将节点变成黑色，是不是就符合5个性质了？</p>
+<p><strong>情况二：插入节点的父节点是黑色</strong></p>
+<p>直接插入节点即可，因为插入的节点是红色的，所以并不影响红黑树的平衡。</p>
+<p><strong>情况三：插入节点的父节点和叔叔节点是红色</strong></p>
+<p>分析一下这种情形，由于插入节点的父节点和叔叔节点都是红色，所以插入节点的祖父节点一定是黑色，因为不可能出现父子节点均为红色的情形。以前面的那棵红黑树为例，我们试着向里面插入一个值为21的节点。插入后的情形：</p>
+<p><img src="https://img-blog.csdnimg.cn/20200623222028640.jpg#pic_center" alt="情况三的第一次调整"></p>
+<p>结束了吗？没有。22和21是两个连续的红色节点，需要进行调整。插入节点的父节点和叔叔节点都是红色，因此将这两个节点变黑。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020062322291227.jpg#pic_center" alt="情况三的第二次调整"></p>
+<p>再仔细观察一下，好像是可以了，但是尝试从根节点到叶子节点，不是每条路径上的黑色节点数都是相同的。再把插入节点的祖父节点25改成红色。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200624091332271.jpg#pic_center" alt="情况三的第三次调整"></p>
+<p>17和25又是连续的红色节点了，这时把25当作新插入的节点，是不是回到了这种情况开始的状态？这时，给8和17变成黑色就可以满足所有的性质。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020062414045744.jpg#pic_center" alt="情况三的第四次调整"></p>
+<p><strong>情况四：插入节点的父节点是红色，叔叔节点是黑色或缺少，插入节点是父节点的左子节点，父节点是祖父节点的左子节点</strong></p>
+<p><img src="https://img-blog.csdnimg.cn/20200624152342709.jpg#pic_center" alt="情况四"></p>
+<p>要在上图插入一个值为1的节点，这时会满足情况四。我们看一下插入这个节点以后的情况。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200624152830533.jpg#pic_center" alt="情况四插入节点后"></p>
+<p>显然这里不满足不能有两个连续红色节点的性质，我们绕节点13进行右旋。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200624153529403.jpg#pic_center" alt="情况四的第一次调整"></p>
+<p>接下来对8和13变色，就调整完成了。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200624153742773.jpg#pic_center" alt="情况四的第二次调整"></p>
+<p><strong>情况五：插入节点的父节点是红色，叔叔节点是黑色或缺少，插入节点是父节点的右子节点，父节点是祖父节点的左子节点</strong></p>
+<p>最后一种情况了，我们还是使用情况四的初始状态，往里面插入一个值为10的新节点。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200624154816264.jpg#pic_center" alt="情况五插入节点后"></p>
+<p>我们对节点8通过一次左旋交换插入节点和其父节点的位置，大家看一下是不是变成了情况四？然后我们按照情况四的方式进行调整即可。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200624160013634.jpg#pic_center" alt="情况五的第一次调整"></p>
+<p>以上是本文的内容，红黑树的删除操作将在下一篇文章中进行介绍。</p>
 ]]></content>
       <categories>
-        <category>Java</category>
+        <category>数据结构</category>
       </categories>
       <tags>
-        <tag>Java</tag>
-        <tag>JVM</tag>
+        <tag>数据结构</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>操作系统-概述</title>
+    <url>/2020/06/01/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E6%A6%82%E8%BF%B0/</url>
+    <content><![CDATA[<p>本文是操作系统系列文章的第一篇，后续将陆续更新操作系统相关的文章。</p>
+<a id="more"></a>
+
+<h2 id="什么是操作系统？"><a href="#什么是操作系统？" class="headerlink" title="什么是操作系统？"></a>什么是操作系统？</h2><p>计算机系统自底向上大致可分为四个部分：硬件、操作系统、应用程序和用户，我们这里比较关心位于硬件之上的操作系统。操作系统是控制和管理硬件和软件资源，组织调度计算机工作和资源分配，并为用户提供接口与环境的程序集合。</p>
+<h3 id="操作系统的特征"><a href="#操作系统的特征" class="headerlink" title="操作系统的特征"></a>操作系统的特征</h3><ul>
+<li><p>并发。并发是指多个事件在同一时间段内发生，当我们一边在QQ上聊天，一边听着音乐，此时操作系统同时处理着多个程序，我们可以说QQ和播放器是并发执行的。需要注意的是，与并发容易混淆的概念——并行，并行是指多个事件在同一时刻同时执行。</p>
+</li>
+<li><p>共享。系统中某些资源是可以允许多个进程使用的，共享分为互斥共享与同时访问方式。互斥共享典型代表如打印机，每次只允许一个进程使用。同时访问的“同时”体现在宏观层面上，而微观层面上是“分时共享”的。</p>
+</li>
+<li><p>虚拟。虚拟是指将一个物理上的实体对应变为多个逻辑上的实体，常见的虚拟技术有虚拟处理器、虚拟内存和虚拟外设等。</p>
+</li>
+<li><p>异步。多道程序系统允许多程序并发执行，多个程序并非一次执行到底，而是走走停停，以为止速度向前推进。</p>
+</li>
+</ul>
+<h3 id="操作系统的功能"><a href="#操作系统的功能" class="headerlink" title="操作系统的功能"></a>操作系统的功能</h3><ul>
+<li><p>处理机管理</p>
+</li>
+<li><p>存储器管理</p>
+</li>
+<li><p>文件管理</p>
+</li>
+<li><p>设备管理</p>
+</li>
+<li><p>为用户提供接口</p>
+</li>
+</ul>
+<h2 id="操作系统的发展与分类"><a href="#操作系统的发展与分类" class="headerlink" title="操作系统的发展与分类"></a>操作系统的发展与分类</h2><h3 id="手工操作阶段"><a href="#手工操作阶段" class="headerlink" title="手工操作阶段"></a>手工操作阶段</h3><p>这种方式是最早的操作方式，由人工直接使用计算机硬件系统，这种方式主要有两个缺点：</p>
+<ul>
+<li><p>用户独占全机。此时的计算机由操作人员一个人独占。</p>
+</li>
+<li><p>CPU等待用户操作。由于手工操作较慢，CPU资源长时间是空闲的。</p>
+</li>
+</ul>
+<p>也正是因为上述缺点的存在，人机矛盾原来越严重，此时唯一的解决方法是用机器代替手工进行作业控制。</p>
+<h3 id="批处理阶段"><a href="#批处理阶段" class="headerlink" title="批处理阶段"></a>批处理阶段</h3><p>为了解决人机矛盾扩大的问题，批处理系统很快被提出。批处理阶段又分为单道批处理系统和多道批处理系统。单道批处理系统允许内存中保持一道作业，当遇到IO操作时，CPU会等待IO操作完成。为了提高系统吞吐量，又提出了多道批处理系统。多道批处理系统允许多个程序进入内存并且能在CPU中交替运行，当一个程序执行IO操作时，CPU立马运行另一个程序。</p>
+<h3 id="分时操作系统"><a href="#分时操作系统" class="headerlink" title="分时操作系统"></a>分时操作系统</h3><p>分时是将处理器运行时间划分成为时间片，每个作业分别分配到这些时间片。当一个时间片用完时，某个作业会暂停，CPU会执行下一个程序。由于作业轮转很快，所以用户会感觉独占了计算机。</p>
+<h3 id="实时操作系统"><a href="#实时操作系统" class="headerlink" title="实时操作系统"></a>实时操作系统</h3><p>实时操作系统是需要在规定时间内完成特定任务的系统，又可以分为硬实时系统和软实时系统。硬实时系统要求某个动作在某一时刻（或某一时间段）必须完成，例如无人机的飞控系统。软实时系统能够接受偶尔的超时但又不会造成严重后果，例如12306订票系统。</p>
+<h3 id="网络操作系统和分布式计算机系统"><a href="#网络操作系统和分布式计算机系统" class="headerlink" title="网络操作系统和分布式计算机系统"></a>网络操作系统和分布式计算机系统</h3><p>网络操作系统将网络中的计算机连接起来，实现计算机之间的数据通信。分布式计算机有多台计算机组成，每台计算机拥有相同的地位，没有主从关系。分布式操作系统与网络操作系统之间的不同之处在于分布式操作系统是协同完成同一任务的计算机集群。</p>
+<h3 id="个人计算机操作系统"><a href="#个人计算机操作系统" class="headerlink" title="个人计算机操作系统"></a>个人计算机操作系统</h3><p>常见的个人操作系统有Windows和Linux等。</p>
+<h2 id="操作系统运行环境"><a href="#操作系统运行环境" class="headerlink" title="操作系统运行环境"></a>操作系统运行环境</h2><h3 id="内核态和用户态"><a href="#内核态和用户态" class="headerlink" title="内核态和用户态"></a>内核态和用户态</h3><p>内核态又称核心态、管态，通常是系统内核执行特权指令时的状态，特权指令是指不能由应用程序直接执行的指令，如IO指令、置中断指令等。用户态又称目态，是上层应用程序运行时CPU的状态。</p>
+<h3 id="原语"><a href="#原语" class="headerlink" title="原语"></a>原语</h3><p>原语是一些位于操作系统底层，最接近硬件的小程序。这些程序具有原子性，运行时间短且频繁执行。</p>
+<h3 id="系统调用"><a href="#系统调用" class="headerlink" title="系统调用"></a>系统调用</h3><p>系统调用是操作系统为应用程序提供的接口，是为了避免应用程序直接访问内核态而采取的保护措施。</p>
+<h3 id="中断和异常"><a href="#中断和异常" class="headerlink" title="中断和异常"></a>中断和异常</h3><p>中断一般与当前运行的程序无关，比如当设备完成IO操作时向处理机发出的结束中断，时间片用完发出的时钟中断。异常一般与程序相关，如地址越界、算术溢出等事件。</p>
+<h2 id="操作系统体系结构"><a href="#操作系统体系结构" class="headerlink" title="操作系统体系结构"></a>操作系统体系结构</h2><p>现代操作系统的体系结构主要分为两种：大内核和微内核。大内核是将系统主要模块集中在内核态，提供高性能的系统服务。但随着系统日益复杂，操作系统规模也急剧增大，为此又提出了微内核，微内核在内核态中只保留了最基本的功能，其他不需要内核态关注的功能都移到了用户态中，降低了内核的复杂性。被移出内核的功能借助微内核进行通信，但微内核的一个问题是性能不如大内核，因为需要在内核态和用户态之间频繁切换，系统开销比较大。</p>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>操作系统</tag>
       </tags>
   </entry>
   <entry>
@@ -884,6 +957,37 @@
       <tags>
         <tag>Java</tag>
         <tag>JVM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>计算机网络-网络层（更新中）</title>
+    <url>/2020/07/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E7%BD%91%E7%BB%9C%E5%B1%82/</url>
+    <content><![CDATA[<p>网络层位于TCP/IP结构中的第三层，也是计算机网络中的重点和难点之一。</p>
+<a id="more"></a>
+
+<h2 id="网络层功能"><a href="#网络层功能" class="headerlink" title="网络层功能"></a>网络层功能</h2><ul>
+<li><strong>异构网络互联</strong>。异构网络互联是指将多个计算机网络通过中继系统连接起来，这些网络在物理上是异构的。物理层和数据链路层的设备只是进行网络的扩大，而不是网络互联。</li>
+<li><strong>路由与转发</strong>。路由与转发实际上是两个部分：路由选择、分组转发。路由选择是根据特定路由选择算法从相邻路由器获得网络拓扑变化从而动态更新路由。路由转发是选择合适的端口将分组转发出去。</li>
+<li><strong>拥塞控制</strong>。随着网络负载的增大，如果吞吐量明显小于正常的吞吐量，那么网络可能就进入了拥塞状态。与流量控制不同的是，拥塞控制是一个全局性问题，涉及到网络中的所有主机、路由器等设备，而流量控制只需要控制发送端和接收端的通信量，保证接收端来得及接收发送端发来的数据。拥塞控制的方法主要有两种：开环控制和闭环控制。开环控制是一种静态方法，在系统启动之前决定何时接收新流量、丢弃分组，丢弃哪些分组等问题。而闭环控制是一种动态方法，无需提前考虑拥塞因素，一旦发现网络发生拥塞，将拥塞信息发送到合适的地方，动态调整网络系统。</li>
+</ul>
+<h2 id="路由算法"><a href="#路由算法" class="headerlink" title="路由算法"></a>路由算法</h2><p>在介绍路由算法之前，需要先介绍一下<strong>静态路由</strong>和<strong>动态路由</strong>的概念。静态路由需要网络管理员手动配置路由信息，一旦链路状态或拓扑结构发生变化，网络管理员就要去修改路由表中的静态路由信息。动态路由是路由器之间相互交换路由表信息，通过一定算法优化得出的最优寻路方式。静态路由比较适合于拓扑变化不大的小型网络或需要保证安全性和稳定性的军事系统，而动态路由适合复杂的大型网络。常见的动态路由算法有距离向量路由算法和链路状态路由算法。</p>
+<h3 id="距离向量路由算法"><a href="#距离向量路由算法" class="headerlink" title="距离向量路由算法"></a>距离向量路由算法</h3><p>距离向量路由算法中，节点之间定期向相邻节点发送路由表，路由表的内容包括每条路径的目的地和路径的距离。</p>
+<blockquote>
+<p>这里说的距离不是物理上说的距离，而是一个抽象概念，在RIP算法中将距离定义为“跳数”，也就是指从源端口到目的端口经过的路由器数量。</p>
+</blockquote>
+<p>距离向量路由算法的所有节点都在监听相邻节点的路由更新信息，并在以下两种情况下更新路由选择表信息：</p>
+<p>1.被通知有一条新的路由，这个路由在当前节点的路由表中并不存在。<br>2.到达某一目的地有比当前使用路由更短距离的路由，就用较短路由代替当前路由。</p>
+<h3 id="链路状态路由算法"><a href="#链路状态路由算法" class="headerlink" title="链路状态路由算法"></a>链路状态路由算法</h3><p>使用链路状态路由算法的网络中的节点会主动测试相邻节点的状态并在链路发生变化时将链路状态发送给网络中的<strong>全部节点</strong>。在这里每次链路状态更新时，节点都会利用迪杰斯特拉算法更新最短路径。链路状态路由算法具有以下三个特征：</p>
+<p>1.使用泛洪法向本自治系统所有的路由器发送信息，即向相邻所有节点发送信息，每个相邻节点又向除刚刚发送信息的节点继续发送信息。<br>2.发送的信息是与路由器相连的所有路由器的链路状态。<br>3.当链路状态发生改变时，路由器才会向所有路由器发送信息。</p>
+<p>与距离向量路由算法相比，链路状态路由算法不依赖中间节点的计算，并且节点通过广播的方式与所有节点交谈。</p>
+<h3 id="层次路由"><a href="#层次路由" class="headerlink" title="层次路由"></a>层次路由</h3><p>随着网络规模的逐渐扩大，路由表中的信息越来越多，因此层次路由的概念被提了出来。层次路由是将互联网划分为多个自治系统，每个自治系统又包含很多局域网。一个自治系统内部使用内部网关协议（IGP），具体的协议有RIP和OSPF等。OSPF会将一个自治系统划分成若干个区域，路由器并不知道区域内的结构细节。</p>
+<p>自治系统之间采用外部网关协议（EGP），用于不同自治系统的路由器交换路由信息，并选择最优路径，具体协议有BGP。</p>
+<h2 id="IPv4"><a href="#IPv4" class="headerlink" title="IPv4"></a>IPv4</h2><h2 id="IPv6"><a href="#IPv6" class="headerlink" title="IPv6"></a>IPv6</h2><h2 id="路由协议"><a href="#路由协议" class="headerlink" title="路由协议"></a>路由协议</h2><h2 id="IP组播"><a href="#IP组播" class="headerlink" title="IP组播"></a>IP组播</h2><h2 id="移动IP"><a href="#移动IP" class="headerlink" title="移动IP"></a>移动IP</h2><h2 id="网络层设备"><a href="#网络层设备" class="headerlink" title="网络层设备"></a>网络层设备</h2>]]></content>
+      <categories>
+        <category>计算机网络</category>
+      </categories>
+      <tags>
+        <tag>计算机网络</tag>
       </tags>
   </entry>
   <entry>
@@ -969,138 +1073,6 @@
       <tags>
         <tag>Java</tag>
         <tag>JVM</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>计算机网络-传输层</title>
-    <url>/2020/05/21/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E4%BC%A0%E8%BE%93%E5%B1%82/</url>
-    <content><![CDATA[<p>计算机网络的传输层是整个计算机网络体系中的关键层次，向上层的应用层提供服务，它是面向通信部分的最高层，也是用户功能中的最低层。</p>
-<a id="more"></a>
-
-<h2 id="传输层的功能"><a href="#传输层的功能" class="headerlink" title="传输层的功能"></a>传输层的功能</h2><ul>
-<li><p>提供应用进程间的通信。我们的计算机上运行着多个应用程序，而每个程序却能够准确与对应服务器进行通信，你知道这是为什么吗？我们需要引出一个概念：端口。<br>什么是端口？当我们上网时，可能有一部分网站在输入网址后跟上<code>:(数字)</code>，这里网址后的数字就是我们的端口号。常见的端口号有web服务器的80端口，ftp服务器的21和20端口，SMTP的25端口等。这些都是服务器端的端口，当我们的客户机和服务器进行连接时，会分配一个端口号，这就是识别进程的唯一标识。传输层通过端口提供端到端的逻辑通信，传输层好像沿着水平方向传输数据，但事实上传输层之间没有水平方向上直接的物理连接。</p>
-</li>
-<li><p>复用和分用。复用是指不同应用进程可使用同一个传输层协议传输数据，分用则是指接收方的传输层在剥去报文首部以后可以将数据发送到对应的进程。</p>
-</li>
-<li><p>差错检测。</p>
-</li>
-<li><p>提供TCP和UDP两种协议。当采用TCP协议时，尽管下面的网络是不可靠的，它却能提供逻辑上的可靠信道。而当采用UDP时，逻辑信道仍是不可靠的，只是尽力保证交付数据。</p>
-</li>
-</ul>
-<h2 id="面向连接服务和无连接服务"><a href="#面向连接服务和无连接服务" class="headerlink" title="面向连接服务和无连接服务"></a>面向连接服务和无连接服务</h2><p>面向连接服务是指当通信双方在通信前首先建立连接，通信过程中连接一直保持，通信完毕后会释放连接。TCP就是面向连接的传输协议，向上提供可靠的逻辑信道。<br>无连接服务是指通信双方在通信时无需建立连接，发送方直接将信息发送到网络中，只是尽力交付信息。UDP是无连接的传输协议，向上提供的则是不可靠的逻辑信道。</p>
-<h2 id="UDP协议"><a href="#UDP协议" class="headerlink" title="UDP协议"></a>UDP协议</h2><h3 id="UDP协议的特点"><a href="#UDP协议的特点" class="headerlink" title="UDP协议的特点"></a>UDP协议的特点</h3><ul>
-<li><p>无需建立连接。与TCP不同的是，UDP不需要提前建立连接，这意味着UDP协议比TCP协议更快，因此对于一些对速度要求较高的应用（如DNS，网络音视频通话等）常常选用UDP协议。</p>
-</li>
-<li><p>传输不可靠。省去了建立连接的过程，UDP直接将数据发送到网络，无法保证传输的可靠性。</p>
-</li>
-<li><p>UDP是面向报文的。应用程序交付的报文，UDP既不合并，也不拆分，直接添加首部以后交给网络层添加首部。</p>
-</li>
-<li><p>分组首部开销小。UDP首部只有8B，而TCP有20B的首部开销。</p>
-</li>
-<li><p>应用层可以控制发送时间和发送的数据。UDP没有拥塞控制，所以网络中的拥塞不影响主机发送效率。</p>
-</li>
-</ul>
-<h3 id="UDP数据报"><a href="#UDP数据报" class="headerlink" title="UDP数据报"></a>UDP数据报</h3><p>UDP数据报主要由用户数据和UDP首部组成，其中UDP首部由源端口、目的端口、UDP长度和UDP校验和组成。其中UDP长度的最小值为8，表示只有UDP首部而没有数据部分。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200522165926646.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="UDP数据包格式"></p>
-<h2 id="TCP协议"><a href="#TCP协议" class="headerlink" title="TCP协议"></a>TCP协议</h2><h3 id="TCP协议的特点"><a href="#TCP协议的特点" class="headerlink" title="TCP协议的特点"></a>TCP协议的特点</h3><ul>
-<li><p>TCP是面向连接的传输层协议。</p>
-</li>
-<li><p>TCP提供可靠交付服务，能保证数据有序、无差错、不重复且无丢失。</p>
-</li>
-<li><p>允许全双工通信，通信双方能够同时发送和接受数据。因此通信双方都有发送缓存和接收缓存。</p>
-</li>
-<li><p>TCP协议面向字节流。TCP协议将应用层传递下来的数据视为一串无结构的字节流。</p>
-</li>
-</ul>
-<h3 id="TCP报文段"><a href="#TCP报文段" class="headerlink" title="TCP报文段"></a>TCP报文段</h3><p><img src="https://img-blog.csdnimg.cn/2020052318234629.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="TCP报文段格式"></p>
-<ul>
-<li><p>源端口和目的端口各占2B，前面UDP数据报也有。</p>
-</li>
-<li><p>序号字段占4B，是该报文段第一个字节的序号，比如当前报文段的序号是101，报文段的长度是100B，说明当前报文段的最后一个字节的序号是200，则下一个报文段序号是201。</p>
-</li>
-<li><p>确认号字段占4B，是指期望收到的下一个报文段的第一个字节的序号。例如B收到A发送的报文段，这个报文段的序号是101，报文段长度是100B，B期望收到的下一个报文段是第一个字节序号是201，所以确认号就是201。</p>
-</li>
-<li><p>数据偏移占4bit，用于表示首部长度。数据偏移的单位是32位（4B），因此当数据偏移的值是15时，达到首部长度最大值60B。</p>
-</li>
-<li><p>保留字段占6bit，用作保留今后使用，全为0，可忽略不计。</p>
-</li>
-<li><p>紧急位URG占1bit，当URG=1时表示有紧急数据传送，相当于提高了优先级。</p>
-</li>
-<li><p>确认位ACK占1bit，当ACK=1时表示确认号字段有效，若该值为0时表示确认号字段无效。TCP规定在连接建立以后所有报文段的ACK都要置为1。</p>
-</li>
-<li><p>推送位PSH占1bit，当PSH=1时表示尽快交付应用程序，而不需要等到缓存满了以后再向上交付。</p>
-</li>
-<li><p>复位位RST占1bit，当RST=1时表示TCP连接过程中出现严重错误（如主机崩溃等）需要释放当前连接，然后重新建立连接。</p>
-</li>
-<li><p>同步位SYN占1bit，当SYN=1时表示这是连接请求或连接接收报文。当SYN=1且ACK=0时，则表明是连接请求报文。若对方同意建立连接，则在响应报文中设置SYN=1和ACK=1。</p>
-</li>
-<li><p>终止位FIN占1bit，当FIN=1时表示传输完毕，准备释放连接。</p>
-</li>
-<li><p>窗口字段占2B，接收方的缓存空间有限，该字段用于指定发送方允许发送的数据的长度，单位为字节。举个例子，当确认号为701，窗口字段为1000，表示从701号算起，接收方还有1000B的缓存接收空间。</p>
-</li>
-<li><p>校验和占2B，和UDP一样用于数据校验。</p>
-</li>
-<li><p>紧急指针字段占2B，指出该报文段有多少字节的紧急数据，其中紧急数据在报文段数据的最前面。</p>
-</li>
-<li><p>选项字段长度可变，TCP最初只规定了一种选项，即最大报文段长度（MSS），MSS是TCP报文段中数据字段的最大长度。</p>
-</li>
-<li><p>填充字段是为了使首部长度是4B的整数倍而存在。</p>
-</li>
-</ul>
-<h3 id="三次握手"><a href="#三次握手" class="headerlink" title="三次握手"></a>三次握手</h3><p>三次握手在面试中属于及其高频的面试点，几乎是问到计算机网络的知识就会问三次握手。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200524154116793.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="三次握手"></p>
-<p>三次握手的第一步是客户端向服务器发起连接请求，这个请求中不携带数据。第一次握手的首部SYN设置为1，客户端还会随机分配一个起始序号seq=x。<br>第二步是当服务器收到客户端发送的报文段后，若同意建立连接，就向客户端返回一个确认报文段，并为该连接分配缓存和变量。确认报文段将SYN和ACK设置为1，设置确认号ack=x+1，服务器随机产生一个起始序号seq=y。这个确认报文段同样也不携带数据。<br>第三步是客户端收到了来自服务器的确认建立连接报文段后，向服务器发送确认信息，并为连接分配缓存和变量。此时的报文段ACK被设置为1，序号seq被设置为x+1，确认号ack被设置为y+1。该报文段可以携带数据，若不携带数据则不消耗序号。</p>
-<h3 id="四次挥手"><a href="#四次挥手" class="headerlink" title="四次挥手"></a>四次挥手</h3><p>与三次握手建立连接相对的，四次挥手是TCP断开连接的方式。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200525145942799.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="四次挥手"></p>
-<p>四次挥手第一步是客户机主动关闭连接，向服务器发送一个释放连接报文段，并停止发送数据。这个报文段的FIN终止位被置为1，并设置序号seq=u。此时客户机关闭了数据通路，但是由于TCP是全双工的，所以服务器仍然可以发送数据。<br>第二步是服务器接收到客户机发送的连接释放请求，向客户端发送确认报文段。将ACK设置为1，确认号ack=u+1，序号seq=v。此时客户机到服务器的连接释放了，但是服务器到客户端的数据通路仍然是连接的。<br>第三步是服务器已经没有需要传输的数据，则向客户机发送FIN=1的报文段释放连接。<br>第四步是客户机收到服务器的释放连接报文段后，向服务器发送确认报文段，报文段的ACK被置为1。此时还需要再等2MSL后，客户机才进入连接关闭状态。</p>
-<h3 id="TCP可靠连接"><a href="#TCP可靠连接" class="headerlink" title="TCP可靠连接"></a>TCP可靠连接</h3><p>我们知道，TCP和UDP的不同点之一就是TCP是可靠连接而UDP是不可靠连接。下面就介绍一下TCP保证可靠连接的措施。<br>TCP确认机制是建立在报文段序号之上的，当接收方收到了发送方发来的0-2字节和6-8字节，而一直未收到3-5的字节，此时接收方向发送方返回的报文段中确认号设置为3，表示期待序号为3的报文段。重传有超时和冗余ACK两种实现机制，超时重传很容易理解，冗余ACK从字面上理解就是发送冗余的ACK。举个例子，A向B发送了序号为1、2、3、4、5、6的六个报文段，但B只收到了1、2、4、5、6号的报文段，此时B期望收到的报文段是3号，而4-6号报文段却先于3号送达，所以B向A发送3个ack=3的冗余ACK。根据TCP规定，当冗余ACK达到3个时，就视为那个报文段已经丢失，发送方A将重新发送3号报文。因为冗余ACK比起超时重传用时更短，因此又被称为快速重传。</p>
-<h3 id="TCP流量控制"><a href="#TCP流量控制" class="headerlink" title="TCP流量控制"></a>TCP流量控制</h3><p>什么是流量控制？为什么需要流量控制？我们知道，发送方发送分组和接收方接收分组的速率并不完全一致，很可能存在发送方发送分组过快导致丢包的现象。这时候就需要一种机制来实现制约发送方发送速率的情况，TCP流量控制就是解决这个问题的方法。<br>当发送方向接收方发送数据时，接收方会向发送方返回一个接收窗口值，这个接收窗口配合确认号ack可以控制发送方发送速率。以下是窗口机制实现流量控制实例。</p>
-<p><img src="https://img-blog.csdnimg.cn/2020052618230555.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="可变窗口实现流量控制实例"></p>
-<p>上图中主机A向主机B发送数据刚开始建立连接时，窗口大小是400，后来随着发送方发送数据的增加，窗口也在动态调整大小。值得一提的是，TCP窗口单位是字节不是报文段。</p>
-<h3 id="TCP拥塞控制"><a href="#TCP拥塞控制" class="headerlink" title="TCP拥塞控制"></a>TCP拥塞控制</h3><p>拥塞控制和流量控制不同，拥塞控制是指TCP通过控制数据传输速率防止因数据过多造成网络阻塞。TCP规定发送方不仅要维护一个拥塞窗口，这个拥塞窗口的大小是发送方根据网络拥塞情况进行判断从而确定的。所以发送方发送速率不仅取决于接收窗口的大小，也取决于拥塞窗口的大小，发送上限取这两个窗口的较小值。<br>TCP维护拥塞窗口的算法主要包括四个：慢开始、拥塞避免、快重传和快恢复。</p>
-<ul>
-<li><p>慢开始。慢开始的“慢”不是指拥塞窗口cwnd的发送速率慢，而是TCP在初始设置的拥塞窗口较小，慢慢增大进行网络拥塞试探。算法最初设置窗口大小cwnd=1，每次接收到一个确认报文段后，都会将窗口值加一。于是一次往返延迟时间（RTT）以后，接收方对那个报文进行确认，拥塞窗口cwnd=2。再经过一次RTT以后，接收方对两个报文进行确认，cwnd=4。以此类推，我们可以发现，拥塞窗口大小是呈指数增长的，这印证了前面说的慢开始的“慢”不是发送速率慢。当拥塞窗口超过了一个阈值ssthresh之后，开始使用拥塞避免算法。</p>
-</li>
-<li><p>拥塞避免。拥塞控制算法的思想是当慢开始使拥塞窗口大小达到阈值ssthresh时，每次经过一个RTT时，窗口大小增加1，而不是像慢开始一样，每次都是成倍增长。当出现一次拥塞时，将阈值ssthresh设置成为当前拥塞窗口cwnd的大小的一半（但阈值不能小于2）。然后拥塞窗口cwnd重新设置为1，重新进行慢开始算法。</p>
-</li>
-</ul>
-<p><img src="https://img-blog.csdnimg.cn/20200526230338111.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="TCP拥塞窗口cwnd在拥塞控制时的变化情况"></p>
-<p>从上图可以看出当窗口cwnd达到24时，出现网络拥塞，阈值ssthresh被降为此时cwnd的一半即为24，并重新进入慢开始阶段。</p>
-<ul>
-<li><p>快重传。前面的TCP可靠传输中我们提到了冗余ACK可以保证TCP的可靠性，在这里的快重传中我们同样使用冗余ACK来完成丢包检测。一旦接收方收到了失序的报文，立马发送一个ACK给发送方。当发送方收到三个同样的ACK报文时，就可以认为发生了丢包，需要进行重传。</p>
-</li>
-<li><p>快恢复。快恢复的思想是一旦发送方接受到三个重复的ACK报文时，将阈值ssthresh设置为当前拥塞窗口cwnd的一半，然后跳过慢开始的步骤，直接将拥塞窗口的值设置为ssthresh，使拥塞窗口大小线性增加。</p>
-</li>
-</ul>
-<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>2020王道计算机网络<br>计算机网络（第7版）-谢希仁<br><a href="https://www.cnblogs.com/kubidemanong/p/9987810.html" target="_blank" rel="noopener">通俗易懂讲解TCP流量控制机制，了解一下</a></p>
-]]></content>
-      <categories>
-        <category>计算机网络</category>
-      </categories>
-      <tags>
-        <tag>计算机网络</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>计算机网络-网络层（更新中）</title>
-    <url>/2020/06/09/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E7%BD%91%E7%BB%9C%E5%B1%82/</url>
-    <content><![CDATA[<p>网络层位于TCP/IP结构中的第三层，也是计算机网络中的重点和难点之一。</p>
-<a id="more"></a>
-
-<h2 id="网络层功能"><a href="#网络层功能" class="headerlink" title="网络层功能"></a>网络层功能</h2><ul>
-<li><p>异构网络互联。异构网络互联是指将多个计算机网络通过中继系统连接起来，这些网络在物理上是异构的。物理层和数据链路层的设备只是进行网络的扩大，而不是网络互联。</p>
-</li>
-<li><p>路由与转发。路由与转发实际上是两个部分：路由选择、分组转发。路由选择是根据特定路由选择算法从相邻路由器获得网络拓扑变化从而动态更新路由。路由转发是选择合适的端口将分组转发出去。</p>
-</li>
-<li><p>拥塞控制。随着网络负载的增大，如果吞吐量明显小于正常的吞吐量，那么网络可能就进入了拥塞状态。与流量控制不同的是，拥塞控制是一个全局性问题，涉及到网络中的所有主机、路由器等设备，而流量控制只需要控制发送端和接收端的通信量，保证接收端来得及接收发送端发来的数据。拥塞控制的方法主要有两种：开环控制和闭环控制。开环控制是一种静态方法，在系统启动之前决定何时接收新流量、丢弃分组，丢弃哪些分组等问题。而闭环控制是一种静态方法，无需提前考虑拥塞因素，一旦发现网络发生拥塞，将拥塞信息发送到合适的地方，动态调整网络系统。</p>
-</li>
-</ul>
-<h2 id="路由算法"><a href="#路由算法" class="headerlink" title="路由算法"></a>路由算法</h2><h2 id="IPv4"><a href="#IPv4" class="headerlink" title="IPv4"></a>IPv4</h2><h2 id="IPv6"><a href="#IPv6" class="headerlink" title="IPv6"></a>IPv6</h2><h2 id="路由协议"><a href="#路由协议" class="headerlink" title="路由协议"></a>路由协议</h2><h2 id="IP组播"><a href="#IP组播" class="headerlink" title="IP组播"></a>IP组播</h2><h2 id="移动IP"><a href="#移动IP" class="headerlink" title="移动IP"></a>移动IP</h2><h2 id="网络层设备"><a href="#网络层设备" class="headerlink" title="网络层设备"></a>网络层设备</h2>]]></content>
-      <categories>
-        <category>计算机网络</category>
-      </categories>
-      <tags>
-        <tag>计算机网络</tag>
       </tags>
   </entry>
   <entry>
@@ -1192,6 +1164,116 @@
       <tags>
         <tag>Java</tag>
         <tag>Java容器</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>计算机网络-传输层</title>
+    <url>/2020/05/21/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E4%BC%A0%E8%BE%93%E5%B1%82/</url>
+    <content><![CDATA[<p>计算机网络的传输层是整个计算机网络体系中的关键层次，向上层的应用层提供服务，它是面向通信部分的最高层，也是用户功能中的最低层。</p>
+<a id="more"></a>
+
+<h2 id="传输层的功能"><a href="#传输层的功能" class="headerlink" title="传输层的功能"></a>传输层的功能</h2><ul>
+<li><p>提供应用进程间的通信。我们的计算机上运行着多个应用程序，而每个程序却能够准确与对应服务器进行通信，你知道这是为什么吗？我们需要引出一个概念：端口。<br>什么是端口？当我们上网时，可能有一部分网站在输入网址后跟上<code>:(数字)</code>，这里网址后的数字就是我们的端口号。常见的端口号有web服务器的80端口，ftp服务器的21和20端口，SMTP的25端口等。这些都是服务器端的端口，当我们的客户机和服务器进行连接时，会分配一个端口号，这就是识别进程的唯一标识。传输层通过端口提供端到端的逻辑通信，好像沿着水平方向传输数据，但事实上传输层之间没有水平方向上直接的物理连接。</p>
+</li>
+<li><p>复用和分用。复用是指不同应用进程可使用同一个传输层协议传输数据，分用则是指接收方的传输层在剥去报文首部以后可以将数据发送到对应的进程。</p>
+</li>
+<li><p>差错检测。</p>
+</li>
+<li><p>提供TCP和UDP两种协议。当采用TCP协议时，尽管下面的网络是不可靠的，它却能提供逻辑上的可靠信道。而当采用UDP时，逻辑信道仍是不可靠的，只是尽力保证交付数据。</p>
+</li>
+</ul>
+<h2 id="面向连接服务和无连接服务"><a href="#面向连接服务和无连接服务" class="headerlink" title="面向连接服务和无连接服务"></a>面向连接服务和无连接服务</h2><p>面向连接服务是指当通信双方在通信前首先建立连接，通信过程中连接一直保持，通信完毕后会释放连接。TCP就是面向连接的传输协议，向上提供可靠的逻辑信道。<br>无连接服务是指通信双方在通信时无需建立连接，发送方直接将信息发送到网络中，只是尽力交付信息。UDP是无连接的传输协议，向上提供的则是不可靠的逻辑信道。</p>
+<h2 id="UDP协议"><a href="#UDP协议" class="headerlink" title="UDP协议"></a>UDP协议</h2><h3 id="UDP协议的特点"><a href="#UDP协议的特点" class="headerlink" title="UDP协议的特点"></a>UDP协议的特点</h3><ul>
+<li><p>无需建立连接。与TCP不同的是，UDP不需要提前建立连接，这意味着UDP协议比TCP协议更快，因此对于一些对速度要求较高的应用（如DNS，网络音视频通话等）常常选用UDP协议。</p>
+</li>
+<li><p>传输不可靠。省去了建立连接的过程，UDP直接将数据发送到网络，无法保证传输的可靠性。</p>
+</li>
+<li><p>UDP是面向报文的。应用程序交付的报文，UDP既不合并，也不拆分，直接添加首部以后交给网络层添加首部。</p>
+</li>
+<li><p>分组首部开销小。UDP首部只有8B，而TCP有20B的首部开销。</p>
+</li>
+<li><p>应用层可以控制发送时间和发送的数据。UDP没有拥塞控制，所以网络中的拥塞不影响主机发送效率。</p>
+</li>
+</ul>
+<h3 id="UDP数据报"><a href="#UDP数据报" class="headerlink" title="UDP数据报"></a>UDP数据报</h3><p>UDP数据报主要由用户数据和UDP首部组成，其中UDP首部由源端口、目的端口、UDP长度和UDP校验和组成。其中UDP长度的最小值为8，表示只有UDP首部而没有数据部分。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200522165926646.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="UDP数据包格式"></p>
+<h2 id="TCP协议"><a href="#TCP协议" class="headerlink" title="TCP协议"></a>TCP协议</h2><h3 id="TCP协议的特点"><a href="#TCP协议的特点" class="headerlink" title="TCP协议的特点"></a>TCP协议的特点</h3><ul>
+<li><p>TCP是面向连接的传输层协议。</p>
+</li>
+<li><p>TCP提供可靠交付服务，能保证数据有序、无差错、不重复且无丢失。</p>
+</li>
+<li><p>允许全双工通信，通信双方能够同时发送和接受数据。因此通信双方都有发送缓存和接收缓存。</p>
+</li>
+<li><p>TCP协议面向字节流。TCP协议将应用层传递下来的数据视为一串无结构的字节流。</p>
+</li>
+</ul>
+<h3 id="TCP报文段"><a href="#TCP报文段" class="headerlink" title="TCP报文段"></a>TCP报文段</h3><p><img src="https://img-blog.csdnimg.cn/2020052318234629.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="TCP报文段格式"></p>
+<ul>
+<li><p>源端口和目的端口各占2B，前面UDP数据报也有。</p>
+</li>
+<li><p>序号字段占4B，是该报文段第一个字节的序号，比如当前报文段的序号是101，报文段的长度是100B，说明当前报文段的最后一个字节的序号是200，则下一个报文段序号是201。</p>
+</li>
+<li><p>确认号字段占4B，是指期望收到的下一个报文段的第一个字节的序号。例如B收到A发送的报文段，这个报文段的序号是101，报文段长度是100B，B期望收到的下一个报文段是第一个字节序号是201，所以确认号就是201。</p>
+</li>
+<li><p>数据偏移占4bit，用于表示首部长度。数据偏移的单位是32位（4B），因此当数据偏移的值是15时，达到首部长度最大值60B。</p>
+</li>
+<li><p>保留字段占6bit，用作保留今后使用，全为0，可忽略不计。</p>
+</li>
+<li><p>紧急位URG占1bit，当URG=1时表示有紧急数据传送，相当于提高了优先级。</p>
+</li>
+<li><p>确认位ACK占1bit，当ACK=1时表示确认号字段有效，若该值为0时表示确认号字段无效。TCP规定在连接建立以后所有报文段的ACK都要置为1。</p>
+</li>
+<li><p>推送位PSH占1bit，当PSH=1时表示尽快交付应用程序，而不需要等到缓存满了以后再向上交付。</p>
+</li>
+<li><p>复位位RST占1bit，当RST=1时表示TCP连接过程中出现严重错误（如主机崩溃等）需要释放当前连接，然后重新建立连接。</p>
+</li>
+<li><p>同步位SYN占1bit，当SYN=1时表示这是连接请求或连接接收报文。当SYN=1且ACK=0时，则表明是连接请求报文。若对方同意建立连接，则在响应报文中设置SYN=1和ACK=1。</p>
+</li>
+<li><p>终止位FIN占1bit，当FIN=1时表示传输完毕，准备释放连接。</p>
+</li>
+<li><p>窗口字段占2B，接收方的缓存空间有限，该字段用于指定发送方允许发送的数据的长度，单位为字节。举个例子，当确认号为701，窗口字段为1000，表示从701号算起，接收方还有1000B的缓存接收空间。</p>
+</li>
+<li><p>校验和占2B，和UDP一样用于数据校验。</p>
+</li>
+<li><p>紧急指针字段占2B，指出该报文段有多少字节的紧急数据，其中紧急数据在报文段数据的最前面。</p>
+</li>
+<li><p>选项字段长度可变，TCP最初只规定了一种选项，即最大报文段长度（MSS），MSS是TCP报文段中数据字段的最大长度。</p>
+</li>
+<li><p>填充字段是为了使首部长度是4B的整数倍而存在。</p>
+</li>
+</ul>
+<h3 id="三次握手"><a href="#三次握手" class="headerlink" title="三次握手"></a>三次握手</h3><p>三次握手在面试中属于极其高频的面试点，几乎是问到计算机网络的知识就会问三次握手。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200524154116793.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="三次握手"></p>
+<p>三次握手的第一步是客户端向服务器发起连接请求，这个请求中不携带数据。第一次握手的首部SYN设置为1，客户端还会随机分配一个起始序号seq=x。<br>第二步是当服务器收到客户端发送的报文段后，若同意建立连接，就向客户端返回一个确认报文段，并为该连接分配缓存和变量。确认报文段将SYN和ACK设置为1，设置确认号ack=x+1，服务器随机产生一个起始序号seq=y。这个确认报文段同样也不携带数据。<br>第三步是客户端收到了来自服务器的确认建立连接报文段后，向服务器发送确认信息，并为连接分配缓存和变量。此时的报文段ACK被设置为1，序号seq被设置为x+1，确认号ack被设置为y+1。该报文段可以携带数据，若不携带数据则不消耗序号。</p>
+<h3 id="四次挥手"><a href="#四次挥手" class="headerlink" title="四次挥手"></a>四次挥手</h3><p>与三次握手建立连接相对的，四次挥手是TCP断开连接的方式。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200525145942799.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="四次挥手"></p>
+<p>四次挥手第一步是客户机主动关闭连接，向服务器发送一个释放连接报文段，并停止发送数据。这个报文段的FIN终止位被置为1，并设置序号seq=u。此时客户机关闭了数据通路，但是由于TCP是全双工的，所以服务器仍然可以发送数据。<br>第二步是服务器接收到客户机发送的连接释放请求，向客户端发送确认报文段。将ACK设置为1，确认号ack=u+1，序号seq=v。此时客户机到服务器的连接释放了，但是服务器到客户端的数据通路仍然是连接的。<br>第三步是服务器已经没有需要传输的数据，则向客户机发送FIN=1的报文段释放连接。<br>第四步是客户机收到服务器的释放连接报文段后，向服务器发送确认报文段，报文段的ACK被置为1。此时还需要再等2MSL后，客户机才进入连接关闭状态。</p>
+<h3 id="TCP可靠连接"><a href="#TCP可靠连接" class="headerlink" title="TCP可靠连接"></a>TCP可靠连接</h3><p>我们知道，TCP和UDP的不同点之一就是TCP是可靠连接而UDP是不可靠连接。下面就介绍一下TCP保证可靠连接的措施。<br>TCP确认机制是建立在报文段序号之上的，当接收方收到了发送方发来的0-2字节和6-8字节，而一直未收到3-5的字节，此时接收方向发送方返回的报文段中确认号设置为3，表示期待序号为3的报文段。重传有超时和冗余ACK两种实现机制，超时重传很容易理解，冗余ACK从字面上理解就是发送冗余的ACK。举个例子，A向B发送了序号为1、2、3、4、5、6的六个报文段，但B只收到了1、2、4、5、6号的报文段，此时B期望收到的报文段是3号，而4-6号报文段却先于3号送达，所以B向A发送3个ack=3的冗余ACK。根据TCP规定，当冗余ACK达到3个时，就视为那个报文段已经丢失，发送方A将重新发送3号报文。因为冗余ACK比起超时重传用时更短，因此又被称为快速重传。</p>
+<h3 id="TCP流量控制"><a href="#TCP流量控制" class="headerlink" title="TCP流量控制"></a>TCP流量控制</h3><p>什么是流量控制？为什么需要流量控制？我们知道，发送方发送分组和接收方接收分组的速率并不完全一致，很可能存在发送方发送分组过快导致丢包的现象。这时候就需要一种机制来实现制约发送方发送速率的情况，TCP流量控制就是解决这个问题的方法。<br>当发送方向接收方发送数据时，接收方会向发送方返回一个接收窗口值，这个接收窗口配合确认号ack可以控制发送方发送速率。以下是窗口机制实现流量控制实例。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020052618230555.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="可变窗口实现流量控制实例"></p>
+<p>上图中主机A向主机B发送数据刚开始建立连接时，窗口大小是400，后来随着发送方发送数据的增加，窗口也在动态调整大小。值得一提的是，TCP窗口单位是字节不是报文段。</p>
+<h3 id="TCP拥塞控制"><a href="#TCP拥塞控制" class="headerlink" title="TCP拥塞控制"></a>TCP拥塞控制</h3><p>拥塞控制和流量控制不同，拥塞控制是指TCP通过控制数据传输速率防止因数据过多造成网络阻塞。TCP规定发送方不仅要维护一个拥塞窗口，这个拥塞窗口的大小是发送方根据网络拥塞情况进行判断从而确定的。所以发送方发送速率不仅取决于接收窗口的大小，也取决于拥塞窗口的大小，发送上限取这两个窗口的较小值。<br>TCP维护拥塞窗口的算法主要包括四个：慢开始、拥塞避免、快重传和快恢复。</p>
+<ul>
+<li><p>慢开始。慢开始的“慢”不是指拥塞窗口cwnd的发送速率慢，而是TCP在初始设置的拥塞窗口较小，慢慢增大进行网络拥塞试探。算法最初设置窗口大小cwnd=1，每次接收到一个确认报文段后，都会将窗口值加一。于是一次往返延迟时间（RTT）以后，接收方对那个报文进行确认，拥塞窗口cwnd=2。再经过一次RTT以后，接收方对两个报文进行确认，cwnd=4。以此类推，我们可以发现，拥塞窗口大小是呈指数增长的，这印证了前面说的慢开始的“慢”不是发送速率慢。当拥塞窗口超过了一个阈值ssthresh之后，开始使用拥塞避免算法。</p>
+</li>
+<li><p>拥塞避免。拥塞控制算法的思想是当慢开始使拥塞窗口大小达到阈值ssthresh时，每次经过一个RTT时，窗口大小增加1，而不是像慢开始一样，每次都是成倍增长。当出现一次拥塞时，将阈值ssthresh设置成为当前拥塞窗口cwnd的大小的一半（但阈值不能小于2）。然后拥塞窗口cwnd重新设置为1，重新进行慢开始算法。</p>
+</li>
+</ul>
+<p><img src="https://img-blog.csdnimg.cn/20200526230338111.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="TCP拥塞窗口cwnd在拥塞控制时的变化情况"></p>
+<p>从上图可以看出当窗口cwnd达到24时，出现网络拥塞，阈值ssthresh被降为此时cwnd的一半即为24，并重新进入慢开始阶段。</p>
+<ul>
+<li><p>快重传。前面的TCP可靠传输中我们提到了冗余ACK可以保证TCP的可靠性，在这里的快重传中我们同样使用冗余ACK来完成丢包检测。一旦接收方收到了失序的报文，立马发送一个ACK给发送方。当发送方收到三个同样的ACK报文时，就可以认为发生了丢包，需要进行重传。</p>
+</li>
+<li><p>快恢复。快恢复的思想是一旦发送方接受到三个重复的ACK报文时，将阈值ssthresh设置为当前拥塞窗口cwnd的一半，然后跳过慢开始的步骤，直接将拥塞窗口的值设置为ssthresh，使拥塞窗口大小线性增加。</p>
+</li>
+</ul>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>2020王道计算机网络<br>计算机网络（第7版）-谢希仁<br><a href="https://www.cnblogs.com/kubidemanong/p/9987810.html" target="_blank" rel="noopener">通俗易懂讲解TCP流量控制机制，了解一下</a></p>
+]]></content>
+      <categories>
+        <category>计算机网络</category>
+      </categories>
+      <tags>
+        <tag>计算机网络</tag>
       </tags>
   </entry>
 </search>
