@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://sky-ng.github.io/"/>
-  <updated>2020-07-10T14:58:29.153Z</updated>
+  <updated>2020-07-14T10:35:04.675Z</updated>
   <id>https://sky-ng.github.io/</id>
   
   <author>
@@ -17,11 +17,32 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
+    <title>简单理解线段树</title>
+    <link href="https://sky-ng.github.io/2020/07/12/%E7%AE%80%E5%8D%95%E7%90%86%E8%A7%A3%E7%BA%BF%E6%AE%B5%E6%A0%91/"/>
+    <id>https://sky-ng.github.io/2020/07/12/%E7%AE%80%E5%8D%95%E7%90%86%E8%A7%A3%E7%BA%BF%E6%AE%B5%E6%A0%91/</id>
+    <published>2020-07-12T07:41:59.000Z</published>
+    <updated>2020-07-14T10:35:04.675Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;线段树是二叉树的一种，常常被用于求区间和与区间最大值等操作。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="数据结构" scheme="https://sky-ng.github.io/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
+    
+    
+      <category term="数据结构" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
+    
+  </entry>
+  
+  <entry>
     <title>关于HashMap，你想知道的可能都有</title>
     <link href="https://sky-ng.github.io/2020/07/08/%E5%85%B3%E4%BA%8EHashMap%EF%BC%8C%E4%BD%A0%E6%83%B3%E7%9F%A5%E9%81%93%E7%9A%84%E5%8F%AF%E8%83%BD%E9%83%BD%E6%9C%89/"/>
     <id>https://sky-ng.github.io/2020/07/08/%E5%85%B3%E4%BA%8EHashMap%EF%BC%8C%E4%BD%A0%E6%83%B3%E7%9F%A5%E9%81%93%E7%9A%84%E5%8F%AF%E8%83%BD%E9%83%BD%E6%9C%89/</id>
     <published>2020-07-08T07:02:21.000Z</published>
-    <updated>2020-07-10T14:58:29.153Z</updated>
+    <updated>2020-07-10T15:05:47.384Z</updated>
     
     <summary type="html">
     
@@ -44,7 +65,7 @@
     <link href="https://sky-ng.github.io/2020/07/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E7%BD%91%E7%BB%9C%E5%B1%82/"/>
     <id>https://sky-ng.github.io/2020/07/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E7%BD%91%E7%BB%9C%E5%B1%82/</id>
     <published>2020-07-07T13:52:53.000Z</published>
-    <updated>2020-07-08T07:00:11.990Z</updated>
+    <updated>2020-07-12T07:23:18.184Z</updated>
     
     <summary type="html">
     
