@@ -1327,7 +1327,7 @@
 <ul>
 <li>通过类的全限定名获取类的二进制字节流。</li>
 <li>将二进制字节流转化成运行时数据结构。</li>
-<li>在内存中生成这个类的java.lang.Class对象，作为方法区数据结构的访问入口。</li>
+<li>在内存中生成这个类的<code>java.lang.Class</code>对象，作为方法区数据结构的访问入口。</li>
 </ul>
 <p>对于第一个任务，Java虚拟机规范并没有明确要求从字节码文件中获取二进制字节流，因此一般可以从以下途径获取：</p>
 <ul>
@@ -1338,7 +1338,7 @@
 <li>从加密文件中获取</li>
 <li>……</li>
 </ul>
-<p>非数组类型的类加载阶段是程序员可控制性最强的阶段，程序员可以通过自定义类加载器来控制字节流的获取方式。<br>数组类型本身并不是通过类加载器进行创建，而是通过JVM在内存中直接动态创建。但数组类的元素类型（去掉所有数组维度的类型）最终还是要靠类加载器加载，数组类的创建过程遵循下列规则：</p>
+<p>非数组类型的加载阶段是程序员可控制性最强的阶段，程序员可以通过自定义类加载器来控制字节流的获取方式。<br>数组类型本身并不是通过类加载器进行创建，而是通过JVM在内存中直接动态创建。但数组类的元素类型（去掉所有数组维度的类型）最终还是要靠类加载器加载，数组类的创建过程遵循下列规则：</p>
 <ul>
 <li>如果数组的组件类型（去掉一个维度的类型，区别于元素类型）是引用类型，就递归加载这个组件类型，数组会被标识在加载该组件类型的类加载器的类名称空间上。</li>
 <li>如果数组的组件类型不是引用类型，JVM会将数组标记为与引导类加载器关联。</li>
@@ -1375,10 +1375,10 @@
 <li>符号引用中的类、字段和方法的可访问性是否可以被当前类访问。</li>
 <li>……</li>
 </ul>
-<h3 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h3><p>这个阶段是为静态变量设置初始值并分配内存的阶段，一般来说是应该在方法区上进行操作的，在JDK7之前，HotSpot使用永久代来实现方法区，但JDK8开始，永久代被移除，静态变量就和class对象一起被存放在了堆空间中。<br>准备阶段的初始值并不是代码中赋予的值，而是“赋零值”的过程，一起看一下下面的代码：</p>
+<h3 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h3><p>这个阶段是为静态变量分配内存并设置初始值的阶段，一般来说是应该在方法区上进行操作的，在JDK7之前，HotSpot使用永久代来实现方法区，但JDK8开始，永久代被移除，静态变量就和class对象一起被存放在了堆空间中。因此，静态变量是在逻辑上的方法区。<br>准备阶段的初始值并不是代码中赋予的值，而是“赋零值”的过程，一起看一下下面的代码：</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> value = <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
 
-<p>尽管代码里面写的是给value赋1，但准备阶段应该是将0赋给value，真正将1赋给value的阶段应该是后面的初始化的阶段。下面列出了各种数据类型的零值表表格。</p>
+<p>尽管代码里面写的是给value赋1，但准备阶段应该是将0赋给value，真正将1赋给value的阶段应该是后面的初始化的阶段。下面列出了各种数据类型的零值。</p>
 <table>
 <thead>
 <tr>
@@ -1434,13 +1434,13 @@
 <li><p><strong>直接引用</strong>：直接引用是可以直接指向目标的指针、相对偏移量或是一个能间接定位到目标的句柄。</p>
 </li>
 </ul>
-<h3 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h3><p>初始化是类加载过程的最后一个阶段，前面的准备阶段我们说这是一个给静态变量赋零值的阶段，而到了初始化阶段就是真正给Java代码中的静态变量赋初始值的时候了。在初始化阶段，javac编译器会生成一个<clinit>()方法，用来给静态变量和静态语句块赋值。<clinit>()必须保证在多线程场景下被正确加锁同步，所以多个线程去执行<clinit>()方法时可能会遇到耗时操作导致阻塞。下面的代码进行了这种情况的演示。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestDeadLoopClass</span> </span>&#123;</span><br><span class="line">	<span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">DeadLoopClass</span> </span>&#123;</span><br><span class="line">		<span class="keyword">static</span> &#123;</span><br><span class="line">			<span class="comment">//这里不加if语句会无法编译</span></span><br><span class="line">			<span class="keyword">if</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">				System.out.println(Thread.currentThread() + <span class="string">"init DeadLoopClass"</span>);</span><br><span class="line">				<span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		Runnable script = <span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">			<span class="meta">@Override</span></span><br><span class="line">			<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">				System.out.println(Thread.currentThread() + <span class="string">" start"</span>);</span><br><span class="line">				DeadLoopClass dlc = <span class="keyword">new</span> DeadLoopClass();</span><br><span class="line">				System.out.println(Thread.currentThread() + <span class="string">" run over"</span>);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;;</span><br><span class="line">		</span><br><span class="line">		Thread thread1 = <span class="keyword">new</span> Thread(script);</span><br><span class="line">		Thread thread2 = <span class="keyword">new</span> Thread(script);</span><br><span class="line">		thread1.start();</span><br><span class="line">		thread2.start();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h3><p>初始化是类加载过程的最后一个阶段，前面的准备阶段我们说这是一个给静态变量赋零值的阶段，而到了初始化阶段就是真正给Java代码中的静态变量赋初始值的时候了。在初始化阶段，javac编译器会生成一个&lt;clinit&gt;()方法，用来给静态变量和静态语句块赋值。&lt;clinit&gt;()必须保证在多线程场景下被正确加锁同步，所以多个线程去执行&lt;clinit&gt;()方法时可能会遇到耗时操作导致阻塞。下面的代码进行了这种情况的演示。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestDeadLoopClass</span> </span>&#123;</span><br><span class="line">	<span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">DeadLoopClass</span> </span>&#123;</span><br><span class="line">		<span class="keyword">static</span> &#123;</span><br><span class="line">			<span class="comment">//这里不加if语句会无法编译</span></span><br><span class="line">			<span class="keyword">if</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">				System.out.println(Thread.currentThread() + <span class="string">" init DeadLoopClass"</span>);</span><br><span class="line">				<span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		Runnable script = <span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">			<span class="meta">@Override</span></span><br><span class="line">			<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">				System.out.println(Thread.currentThread() + <span class="string">" start"</span>);</span><br><span class="line">				DeadLoopClass dlc = <span class="keyword">new</span> DeadLoopClass();</span><br><span class="line">				System.out.println(Thread.currentThread() + <span class="string">" run over"</span>);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;;</span><br><span class="line">		</span><br><span class="line">		Thread thread1 = <span class="keyword">new</span> Thread(script);</span><br><span class="line">		Thread thread2 = <span class="keyword">new</span> Thread(script);</span><br><span class="line">		thread1.start();</span><br><span class="line">		thread2.start();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 
 <p>运行结果如下，一个线程卡死了，另一个线程一直阻塞：</p>
 <blockquote>
-<p>Thread[Thread-0,5,main] start<br>Thread[Thread-1,5,main] start<br>Thread[Thread-0,5,main]init DeadLoopClass</p>
+<p>Thread[Thread-0,5,main] start<br>Thread[Thread-1,5,main] start<br>Thread[Thread-0,5,main] init DeadLoopClass</p>
 </blockquote>
 <p>接下来看一下初始化的几种情况：</p>
 <p>1.遇到new、getstatic、putstatic或invokestatic时触发初始化：</p>
