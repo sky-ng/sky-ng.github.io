@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://sky-ng.github.io/"/>
-  <updated>2020-07-14T10:42:10.972Z</updated>
+  <updated>2020-07-20T10:45:24.288Z</updated>
   <id>https://sky-ng.github.io/</id>
   
   <author>
@@ -15,6 +15,29 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>类加载过程</title>
+    <link href="https://sky-ng.github.io/2020/07/16/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B/"/>
+    <id>https://sky-ng.github.io/2020/07/16/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B/</id>
+    <published>2020-07-16T03:19:07.000Z</published>
+    <updated>2020-07-20T10:45:24.288Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;之前我们了解过class文件的存储格式，本文将介绍虚拟机如何加载class文件。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+      <category term="JVM" scheme="https://sky-ng.github.io/tags/JVM/"/>
+    
+  </entry>
   
   <entry>
     <title>简单理解线段树</title>
@@ -436,31 +459,6 @@
       <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
     
       <category term="JVM" scheme="https://sky-ng.github.io/tags/JVM/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>快速排序Java代码简洁实现</title>
-    <link href="https://sky-ng.github.io/2020/04/29/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8FJava%E4%BB%A3%E7%A0%81%E7%AE%80%E6%B4%81%E5%AE%9E%E7%8E%B0/"/>
-    <id>https://sky-ng.github.io/2020/04/29/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8FJava%E4%BB%A3%E7%A0%81%E7%AE%80%E6%B4%81%E5%AE%9E%E7%8E%B0/</id>
-    <published>2020-04-29T08:29:11.000Z</published>
-    <updated>2020-05-21T15:01:40.956Z</updated>
-    
-    <summary type="html">
-    
-      &lt;p&gt;学习过数据结构的同学们都知道，快速排序算法是一种时间复杂度为O(nlogn)的排序算法，在各种排序算法中算是较为高效的方法，企业面试中也经常有手撕快排的环节。本文将阐述算法的基本思想，并用Java代码的形式实现快速排序代码。&lt;/p&gt;
-    
-    </summary>
-    
-    
-      <category term="算法" scheme="https://sky-ng.github.io/categories/%E7%AE%97%E6%B3%95/"/>
-    
-    
-      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
-    
-      <category term="算法" scheme="https://sky-ng.github.io/tags/%E7%AE%97%E6%B3%95/"/>
-    
-      <category term="排序" scheme="https://sky-ng.github.io/tags/%E6%8E%92%E5%BA%8F/"/>
     
   </entry>
   

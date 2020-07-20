@@ -1,211 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>后浪-下一代垃圾收集器</title>
-    <url>/2020/06/14/%E5%90%8E%E6%B5%AA-%E4%B8%8B%E4%B8%80%E4%BB%A3%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/</url>
-    <content><![CDATA[<p>随着Java虚拟机技术的不断发展，垃圾收集器也进行了大量迭代。前面介绍了7种经典的垃圾收集器，各有优缺点。Serial GC虽然是最古老的垃圾收集器，但由于设计简单，未必就是过时的收集器。CMS收集器由于自身有些算法缺陷，在JDK9中被标记为废弃，在最新版的JDK14中，CMS已经被彻底移除，进入了历史垃圾堆。我们可以发现G1收集器在JDK的各个版本中仍然在不断改进，并且成为了JDK9到JDK13的默认垃圾收集器。今天，我们要介绍的三种垃圾收集器算是垃圾收集器的前沿成果。</p>
-<a id="more"></a>
-
-<h2 id="Epsilon收集器"><a href="#Epsilon收集器" class="headerlink" title="Epsilon收集器"></a>Epsilon收集器</h2><p>我们看一下JEP 318中对于Epsilon收集器的介绍：</p>
-<blockquote>
-<p>Develop a GC that handles memory allocation but does not implement any actual memory reclamation mechanism. Once the available Java heap is exhausted, the JVM will shut down.</p>
-</blockquote>
-<p><img src="https://img-blog.csdnimg.cn/2020061419132816.jpg#pic_center" alt=""></p>
-<p>好吧，翻译成中文就是说这款垃圾收集器可以分配内存但是不实现垃圾回收机制。一旦可用的Java堆内存耗尽，JVM就会关闭。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200614191722120.jpg#pic_center" alt=""></p>
-<p>纳尼？垃圾收集器没有垃圾收集功能叫什么垃圾收集器？实际上Epsilon收集器提供有限分配限制和尽可能低的延迟开销的消极GC实现，尽管会以占用一定内存和牺牲一定内存吞吐量为代价。如果只是需要运行几分钟甚至几秒的小应用，那么JVM负责给对象分配内存，程序在堆内存消耗殆尽之前退出，这种场景下Epsilon收集器是很不错的选择。</p>
-<h2 id="Shenandoah收集器"><a href="#Shenandoah收集器" class="headerlink" title="Shenandoah收集器"></a>Shenandoah收集器</h2><p>Shenandoah收集器算是最特别的一款垃圾收集器，它是由Red Hat研发的低延迟垃圾收集器，之所以说它特别，是因为研发团队将它引入OpenJDK 12的时候，Oracle官方却不愿意将它加入HotSpot中，导致了开源版比商用版功能更多的尴尬。</p>
-<p>Red Hat团队设计这款收集器的最初目的是为了将垃圾收集的延迟降低到10毫秒以内，不管是200MB还是200GB的垃圾都要达到这样的目标，但Shenandoah开发团队的实际测试似乎并没有达到最初的目标，尽管停顿时间确实是大大降低了。停顿时间的降低必然会造成别的参数性能下降，在吞吐量方面，Shenandoah收集器比起G1、CMS等收集器还是有一定差距的。</p>
-<h3 id="工作过程"><a href="#工作过程" class="headerlink" title="工作过程"></a>工作过程</h3><p>Shenandoah收集器非常像是G1的改进版本，它的工作过程大致可以分为以下阶段：</p>
-<ul>
-<li><p>初始标记。标记和GC Roots直接关联的对象，这个过程需要STW（Stop the world），该过程停顿时间只与GC Roots的数量相关。</p>
-</li>
-<li><p>并发标记。与用户线程并发执行，遍历对象图，标记所有可达对象。</p>
-</li>
-<li><p>最终标记。同样需要STW，并扫描剩余STAB，统计最有回收价值的Region，并将这些Region组成回收集。</p>
-</li>
-<li><p>并发清理。清理没有存活对象的Region。</p>
-</li>
-<li><p>并发回收。将回收集中的存活对象复制到空白Region中，并且这个阶段是与用户线程并发执行的，用户线程有可能继续访问原来的内存地址，所以利用读屏障和Brooks Pointers转发指针。</p>
-</li>
-<li><p>初始引用更新。需要STW，建立线程集合点，确保并发回收阶段的存活对象已经移到其他Region中。</p>
-</li>
-<li><p>并发引用更新。按物理内存顺序，线性搜索引用类型，将旧值改成新值。</p>
-</li>
-<li><p>最终引用更新。短暂的STW，修正GC Roots的引用。</p>
-</li>
-<li><p>并发清理。将回收集中的内存全部回收。</p>
-</li>
-</ul>
-<h3 id="Brooks-Pointers"><a href="#Brooks-Pointers" class="headerlink" title="Brooks Pointers"></a>Brooks Pointers</h3><p>现在解释一下并发回收里的Brooks Pointers，我们知道，在并发回收的过程中可能有用户程序继续访问旧地址，但是访问旧地址势必会出错，因此提出了转发指针的概念（其实Brooks是个人名）。</p>
-<p><img src="https://img-blog.csdnimg.cn/2020061522011670.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="Brooks Pointers示意图1"></p>
-<p>转发指针是设置在原有对象前的一个引用字段，正常情况下指向对象自身。并发回收阶段把旧对象的转发指针指向新对象的地址。</p>
-<p><img src="https://img-blog.csdnimg.cn/202006152211433.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="Brooks Pointers示意图2"></p>
-<h3 id="Shenandoah相比G1的改进"><a href="#Shenandoah相比G1的改进" class="headerlink" title="Shenandoah相比G1的改进"></a>Shenandoah相比G1的改进</h3><p>Shenandoah收集器其实可以看做是G1的继承版本，这两款收集器的工作步骤很多都是一样的，甚至还共享了代码。但是Shenandoah收集器其实还是有很多改进的地方的，以下介绍一下改进之处：</p>
-<ul>
-<li><p>Shenandoah收集器支持并发整理而G1回收内存不能与用户线程并发执行。</p>
-</li>
-<li><p>Shenandoah收集器默认不使用分代收集。</p>
-</li>
-<li><p>Shenandoah收集器不再使用记忆集记录跨Region的引用而是改用连接矩阵。</p>
-</li>
-</ul>
-<p>简单介绍一下连接矩阵，连接矩阵可理解为一个二维表格，如果Region M指向Region N则在表格的M行N列做一个标记。</p>
-<h2 id="ZGC收集器"><a href="#ZGC收集器" class="headerlink" title="ZGC收集器"></a>ZGC收集器</h2><p>和Shenandoah一样，ZGC也希望能将延迟时间压缩到10毫秒以内。它是JDK11引入的实验性质的低延迟收集器，这可是根红苗正的Oracle亲儿子。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200615223858595.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt=""></p>
-<h3 id="内存布局"><a href="#内存布局" class="headerlink" title="内存布局"></a>内存布局</h3><p>ZGC是暂时不使用分代机制的，它的内存布局主要有小型Region、中型Region和大型Region。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200616160122298.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70" alt=""></p>
-<ul>
-<li><p>小型Region：容量为2MB，存放小于256KB的对象。</p>
-</li>
-<li><p>中型Region：容量为32MB，存放小于4MB但大于256KB的对象。</p>
-</li>
-<li><p>大型Region：容量不固定，但必须是2MB的整数倍，用于存放4MB及以上大小的对象，也就是说最小容量只有4MB，比中型Region小，但是大型Region只能存放一个对象。</p>
-</li>
-</ul>
-<h3 id="染色指针"><a href="#染色指针" class="headerlink" title="染色指针"></a>染色指针</h3><p>染色指针是ZGC与其他垃圾收集器的区别之一，它将少量对象信息直接存储在指针上。以64位Linux为例，它的高18位不能用来寻址，剩下的46位中4位是标志位，用来表示引用对象的状态，剩下42位用来寻址，最大支持4TB内存。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200616171719124.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="染色指针"></p>
-<p>上面的四位标志位中Marked0和Marked1表示引用对象的三色标记状态，Remapped表示是否被移动过，Finalizable表示是否只能通过finalize()方法访问到。染色指针指向的存活对象被移走后，对象所在的Region立马就可以被释放。</p>
-<h3 id="工作过程-1"><a href="#工作过程-1" class="headerlink" title="工作过程"></a>工作过程</h3><ul>
-<li><p>并发标记。并发标记前面已经提过很多次了，遍历对象图，需要STW，但是ZGC的标记是标记在染色指针上的。也就是染色指针的Marked0和Marked1两个标志位，用来标识对象状态。</p>
-</li>
-<li><p>并发预备重分配。ZGC将所有要收集的Region组成重分配集，ZGC会扫描所有的Region来换维护记忆集的成本。</p>
-</li>
-<li><p>并发重分配。该过程将重分配集中的存活对象复制到其他Region中，并为重分配集维护一个转发表记录旧对象到新对象的迁移。从染色指针的状态位可以知道对象是否还在重分配集中，如果在的话，会被内存屏障拦截并转发到新对象，然后更新引用使其指向新对象。</p>
-</li>
-<li><p>并发重映射。该过程所做的工作就是修正所有的Region中指向重分配集的引用，但这并不是紧迫的任务，因为大不了就是第一次使用多一次转发。一旦所有引用都被修正，原来的转发表就可以释放了。</p>
-</li>
-</ul>
-<h3 id="NUMA"><a href="#NUMA" class="headerlink" title="NUMA"></a>NUMA</h3><p>ZGC支持NUMA的内存架构，NUMA的中文是非统一内存访问，介绍它之前首先介绍一下UMA（统一内存访问）。</p>
-<p><img src="https://img-blog.csdnimg.cn/2020061615085157.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="UMA"></p>
-<p>在以前的计算机发展中，这样的总线模型保证了所有CPU对内存的访问地址还是一致的。但随着CPU核心数的增加，这样的架构显然无法适应现状。于是发展出了NUMA内存架构。在NUMA架构中，CPU和内存被划分成多个不同的节点，不同节点之间可以通过QPI（Quick Path Interconnect）进行访问。ZGC会优先在当前线程所属的CPU的本地内存中进行访问，这样可以大大加快CPU访问内存的速度。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200616151610492.jpg?x-oss-type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="NUMA"></p>
-<h2 id="写在最后的话"><a href="#写在最后的话" class="headerlink" title="写在最后的话"></a>写在最后的话</h2><p>去年我的一个学长分享了某互联网公司内部员工培训的JVM课件，已经将ZGC加入到培训内容中。可以预见的是，ZGC由于是Oracle官方推出的根红苗正的垃圾收集器，有很大概率会出现在今后甚至是今年即将到来的秋招面试大礼包中。</p>
-]]></content>
-      <categories>
-        <category>Java</category>
-      </categories>
-      <tags>
-        <tag>Java</tag>
-        <tag>JVM</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>关于HashMap，你想知道的可能都有</title>
-    <url>/2020/07/08/%E5%85%B3%E4%BA%8EHashMap%EF%BC%8C%E4%BD%A0%E6%83%B3%E7%9F%A5%E9%81%93%E7%9A%84%E5%8F%AF%E8%83%BD%E9%83%BD%E6%9C%89/</url>
-    <content><![CDATA[<p>在现在的互联网大厂面试中，HashMap几乎是必问的知识点。因此本文对HashMap进行系统性的总结，将HashMap常见的知识点都整理出来。</p>
-<a id="more"></a>
-
-<p>前面铺垫了两篇红黑树的文章，终于进入这篇HashMap了。如果有不知道什么是红黑树的同学，先去看一下我前面讲红黑树的文章。<br><a href="https://mp.weixin.qq.com/s/znClfHriql7LOUi_eRq5lA" target="_blank" rel="noopener">本科数据结构课程的漏网之鱼-红黑树（上）</a><br><a href="https://mp.weixin.qq.com/s/38M5RAFaYTIabIU3ovK0Ew" target="_blank" rel="noopener">本科数据结构课程的漏网之鱼-红黑树（下）</a></p>
-<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>相信大家之前或多或少都接触过HashMap，这是一种用来存放键值对的数据结构。它实现了Map接口，是最常用的Java容器之一。在JDK7及之前版本中，HashMap实现方式都是通过<code>数组+链表</code>，而JDK8开始，HashMap底层通过<code>数组+链表+红黑树</code>的数据结构实现。下面就将开始详细介绍这部分内容。</p>
-<h2 id="底层数据结构"><a href="#底层数据结构" class="headerlink" title="底层数据结构"></a>底层数据结构</h2><p>在JDK7及之前的版本中，HashMap都是通过数组+链表实现的，大致结构如下图。</p>
-<p><img src="https://img-blog.csdnimg.cn/2020070817345065.png#pic_center" alt="JDK7及之前的HashMap底层结构"></p>
-<p>然而这种数据结构有一定局限性，当某个链表特别长的话，搜索效率就大大降低，因此，JDK8中引入了红黑树，目的就是减少查找次数。当链表长度大于阈值（默认为8）时，就会转换成红黑树。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200708172215166.png#pic_center" alt="JDK8的HashMap底层结构"></p>
-<p>在JDK7中，插入结点都叫Entry，这结构就是散列表中常见的“拉链法”。而在JDK8中，结点变成了Node。</p>
-<h2 id="插入结点"><a href="#插入结点" class="headerlink" title="插入结点"></a>插入结点</h2><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> V <span class="title">put</span><span class="params">(K key, V value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> putVal(hash(key), key, value, <span class="keyword">false</span>, <span class="keyword">true</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">hash</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> h;</span><br><span class="line">    <span class="keyword">return</span> (key == <span class="keyword">null</span>) ? <span class="number">0</span> : (h = key.hashCode()) ^ (h &gt;&gt;&gt; <span class="number">16</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">final</span> V <span class="title">putVal</span><span class="params">(<span class="keyword">int</span> hash, K key, V value, <span class="keyword">boolean</span> onlyIfAbsent,</span></span></span><br><span class="line"><span class="function"><span class="params">               <span class="keyword">boolean</span> evict)</span> </span>&#123;</span><br><span class="line">    Node&lt;K,V&gt;[] tab; Node&lt;K,V&gt; p; <span class="keyword">int</span> n, i;</span><br><span class="line">    <span class="keyword">if</span> ((tab = table) == <span class="keyword">null</span> || (n = tab.length) == <span class="number">0</span>)</span><br><span class="line">        n = (tab = resize()).length;</span><br><span class="line">    <span class="keyword">if</span> ((p = tab[i = (n - <span class="number">1</span>) &amp; hash]) == <span class="keyword">null</span>)</span><br><span class="line">        tab[i] = newNode(hash, key, value, <span class="keyword">null</span>);</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        Node&lt;K,V&gt; e; K k;</span><br><span class="line">        <span class="keyword">if</span> (p.hash == hash &amp;&amp;</span><br><span class="line">            ((k = p.key) == key || (key != <span class="keyword">null</span> &amp;&amp; key.equals(k))))</span><br><span class="line">            e = p;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (p <span class="keyword">instanceof</span> TreeNode)</span><br><span class="line">            e = ((TreeNode&lt;K,V&gt;)p).putTreeVal(<span class="keyword">this</span>, tab, hash, key, value);</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> binCount = <span class="number">0</span>; ; ++binCount) &#123;</span><br><span class="line">                <span class="keyword">if</span> ((e = p.next) == <span class="keyword">null</span>) &#123;</span><br><span class="line">                    p.next = newNode(hash, key, value, <span class="keyword">null</span>);</span><br><span class="line">                    <span class="keyword">if</span> (binCount &gt;= TREEIFY_THRESHOLD - <span class="number">1</span>) <span class="comment">// -1 for 1st</span></span><br><span class="line">                        treeifyBin(tab, hash);</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (e.hash == hash &amp;&amp;</span><br><span class="line">                    ((k = e.key) == key || (key != <span class="keyword">null</span> &amp;&amp; key.equals(k))))</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                p = e;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (e != <span class="keyword">null</span>) &#123; <span class="comment">// existing mapping for key</span></span><br><span class="line">            V oldValue = e.value;</span><br><span class="line">            <span class="keyword">if</span> (!onlyIfAbsent || oldValue == <span class="keyword">null</span>)</span><br><span class="line">                e.value = value;</span><br><span class="line">            afterNodeAccess(e);</span><br><span class="line">            <span class="keyword">return</span> oldValue;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    ++modCount;</span><br><span class="line">    <span class="keyword">if</span> (++size &gt; threshold)</span><br><span class="line">        resize();</span><br><span class="line">    afterNodeInsertion(evict);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面是JDK8中截取的插入结点的核心源码，我们一步一步分解上面的源码。首先看到<code>put</code>方法里面对key进行了一次hash运算，传入到<code>putVal</code>中帮助计算下标值，接着往下看<code>putVal</code>方法。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Node&lt;K,V&gt;[] tab; Node&lt;K,V&gt; p; <span class="keyword">int</span> n, i;</span><br><span class="line"><span class="keyword">if</span> ((tab = table) == <span class="keyword">null</span> || (n = tab.length) == <span class="number">0</span>)</span><br><span class="line">    n = (tab = resize()).length;</span><br></pre></td></tr></table></figure>
-
-<p>tab是数组名，p是待插入结点，n是数组长度，这就很明朗了。如果是空数组，那么会进入这个判断语句中，此时tab被<code>resize</code>方法赋值后，取tab的长度给n。这里先不展开介绍<code>resize</code>方法，只需知道tab被赋的初始长度是16。接着往下看。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> ((p = tab[i = (n - <span class="number">1</span>) &amp; hash]) == <span class="keyword">null</span>)</span><br><span class="line">    tab[i] = newNode(hash, key, value, <span class="keyword">null</span>);</span><br></pre></td></tr></table></figure>
-
-<p>上面这段代码就有意思了，重点在<code>(n - 1) &amp; hash</code>。我们前面说到hash是通过<code>hash(key)</code>计算得到的，这里和<code>n-1</code>进行按位与运算实际上等同于<code>hash % n</code>。在HashMap中，数组的长度n一定是2的幂。以n=16为例，n-1的值就是15。我们随便写一个hash值与15进行按位与运算，如下图。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200709190427437.jpg#pic_center" alt="(n - 1) &amp; hash运算"></p>
-<p>我们可以发现15的二进制只有后四位是1，前面全部都是0，进行按位与运算后的结果只与hash的后四位相关，前面全部都是0，也就验证了我们前面所说的<code>(n - 1) &amp; hash</code>等效于<code>hash % n</code>，并由此计算出数组下标值i。很显然如果在数组中下表为i的位置为空，就创建一个新结点放入数组中。</p>
-<p>继续往下看是一个else语句，也就是数组的下标i位置已经有值了，我们需要解决hash冲突。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Node&lt;K,V&gt; e; K k;</span><br><span class="line"><span class="keyword">if</span> (p.hash == hash &amp;&amp;</span><br><span class="line">    ((k = p.key) == key || (key != <span class="keyword">null</span> &amp;&amp; key.equals(k))))</span><br><span class="line">    e = p;</span><br></pre></td></tr></table></figure>
-
-<p>上面这段代码描述了存入一个已存在的key值将会将原来的结点替换成新的结点。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">else</span> <span class="keyword">if</span> (p <span class="keyword">instanceof</span> TreeNode)</span><br><span class="line">    e = ((TreeNode&lt;K,V&gt;)p).putTreeVal(<span class="keyword">this</span>, tab, hash, key, value);</span><br></pre></td></tr></table></figure>
-
-<p>这段代码是指如果当前这个下标的结点是红黑树结点，那么就按照红黑树的插入方式插入结点。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> binCount = <span class="number">0</span>; ; ++binCount) &#123;</span><br><span class="line">        <span class="keyword">if</span> ((e = p.next) == <span class="keyword">null</span>) &#123;</span><br><span class="line">            p.next = newNode(hash, key, value, <span class="keyword">null</span>);</span><br><span class="line">            <span class="keyword">if</span> (binCount &gt;= TREEIFY_THRESHOLD - <span class="number">1</span>) <span class="comment">// -1 for 1st</span></span><br><span class="line">                treeifyBin(tab, hash);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (e.hash == hash &amp;&amp;</span><br><span class="line">            ((k = e.key) == key || (key != <span class="keyword">null</span> &amp;&amp; key.equals(k))))</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        p = e;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>还剩这一种情况就是当结点是链表结点时，顺着链表从头开始往后找，如果找到最后没有相同key值的结点，就将结点插到链表末尾，插入后大于等于8个结点，就把链表转成红黑树；如果在链表中找到了key相同的结点，就替换原来的结点。在JDK8中，插入链表的方式是采用尾插法，而在JDK7中是采用头插法。而在多线程环境下，头插法有可能会出现环形链表。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200709212719737.png#pic_center" alt="头插法导致环形链表"></p>
-<p>但是这并不意味着使用尾插法在多线程环境下就是安全的，因为<code>put/get</code>方法没有加同步锁，因此无法确保线程安全。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (e != <span class="keyword">null</span>) &#123; <span class="comment">// existing mapping for key</span></span><br><span class="line">    V oldValue = e.value;</span><br><span class="line">    <span class="keyword">if</span> (!onlyIfAbsent || oldValue == <span class="keyword">null</span>)</span><br><span class="line">        e.value = value;</span><br><span class="line">    afterNodeAccess(e);</span><br><span class="line">    <span class="keyword">return</span> oldValue;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这段代码用于替换结点后返回原结点的值。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">++modCount;</span><br><span class="line"><span class="keyword">if</span> (++size &gt; threshold)</span><br><span class="line">    resize();</span><br><span class="line">afterNodeInsertion(evict);</span><br><span class="line"><span class="keyword">return</span> <span class="keyword">null</span>;</span><br></pre></td></tr></table></figure>
-
-<p>最后这段代码主要用于收尾，修改次数+1，如果键值对个数超过了阈值就进行扩容。</p>
-<h2 id="扩容机制"><a href="#扩容机制" class="headerlink" title="扩容机制"></a>扩容机制</h2><p>当HashMap中键值对个数超过了阈值时，就会启动扩容机制，而这里的所谓“阈值”指的就是数组长度与负载因子的乘积。扩容机制的核心源码是通过<code>resize</code>方法实现的，前面我们提到过这个方法，但是没有展开讲它的细节，我们这里讲一下具体的代码细节。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">final</span> Node&lt;K,V&gt;[] resize() &#123;</span><br><span class="line">    Node&lt;K,V&gt;[] oldTab = table;</span><br><span class="line">    <span class="keyword">int</span> oldCap = (oldTab == <span class="keyword">null</span>) ? <span class="number">0</span> : oldTab.length;</span><br><span class="line">    <span class="keyword">int</span> oldThr = threshold;</span><br><span class="line">    <span class="keyword">int</span> newCap, newThr = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (oldCap &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (oldCap &gt;= MAXIMUM_CAPACITY) &#123;</span><br><span class="line">            threshold = Integer.MAX_VALUE;</span><br><span class="line">            <span class="keyword">return</span> oldTab;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> ((newCap = oldCap &lt;&lt; <span class="number">1</span>) &lt; MAXIMUM_CAPACITY &amp;&amp;</span><br><span class="line">                 oldCap &gt;= DEFAULT_INITIAL_CAPACITY)</span><br><span class="line">            newThr = oldThr &lt;&lt; <span class="number">1</span>; <span class="comment">// double threshold</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (oldThr &gt; <span class="number">0</span>) <span class="comment">// initial capacity was placed in threshold</span></span><br><span class="line">        newCap = oldThr;</span><br><span class="line">    <span class="keyword">else</span> &#123;               <span class="comment">// zero initial threshold signifies using defaults</span></span><br><span class="line">        newCap = DEFAULT_INITIAL_CAPACITY;</span><br><span class="line">        newThr = (<span class="keyword">int</span>)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (newThr == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">float</span> ft = (<span class="keyword">float</span>)newCap * loadFactor;</span><br><span class="line">        newThr = (newCap &lt; MAXIMUM_CAPACITY &amp;&amp; ft &lt; (<span class="keyword">float</span>)MAXIMUM_CAPACITY ?</span><br><span class="line">                  (<span class="keyword">int</span>)ft : Integer.MAX_VALUE);</span><br><span class="line">    &#125;</span><br><span class="line">    threshold = newThr;</span><br><span class="line">    <span class="meta">@SuppressWarnings</span>(&#123;<span class="string">"rawtypes"</span>,<span class="string">"unchecked"</span>&#125;)</span><br><span class="line">    Node&lt;K,V&gt;[] newTab = (Node&lt;K,V&gt;[])<span class="keyword">new</span> Node[newCap];</span><br><span class="line">    table = newTab;</span><br><span class="line">    <span class="keyword">if</span> (oldTab != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; oldCap; ++j) &#123;</span><br><span class="line">            Node&lt;K,V&gt; e;</span><br><span class="line">            <span class="keyword">if</span> ((e = oldTab[j]) != <span class="keyword">null</span>) &#123;</span><br><span class="line">                oldTab[j] = <span class="keyword">null</span>;</span><br><span class="line">                <span class="keyword">if</span> (e.next == <span class="keyword">null</span>)</span><br><span class="line">                    newTab[e.hash &amp; (newCap - <span class="number">1</span>)] = e;</span><br><span class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (e <span class="keyword">instanceof</span> TreeNode)</span><br><span class="line">                    ((TreeNode&lt;K,V&gt;)e).split(<span class="keyword">this</span>, newTab, j, oldCap);</span><br><span class="line">                <span class="keyword">else</span> &#123; <span class="comment">// preserve order</span></span><br><span class="line">                    Node&lt;K,V&gt; loHead = <span class="keyword">null</span>, loTail = <span class="keyword">null</span>;</span><br><span class="line">                    Node&lt;K,V&gt; hiHead = <span class="keyword">null</span>, hiTail = <span class="keyword">null</span>;</span><br><span class="line">                    Node&lt;K,V&gt; next;</span><br><span class="line">                    <span class="keyword">do</span> &#123;</span><br><span class="line">                        next = e.next;</span><br><span class="line">                        <span class="keyword">if</span> ((e.hash &amp; oldCap) == <span class="number">0</span>) &#123;</span><br><span class="line">                            <span class="keyword">if</span> (loTail == <span class="keyword">null</span>)</span><br><span class="line">                                loHead = e;</span><br><span class="line">                            <span class="keyword">else</span></span><br><span class="line">                                loTail.next = e;</span><br><span class="line">                            loTail = e;</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="keyword">else</span> &#123;</span><br><span class="line">                            <span class="keyword">if</span> (hiTail == <span class="keyword">null</span>)</span><br><span class="line">                                hiHead = e;</span><br><span class="line">                            <span class="keyword">else</span></span><br><span class="line">                                hiTail.next = e;</span><br><span class="line">                            hiTail = e;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125; <span class="keyword">while</span> ((e = next) != <span class="keyword">null</span>);</span><br><span class="line">                    <span class="keyword">if</span> (loTail != <span class="keyword">null</span>) &#123;</span><br><span class="line">                        loTail.next = <span class="keyword">null</span>;</span><br><span class="line">                        newTab[j] = loHead;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span> (hiTail != <span class="keyword">null</span>) &#123;</span><br><span class="line">                        hiTail.next = <span class="keyword">null</span>;</span><br><span class="line">                        newTab[j + oldCap] = hiHead;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> newTab;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这段代码比之前的代码片段更长，我们还是一部分一部分地看。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Node&lt;K,V&gt;[] oldTab = table;</span><br><span class="line"><span class="keyword">int</span> oldCap = (oldTab == <span class="keyword">null</span>) ? <span class="number">0</span> : oldTab.length;</span><br><span class="line"><span class="keyword">int</span> oldThr = threshold;</span><br><span class="line"><span class="keyword">int</span> newCap, newThr = <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
-
-<p>这部分没什么好说的，oldTab就是扩容前的数组，oldCap和oldThr分别是扩容前的容量和扩容前的阈值，如果是之前没有存放过元素，那么这两个属性的初始值都是0，newCap和newThr是扩容后的数组长度和阈值。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (oldCap &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (oldCap &gt;= MAXIMUM_CAPACITY) &#123;</span><br><span class="line">        threshold = Integer.MAX_VALUE;</span><br><span class="line">        <span class="keyword">return</span> oldTab;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> ((newCap = oldCap &lt;&lt; <span class="number">1</span>) &lt; MAXIMUM_CAPACITY &amp;&amp;</span><br><span class="line">             oldCap &gt;= DEFAULT_INITIAL_CAPACITY)</span><br><span class="line">        newThr = oldThr &lt;&lt; <span class="number">1</span>; <span class="comment">// double threshold</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这里就是扩容前数组容量大于0的情况下，如果扩容前的数组容量已经达到了最大限制，那么无法继续扩容，否则新数组容量是原来的两倍，若是扩容后的容量满足要求则阈值也变为原来的二倍。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">else</span> <span class="keyword">if</span> (oldThr &gt; <span class="number">0</span>) <span class="comment">// initial capacity was placed in threshold</span></span><br><span class="line">    newCap = oldThr;</span><br><span class="line"><span class="keyword">else</span> &#123;               <span class="comment">// zero initial threshold signifies using defaults</span></span><br><span class="line">    newCap = DEFAULT_INITIAL_CAPACITY;</span><br><span class="line">    newThr = (<span class="keyword">int</span>)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>如果扩容前容量不大于0，而扩容前的阈值大于0，那么将新的容量设为旧的阈值。如果阈值和容量都不大于0（比如HashMap初始状态）那么将新的容量设置为16，新的阈值设置为12。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (newThr == <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">float</span> ft = (<span class="keyword">float</span>)newCap * loadFactor;</span><br><span class="line">    newThr = (newCap &lt; MAXIMUM_CAPACITY &amp;&amp; ft &lt; (<span class="keyword">float</span>)MAXIMUM_CAPACITY ?</span><br><span class="line">              (<span class="keyword">int</span>)ft : Integer.MAX_VALUE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这里就是给新阈值赋值，也没什么好说的。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">threshold = newThr;</span><br><span class="line"><span class="meta">@SuppressWarnings</span>(&#123;<span class="string">"rawtypes"</span>,<span class="string">"unchecked"</span>&#125;)</span><br><span class="line">Node&lt;K,V&gt;[] newTab = (Node&lt;K,V&gt;[])<span class="keyword">new</span> Node[newCap];</span><br><span class="line">table = newTab;</span><br></pre></td></tr></table></figure>
-
-<p>这段代码就是为扩容以后做准备了，申请一段新的内存空间，赋值给数组。</p>
-<p>最后一部分的代码比较长，我们说一下基本思路。遍历扩容前的所有结点，并对其进行ReHash。为什么要进行ReHash呢？我们回顾一下算出插入位置的方法：<code>(n - 1) &amp; hash(key)</code>。数组长度变了，那么插入的位置自然也就变了，因此我们需要进行ReHash。</p>
-<h2 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h2><h3 id="线程安全"><a href="#线程安全" class="headerlink" title="线程安全"></a>线程安全</h3><p>HashMap是线程不安全的，尽管JDK8改进了之前JDK7在多线程环境下可能出现循环链表的问题，但这并不意味着HashMap就线程安全了。常见的替代HashMap的线程安全方案有HashTable和ConcurrentHashMap两种集合，但是HashTable在并发能力方面并不理想，因此使用很少。</p>
-<h3 id="负载因子"><a href="#负载因子" class="headerlink" title="负载因子"></a>负载因子</h3><p>为什么开发人员要把默认负载因子设置为0.75呢？因为根据泊松分布，使用0.75作为负载因子，链表元素达到8个是极小的概率。</p>
-]]></content>
-      <categories>
-        <category>Java</category>
-      </categories>
-      <tags>
-        <tag>Java</tag>
-        <tag>Java容器</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>分治算法与归并排序</title>
-    <url>/2020/06/13/%E5%88%86%E6%B2%BB%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BD%92%E5%B9%B6%E6%8E%92%E5%BA%8F/</url>
-    <content><![CDATA[<p>距离上次写快排算法的文章已经过去一个半月了，和本文要提到的归并排序算法类似，快排也是分治思想的一种典型应用，如果有不熟悉快速排序的同学可以翻阅我之前写过的快速排序算法的文章。</p>
-<a id="more"></a>
-
-<h2 id="分治算法"><a href="#分治算法" class="headerlink" title="分治算法"></a>分治算法</h2><p>首先为大家介绍一下什么是分治，分治是将一个大问题分割成若干个和原来问题形式相同但规模更小的子问题，然后处理这些小问题，最终实现整个大问题的过程。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200613153944675.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt=""></p>
-<p>额…上面说的概念确实很难理解，我们换一个生活中的场景来介绍一下什么是分治吧。</p>
-<p>小明手里有8枚硬币，其中有1枚是假币，已知假币比真币轻，现在我们有一架天平，那么我们该怎么找出假币呢？</p>
-<p>首先我们将硬币分成两组，每组4枚硬币，分别放到天平上称，硬币一定在轻的那一组里，再次将轻的那一边的硬币分成两组，每组2枚硬币，然后再取轻的那一边在进行二分，直到最后将2枚硬币放在天平上，轻的那一枚就是假币。这里用的就是简单的分治思想，每次把问题规模缩小一半，这里不仅是分治思想，其实也是用到了二分法的思想。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200613155043295.jpg#pic_center" alt=""></p>
-<h2 id="归并排序"><a href="#归并排序" class="headerlink" title="归并排序"></a>归并排序</h2><p>归并排序是分治算法的一种典型应用，基本思路如下：</p>
-<ul>
-<li><p>将数组的前一半进行排序</p>
-</li>
-<li><p>将数组的后一半进行排序</p>
-</li>
-<li><p>将两半数据归并成为一个有序的数组，并拷贝回原数组</p>
-</li>
-</ul>
-<p><img src="https://img-blog.csdnimg.cn/20200613164330511.jpg#pic_center" alt=""></p>
-<p>不多逼逼，直接给你们看代码。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">mergeSort</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span> s, <span class="keyword">int</span> e, <span class="keyword">int</span>[] tmp)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (s &lt; e) &#123;</span><br><span class="line">		<span class="keyword">int</span> m = s + ((e - s) &gt;&gt; <span class="number">1</span>);</span><br><span class="line">		mergeSort(arr, s, m, tmp);</span><br><span class="line">		mergeSort(arr, m + <span class="number">1</span>, e, tmp);</span><br><span class="line">		merge(arr, s, m, e, tmp);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">merge</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span> s, <span class="keyword">int</span> m, <span class="keyword">int</span> e, <span class="keyword">int</span>[] tmp)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> p = <span class="number">0</span>;	<span class="comment">//指向tmp数组当前位置的指针</span></span><br><span class="line">	<span class="keyword">int</span> p1 = s, p2 = m + <span class="number">1</span>; <span class="comment">//p1和p2分别指向分成两组后两边数组的首位置</span></span><br><span class="line">	<span class="keyword">while</span> (p1 &lt;= m &amp;&amp; p2 &lt;= e) &#123;</span><br><span class="line">		<span class="keyword">if</span> (arr[p1] &gt; arr[p2]) &#123;</span><br><span class="line">			tmp[p++] = arr[p2++];</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			tmp[p++] = arr[p1++];</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">while</span> (p1 &lt;= m) &#123;</span><br><span class="line">		tmp[p++] = arr[p1++];</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">while</span> (p2 &lt;= e) &#123;</span><br><span class="line">		tmp[p++] = arr[p2++];</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; e - s + <span class="number">1</span>; ++i) &#123;</span><br><span class="line">		arr[s + i] = tmp[i];</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>咱们来梳理一下上面的代码，首先是<code>mergeSort</code>方法，当起始位置小于终止位置的时候才会执行代码，否则直接结束这个方法。再看看这个判断语句里的内容，首先是求出数组的中点，对数组一分为二进行分治，然后这两个数组又递归调用这个方法，最后对两个已经排好序的数组执行<code>merge</code>方法，进行归并操作。我们可以知道的是，当分到一定程度（s和e指向相同的元素）时，会结束递归，进行归并。我们用一组数据来模拟这个过程。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200613171107537.jpg#pic_center" alt="待排序数组"></p>
-<p>以上是一个待排序的数组，数组长度为10，因此传入的s和e分别为0和9，求出的m值为4，于是将数组分为下标0<del>4和下标5</del>9的两个数组再分别进行归并排序。</p>
-<p>为了简化内容，我们尝试对前一个数组进行递归。此时传入的s和e分别是0和4，则m是2，再对前一个数组进行递归，s和e是0和2，m是1，继续递归，s和e是0和1，m是0，这时候两个数组都只有一个数了，这时候就需要对这两个数进行<code>merge</code>操作。所谓的<code>merge</code>操作，就是将两个数组中的元素按从小到大的顺序复制到tmp数组中，然后复制回arr数组中。咱们下面用图片来展示一下上面的代码到底对这个数组干了些什么。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200613184701300.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="归并排序过程"></p>
-<p>实际上，上述过程只是逻辑上的切分和归并，事实上由于递归需要不断压栈以及以上代码需要顺序执行，切分和归并的次数还要更多一些。</p>
-<p>最后需要提到的是，归并排序是一种稳定的排序算法，时间复杂度为$O(nlogn)$。</p>
-]]></content>
-      <categories>
-        <category>算法</category>
-      </categories>
-      <tags>
-        <tag>Java</tag>
-        <tag>算法</tag>
-        <tag>排序</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>class类文件结构（这是一篇非常枯燥的文章）</title>
     <url>/2020/06/20/class%E7%B1%BB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%EF%BC%88%E8%BF%99%E6%98%AF%E4%B8%80%E7%AF%87%E9%9D%9E%E5%B8%B8%E6%9E%AF%E7%87%A5%E7%9A%84%E6%96%87%E7%AB%A0%EF%BC%89/</url>
     <content><![CDATA[<p>我们知道，Java文件编译后会产生一个字节码文件（<code>.class</code>文件），本文介绍字节码文件的文件结构相关内容。</p>
@@ -360,6 +155,138 @@
       </tags>
   </entry>
   <entry>
+    <title>后浪-下一代垃圾收集器</title>
+    <url>/2020/06/14/%E5%90%8E%E6%B5%AA-%E4%B8%8B%E4%B8%80%E4%BB%A3%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/</url>
+    <content><![CDATA[<p>随着Java虚拟机技术的不断发展，垃圾收集器也进行了大量迭代。前面介绍了7种经典的垃圾收集器，各有优缺点。Serial GC虽然是最古老的垃圾收集器，但由于设计简单，未必就是过时的收集器。CMS收集器由于自身有些算法缺陷，在JDK9中被标记为废弃，在最新版的JDK14中，CMS已经被彻底移除，进入了历史垃圾堆。我们可以发现G1收集器在JDK的各个版本中仍然在不断改进，并且成为了JDK9到JDK13的默认垃圾收集器。今天，我们要介绍的三种垃圾收集器算是垃圾收集器的前沿成果。</p>
+<a id="more"></a>
+
+<h2 id="Epsilon收集器"><a href="#Epsilon收集器" class="headerlink" title="Epsilon收集器"></a>Epsilon收集器</h2><p>我们看一下JEP 318中对于Epsilon收集器的介绍：</p>
+<blockquote>
+<p>Develop a GC that handles memory allocation but does not implement any actual memory reclamation mechanism. Once the available Java heap is exhausted, the JVM will shut down.</p>
+</blockquote>
+<p><img src="https://img-blog.csdnimg.cn/2020061419132816.jpg#pic_center" alt=""></p>
+<p>好吧，翻译成中文就是说这款垃圾收集器可以分配内存但是不实现垃圾回收机制。一旦可用的Java堆内存耗尽，JVM就会关闭。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200614191722120.jpg#pic_center" alt=""></p>
+<p>纳尼？垃圾收集器没有垃圾收集功能叫什么垃圾收集器？实际上Epsilon收集器提供有限分配限制和尽可能低的延迟开销的消极GC实现，尽管会以占用一定内存和牺牲一定内存吞吐量为代价。如果只是需要运行几分钟甚至几秒的小应用，那么JVM负责给对象分配内存，程序在堆内存消耗殆尽之前退出，这种场景下Epsilon收集器是很不错的选择。</p>
+<h2 id="Shenandoah收集器"><a href="#Shenandoah收集器" class="headerlink" title="Shenandoah收集器"></a>Shenandoah收集器</h2><p>Shenandoah收集器算是最特别的一款垃圾收集器，它是由Red Hat研发的低延迟垃圾收集器，之所以说它特别，是因为研发团队将它引入OpenJDK 12的时候，Oracle官方却不愿意将它加入HotSpot中，导致了开源版比商用版功能更多的尴尬。</p>
+<p>Red Hat团队设计这款收集器的最初目的是为了将垃圾收集的延迟降低到10毫秒以内，不管是200MB还是200GB的垃圾都要达到这样的目标，但Shenandoah开发团队的实际测试似乎并没有达到最初的目标，尽管停顿时间确实是大大降低了。停顿时间的降低必然会造成别的参数性能下降，在吞吐量方面，Shenandoah收集器比起G1、CMS等收集器还是有一定差距的。</p>
+<h3 id="工作过程"><a href="#工作过程" class="headerlink" title="工作过程"></a>工作过程</h3><p>Shenandoah收集器非常像是G1的改进版本，它的工作过程大致可以分为以下阶段：</p>
+<ul>
+<li><p>初始标记。标记和GC Roots直接关联的对象，这个过程需要STW（Stop the world），该过程停顿时间只与GC Roots的数量相关。</p>
+</li>
+<li><p>并发标记。与用户线程并发执行，遍历对象图，标记所有可达对象。</p>
+</li>
+<li><p>最终标记。同样需要STW，并扫描剩余STAB，统计最有回收价值的Region，并将这些Region组成回收集。</p>
+</li>
+<li><p>并发清理。清理没有存活对象的Region。</p>
+</li>
+<li><p>并发回收。将回收集中的存活对象复制到空白Region中，并且这个阶段是与用户线程并发执行的，用户线程有可能继续访问原来的内存地址，所以利用读屏障和Brooks Pointers转发指针。</p>
+</li>
+<li><p>初始引用更新。需要STW，建立线程集合点，确保并发回收阶段的存活对象已经移到其他Region中。</p>
+</li>
+<li><p>并发引用更新。按物理内存顺序，线性搜索引用类型，将旧值改成新值。</p>
+</li>
+<li><p>最终引用更新。短暂的STW，修正GC Roots的引用。</p>
+</li>
+<li><p>并发清理。将回收集中的内存全部回收。</p>
+</li>
+</ul>
+<h3 id="Brooks-Pointers"><a href="#Brooks-Pointers" class="headerlink" title="Brooks Pointers"></a>Brooks Pointers</h3><p>现在解释一下并发回收里的Brooks Pointers，我们知道，在并发回收的过程中可能有用户程序继续访问旧地址，但是访问旧地址势必会出错，因此提出了转发指针的概念（其实Brooks是个人名）。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020061522011670.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="Brooks Pointers示意图1"></p>
+<p>转发指针是设置在原有对象前的一个引用字段，正常情况下指向对象自身。并发回收阶段把旧对象的转发指针指向新对象的地址。</p>
+<p><img src="https://img-blog.csdnimg.cn/202006152211433.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="Brooks Pointers示意图2"></p>
+<h3 id="Shenandoah相比G1的改进"><a href="#Shenandoah相比G1的改进" class="headerlink" title="Shenandoah相比G1的改进"></a>Shenandoah相比G1的改进</h3><p>Shenandoah收集器其实可以看做是G1的继承版本，这两款收集器的工作步骤很多都是一样的，甚至还共享了代码。但是Shenandoah收集器其实还是有很多改进的地方的，以下介绍一下改进之处：</p>
+<ul>
+<li><p>Shenandoah收集器支持并发整理而G1回收内存不能与用户线程并发执行。</p>
+</li>
+<li><p>Shenandoah收集器默认不使用分代收集。</p>
+</li>
+<li><p>Shenandoah收集器不再使用记忆集记录跨Region的引用而是改用连接矩阵。</p>
+</li>
+</ul>
+<p>简单介绍一下连接矩阵，连接矩阵可理解为一个二维表格，如果Region M指向Region N则在表格的M行N列做一个标记。</p>
+<h2 id="ZGC收集器"><a href="#ZGC收集器" class="headerlink" title="ZGC收集器"></a>ZGC收集器</h2><p>和Shenandoah一样，ZGC也希望能将延迟时间压缩到10毫秒以内。它是JDK11引入的实验性质的低延迟收集器，这可是根红苗正的Oracle亲儿子。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200615223858595.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt=""></p>
+<h3 id="内存布局"><a href="#内存布局" class="headerlink" title="内存布局"></a>内存布局</h3><p>ZGC是暂时不使用分代机制的，它的内存布局主要有小型Region、中型Region和大型Region。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200616160122298.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70" alt=""></p>
+<ul>
+<li><p>小型Region：容量为2MB，存放小于256KB的对象。</p>
+</li>
+<li><p>中型Region：容量为32MB，存放小于4MB但大于256KB的对象。</p>
+</li>
+<li><p>大型Region：容量不固定，但必须是2MB的整数倍，用于存放4MB及以上大小的对象，也就是说最小容量只有4MB，比中型Region小，但是大型Region只能存放一个对象。</p>
+</li>
+</ul>
+<h3 id="染色指针"><a href="#染色指针" class="headerlink" title="染色指针"></a>染色指针</h3><p>染色指针是ZGC与其他垃圾收集器的区别之一，它将少量对象信息直接存储在指针上。以64位Linux为例，它的高18位不能用来寻址，剩下的46位中4位是标志位，用来表示引用对象的状态，剩下42位用来寻址，最大支持4TB内存。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200616171719124.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="染色指针"></p>
+<p>上面的四位标志位中Marked0和Marked1表示引用对象的三色标记状态，Remapped表示是否被移动过，Finalizable表示是否只能通过finalize()方法访问到。染色指针指向的存活对象被移走后，对象所在的Region立马就可以被释放。</p>
+<h3 id="工作过程-1"><a href="#工作过程-1" class="headerlink" title="工作过程"></a>工作过程</h3><ul>
+<li><p>并发标记。并发标记前面已经提过很多次了，遍历对象图，需要STW，但是ZGC的标记是标记在染色指针上的。也就是染色指针的Marked0和Marked1两个标志位，用来标识对象状态。</p>
+</li>
+<li><p>并发预备重分配。ZGC将所有要收集的Region组成重分配集，ZGC会扫描所有的Region来换维护记忆集的成本。</p>
+</li>
+<li><p>并发重分配。该过程将重分配集中的存活对象复制到其他Region中，并为重分配集维护一个转发表记录旧对象到新对象的迁移。从染色指针的状态位可以知道对象是否还在重分配集中，如果在的话，会被内存屏障拦截并转发到新对象，然后更新引用使其指向新对象。</p>
+</li>
+<li><p>并发重映射。该过程所做的工作就是修正所有的Region中指向重分配集的引用，但这并不是紧迫的任务，因为大不了就是第一次使用多一次转发。一旦所有引用都被修正，原来的转发表就可以释放了。</p>
+</li>
+</ul>
+<h3 id="NUMA"><a href="#NUMA" class="headerlink" title="NUMA"></a>NUMA</h3><p>ZGC支持NUMA的内存架构，NUMA的中文是非统一内存访问，介绍它之前首先介绍一下UMA（统一内存访问）。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020061615085157.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="UMA"></p>
+<p>在以前的计算机发展中，这样的总线模型保证了所有CPU对内存的访问地址还是一致的。但随着CPU核心数的增加，这样的架构显然无法适应现状。于是发展出了NUMA内存架构。在NUMA架构中，CPU和内存被划分成多个不同的节点，不同节点之间可以通过QPI（Quick Path Interconnect）进行访问。ZGC会优先在当前线程所属的CPU的本地内存中进行访问，这样可以大大加快CPU访问内存的速度。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200616151610492.jpg?x-oss-type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="NUMA"></p>
+<h2 id="写在最后的话"><a href="#写在最后的话" class="headerlink" title="写在最后的话"></a>写在最后的话</h2><p>去年我的一个学长分享了某互联网公司内部员工培训的JVM课件，已经将ZGC加入到培训内容中。可以预见的是，ZGC由于是Oracle官方推出的根红苗正的垃圾收集器，有很大概率会出现在今后甚至是今年即将到来的秋招面试大礼包中。</p>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>JVM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>分治算法与归并排序</title>
+    <url>/2020/06/13/%E5%88%86%E6%B2%BB%E7%AE%97%E6%B3%95%E4%B8%8E%E5%BD%92%E5%B9%B6%E6%8E%92%E5%BA%8F/</url>
+    <content><![CDATA[<p>距离上次写快排算法的文章已经过去一个半月了，和本文要提到的归并排序算法类似，快排也是分治思想的一种典型应用，如果有不熟悉快速排序的同学可以翻阅我之前写过的快速排序算法的文章。</p>
+<a id="more"></a>
+
+<h2 id="分治算法"><a href="#分治算法" class="headerlink" title="分治算法"></a>分治算法</h2><p>首先为大家介绍一下什么是分治，分治是将一个大问题分割成若干个和原来问题形式相同但规模更小的子问题，然后处理这些小问题，最终实现整个大问题的过程。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200613153944675.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt=""></p>
+<p>额…上面说的概念确实很难理解，我们换一个生活中的场景来介绍一下什么是分治吧。</p>
+<p>小明手里有8枚硬币，其中有1枚是假币，已知假币比真币轻，现在我们有一架天平，那么我们该怎么找出假币呢？</p>
+<p>首先我们将硬币分成两组，每组4枚硬币，分别放到天平上称，硬币一定在轻的那一组里，再次将轻的那一边的硬币分成两组，每组2枚硬币，然后再取轻的那一边在进行二分，直到最后将2枚硬币放在天平上，轻的那一枚就是假币。这里用的就是简单的分治思想，每次把问题规模缩小一半，这里不仅是分治思想，其实也是用到了二分法的思想。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200613155043295.jpg#pic_center" alt=""></p>
+<h2 id="归并排序"><a href="#归并排序" class="headerlink" title="归并排序"></a>归并排序</h2><p>归并排序是分治算法的一种典型应用，基本思路如下：</p>
+<ul>
+<li><p>将数组的前一半进行排序</p>
+</li>
+<li><p>将数组的后一半进行排序</p>
+</li>
+<li><p>将两半数据归并成为一个有序的数组，并拷贝回原数组</p>
+</li>
+</ul>
+<p><img src="https://img-blog.csdnimg.cn/20200613164330511.jpg#pic_center" alt=""></p>
+<p>不多逼逼，直接给你们看代码。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">mergeSort</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span> s, <span class="keyword">int</span> e, <span class="keyword">int</span>[] tmp)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (s &lt; e) &#123;</span><br><span class="line">		<span class="keyword">int</span> m = s + ((e - s) &gt;&gt; <span class="number">1</span>);</span><br><span class="line">		mergeSort(arr, s, m, tmp);</span><br><span class="line">		mergeSort(arr, m + <span class="number">1</span>, e, tmp);</span><br><span class="line">		merge(arr, s, m, e, tmp);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">merge</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span> s, <span class="keyword">int</span> m, <span class="keyword">int</span> e, <span class="keyword">int</span>[] tmp)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> p = <span class="number">0</span>;	<span class="comment">//指向tmp数组当前位置的指针</span></span><br><span class="line">	<span class="keyword">int</span> p1 = s, p2 = m + <span class="number">1</span>; <span class="comment">//p1和p2分别指向分成两组后两边数组的首位置</span></span><br><span class="line">	<span class="keyword">while</span> (p1 &lt;= m &amp;&amp; p2 &lt;= e) &#123;</span><br><span class="line">		<span class="keyword">if</span> (arr[p1] &gt; arr[p2]) &#123;</span><br><span class="line">			tmp[p++] = arr[p2++];</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			tmp[p++] = arr[p1++];</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">while</span> (p1 &lt;= m) &#123;</span><br><span class="line">		tmp[p++] = arr[p1++];</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">while</span> (p2 &lt;= e) &#123;</span><br><span class="line">		tmp[p++] = arr[p2++];</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; e - s + <span class="number">1</span>; ++i) &#123;</span><br><span class="line">		arr[s + i] = tmp[i];</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>咱们来梳理一下上面的代码，首先是<code>mergeSort</code>方法，当起始位置小于终止位置的时候才会执行代码，否则直接结束这个方法。再看看这个判断语句里的内容，首先是求出数组的中点，对数组一分为二进行分治，然后这两个数组又递归调用这个方法，最后对两个已经排好序的数组执行<code>merge</code>方法，进行归并操作。我们可以知道的是，当分到一定程度（s和e指向相同的元素）时，会结束递归，进行归并。我们用一组数据来模拟这个过程。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200613171107537.jpg#pic_center" alt="待排序数组"></p>
+<p>以上是一个待排序的数组，数组长度为10，因此传入的s和e分别为0和9，求出的m值为4，于是将数组分为下标0<del>4和下标5</del>9的两个数组再分别进行归并排序。</p>
+<p>为了简化内容，我们尝试对前一个数组进行递归。此时传入的s和e分别是0和4，则m是2，再对前一个数组进行递归，s和e是0和2，m是1，继续递归，s和e是0和1，m是0，这时候两个数组都只有一个数了，这时候就需要对这两个数进行<code>merge</code>操作。所谓的<code>merge</code>操作，就是将两个数组中的元素按从小到大的顺序复制到tmp数组中，然后复制回arr数组中。咱们下面用图片来展示一下上面的代码到底对这个数组干了些什么。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200613184701300.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="归并排序过程"></p>
+<p>实际上，上述过程只是逻辑上的切分和归并，事实上由于递归需要不断压栈以及以上代码需要顺序执行，切分和归并的次数还要更多一些。</p>
+<p>最后需要提到的是，归并排序是一种稳定的排序算法，时间复杂度为$O(nlogn)$。</p>
+]]></content>
+      <categories>
+        <category>算法</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>算法</tag>
+        <tag>排序</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>你一定要了解的数据结构-并查集</title>
     <url>/2020/06/09/%E4%BD%A0%E4%B8%80%E5%AE%9A%E8%A6%81%E4%BA%86%E8%A7%A3%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-%E5%B9%B6%E6%9F%A5%E9%9B%86/</url>
     <content><![CDATA[<p>今天要介绍一种非常重要的数据结构-并查集，这种数据结构常常被用于检测有环图的问题。</p>
@@ -482,6 +409,61 @@
 </li>
 </ul>
 <p>最后要提一点，多级反馈队列调度算法兼顾短作业优先的同时，不会让长作业长期处于等待状态最终出现饥饿。</p>
+]]></content>
+      <categories>
+        <category>操作系统</category>
+      </categories>
+      <tags>
+        <tag>操作系统</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>操作系统-概述</title>
+    <url>/2020/06/01/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E6%A6%82%E8%BF%B0/</url>
+    <content><![CDATA[<p>本文是操作系统系列文章的第一篇，后续将陆续更新操作系统相关的文章。</p>
+<a id="more"></a>
+
+<h2 id="什么是操作系统？"><a href="#什么是操作系统？" class="headerlink" title="什么是操作系统？"></a>什么是操作系统？</h2><p>计算机系统自底向上大致可分为四个部分：硬件、操作系统、应用程序和用户，我们这里比较关心位于硬件之上的操作系统。操作系统是控制和管理硬件和软件资源，组织调度计算机工作和资源分配，并为用户提供接口与环境的程序集合。</p>
+<h3 id="操作系统的特征"><a href="#操作系统的特征" class="headerlink" title="操作系统的特征"></a>操作系统的特征</h3><ul>
+<li><p>并发。并发是指多个事件在同一时间段内发生，当我们一边在QQ上聊天，一边听着音乐，此时操作系统同时处理着多个程序，我们可以说QQ和播放器是并发执行的。需要注意的是，与并发容易混淆的概念——并行，并行是指多个事件在同一时刻同时执行。</p>
+</li>
+<li><p>共享。系统中某些资源是可以允许多个进程使用的，共享分为互斥共享与同时访问方式。互斥共享典型代表如打印机，每次只允许一个进程使用。同时访问的“同时”体现在宏观层面上，而微观层面上是“分时共享”的。</p>
+</li>
+<li><p>虚拟。虚拟是指将一个物理上的实体对应变为多个逻辑上的实体，常见的虚拟技术有虚拟处理器、虚拟内存和虚拟外设等。</p>
+</li>
+<li><p>异步。多道程序系统允许多程序并发执行，多个程序并非一次执行到底，而是走走停停，以为止速度向前推进。</p>
+</li>
+</ul>
+<h3 id="操作系统的功能"><a href="#操作系统的功能" class="headerlink" title="操作系统的功能"></a>操作系统的功能</h3><ul>
+<li><p>处理机管理</p>
+</li>
+<li><p>存储器管理</p>
+</li>
+<li><p>文件管理</p>
+</li>
+<li><p>设备管理</p>
+</li>
+<li><p>为用户提供接口</p>
+</li>
+</ul>
+<h2 id="操作系统的发展与分类"><a href="#操作系统的发展与分类" class="headerlink" title="操作系统的发展与分类"></a>操作系统的发展与分类</h2><h3 id="手工操作阶段"><a href="#手工操作阶段" class="headerlink" title="手工操作阶段"></a>手工操作阶段</h3><p>这种方式是最早的操作方式，由人工直接使用计算机硬件系统，这种方式主要有两个缺点：</p>
+<ul>
+<li><p>用户独占全机。此时的计算机由操作人员一个人独占。</p>
+</li>
+<li><p>CPU等待用户操作。由于手工操作较慢，CPU资源长时间是空闲的。</p>
+</li>
+</ul>
+<p>也正是因为上述缺点的存在，人机矛盾原来越严重，此时唯一的解决方法是用机器代替手工进行作业控制。</p>
+<h3 id="批处理阶段"><a href="#批处理阶段" class="headerlink" title="批处理阶段"></a>批处理阶段</h3><p>为了解决人机矛盾扩大的问题，批处理系统很快被提出。批处理阶段又分为单道批处理系统和多道批处理系统。单道批处理系统允许内存中保持一道作业，当遇到IO操作时，CPU会等待IO操作完成。为了提高系统吞吐量，又提出了多道批处理系统。多道批处理系统允许多个程序进入内存并且能在CPU中交替运行，当一个程序执行IO操作时，CPU立马运行另一个程序。</p>
+<h3 id="分时操作系统"><a href="#分时操作系统" class="headerlink" title="分时操作系统"></a>分时操作系统</h3><p>分时是将处理器运行时间划分成为时间片，每个作业分别分配到这些时间片。当一个时间片用完时，某个作业会暂停，CPU会执行下一个程序。由于作业轮转很快，所以用户会感觉独占了计算机。</p>
+<h3 id="实时操作系统"><a href="#实时操作系统" class="headerlink" title="实时操作系统"></a>实时操作系统</h3><p>实时操作系统是需要在规定时间内完成特定任务的系统，又可以分为硬实时系统和软实时系统。硬实时系统要求某个动作在某一时刻（或某一时间段）必须完成，例如无人机的飞控系统。软实时系统能够接受偶尔的超时但又不会造成严重后果，例如12306订票系统。</p>
+<h3 id="网络操作系统和分布式计算机系统"><a href="#网络操作系统和分布式计算机系统" class="headerlink" title="网络操作系统和分布式计算机系统"></a>网络操作系统和分布式计算机系统</h3><p>网络操作系统将网络中的计算机连接起来，实现计算机之间的数据通信。分布式计算机有多台计算机组成，每台计算机拥有相同的地位，没有主从关系。分布式操作系统与网络操作系统之间的不同之处在于分布式操作系统是协同完成同一任务的计算机集群。</p>
+<h3 id="个人计算机操作系统"><a href="#个人计算机操作系统" class="headerlink" title="个人计算机操作系统"></a>个人计算机操作系统</h3><p>常见的个人操作系统有Windows和Linux等。</p>
+<h2 id="操作系统运行环境"><a href="#操作系统运行环境" class="headerlink" title="操作系统运行环境"></a>操作系统运行环境</h2><h3 id="内核态和用户态"><a href="#内核态和用户态" class="headerlink" title="内核态和用户态"></a>内核态和用户态</h3><p>内核态又称核心态、管态，通常是系统内核执行特权指令时的状态，特权指令是指不能由应用程序直接执行的指令，如IO指令、置中断指令等。用户态又称目态，是上层应用程序运行时CPU的状态。</p>
+<h3 id="原语"><a href="#原语" class="headerlink" title="原语"></a>原语</h3><p>原语是一些位于操作系统底层，最接近硬件的小程序。这些程序具有原子性，运行时间短且频繁执行。</p>
+<h3 id="系统调用"><a href="#系统调用" class="headerlink" title="系统调用"></a>系统调用</h3><p>系统调用是操作系统为应用程序提供的接口，是为了避免应用程序直接访问内核态而采取的保护措施。</p>
+<h3 id="中断和异常"><a href="#中断和异常" class="headerlink" title="中断和异常"></a>中断和异常</h3><p>中断一般与当前运行的程序无关，比如当设备完成IO操作时向处理机发出的结束中断，时间片用完发出的时钟中断。异常一般与程序相关，如地址越界、算术溢出等事件。</p>
+<h2 id="操作系统体系结构"><a href="#操作系统体系结构" class="headerlink" title="操作系统体系结构"></a>操作系统体系结构</h2><p>现代操作系统的体系结构主要分为两种：大内核和微内核。大内核是将系统主要模块集中在内核态，提供高性能的系统服务。但随着系统日益复杂，操作系统规模也急剧增大，为此又提出了微内核，微内核在内核态中只保留了最基本的功能，其他不需要内核态关注的功能都移到了用户态中，降低了内核的复杂性。被移出内核的功能借助微内核进行通信，但微内核的一个问题是性能不如大内核，因为需要在内核态和用户态之间频繁切换，系统开销比较大。</p>
 ]]></content>
       <categories>
         <category>操作系统</category>
@@ -630,61 +612,6 @@
       </tags>
   </entry>
   <entry>
-    <title>操作系统-概述</title>
-    <url>/2020/06/01/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E6%A6%82%E8%BF%B0/</url>
-    <content><![CDATA[<p>本文是操作系统系列文章的第一篇，后续将陆续更新操作系统相关的文章。</p>
-<a id="more"></a>
-
-<h2 id="什么是操作系统？"><a href="#什么是操作系统？" class="headerlink" title="什么是操作系统？"></a>什么是操作系统？</h2><p>计算机系统自底向上大致可分为四个部分：硬件、操作系统、应用程序和用户，我们这里比较关心位于硬件之上的操作系统。操作系统是控制和管理硬件和软件资源，组织调度计算机工作和资源分配，并为用户提供接口与环境的程序集合。</p>
-<h3 id="操作系统的特征"><a href="#操作系统的特征" class="headerlink" title="操作系统的特征"></a>操作系统的特征</h3><ul>
-<li><p>并发。并发是指多个事件在同一时间段内发生，当我们一边在QQ上聊天，一边听着音乐，此时操作系统同时处理着多个程序，我们可以说QQ和播放器是并发执行的。需要注意的是，与并发容易混淆的概念——并行，并行是指多个事件在同一时刻同时执行。</p>
-</li>
-<li><p>共享。系统中某些资源是可以允许多个进程使用的，共享分为互斥共享与同时访问方式。互斥共享典型代表如打印机，每次只允许一个进程使用。同时访问的“同时”体现在宏观层面上，而微观层面上是“分时共享”的。</p>
-</li>
-<li><p>虚拟。虚拟是指将一个物理上的实体对应变为多个逻辑上的实体，常见的虚拟技术有虚拟处理器、虚拟内存和虚拟外设等。</p>
-</li>
-<li><p>异步。多道程序系统允许多程序并发执行，多个程序并非一次执行到底，而是走走停停，以为止速度向前推进。</p>
-</li>
-</ul>
-<h3 id="操作系统的功能"><a href="#操作系统的功能" class="headerlink" title="操作系统的功能"></a>操作系统的功能</h3><ul>
-<li><p>处理机管理</p>
-</li>
-<li><p>存储器管理</p>
-</li>
-<li><p>文件管理</p>
-</li>
-<li><p>设备管理</p>
-</li>
-<li><p>为用户提供接口</p>
-</li>
-</ul>
-<h2 id="操作系统的发展与分类"><a href="#操作系统的发展与分类" class="headerlink" title="操作系统的发展与分类"></a>操作系统的发展与分类</h2><h3 id="手工操作阶段"><a href="#手工操作阶段" class="headerlink" title="手工操作阶段"></a>手工操作阶段</h3><p>这种方式是最早的操作方式，由人工直接使用计算机硬件系统，这种方式主要有两个缺点：</p>
-<ul>
-<li><p>用户独占全机。此时的计算机由操作人员一个人独占。</p>
-</li>
-<li><p>CPU等待用户操作。由于手工操作较慢，CPU资源长时间是空闲的。</p>
-</li>
-</ul>
-<p>也正是因为上述缺点的存在，人机矛盾原来越严重，此时唯一的解决方法是用机器代替手工进行作业控制。</p>
-<h3 id="批处理阶段"><a href="#批处理阶段" class="headerlink" title="批处理阶段"></a>批处理阶段</h3><p>为了解决人机矛盾扩大的问题，批处理系统很快被提出。批处理阶段又分为单道批处理系统和多道批处理系统。单道批处理系统允许内存中保持一道作业，当遇到IO操作时，CPU会等待IO操作完成。为了提高系统吞吐量，又提出了多道批处理系统。多道批处理系统允许多个程序进入内存并且能在CPU中交替运行，当一个程序执行IO操作时，CPU立马运行另一个程序。</p>
-<h3 id="分时操作系统"><a href="#分时操作系统" class="headerlink" title="分时操作系统"></a>分时操作系统</h3><p>分时是将处理器运行时间划分成为时间片，每个作业分别分配到这些时间片。当一个时间片用完时，某个作业会暂停，CPU会执行下一个程序。由于作业轮转很快，所以用户会感觉独占了计算机。</p>
-<h3 id="实时操作系统"><a href="#实时操作系统" class="headerlink" title="实时操作系统"></a>实时操作系统</h3><p>实时操作系统是需要在规定时间内完成特定任务的系统，又可以分为硬实时系统和软实时系统。硬实时系统要求某个动作在某一时刻（或某一时间段）必须完成，例如无人机的飞控系统。软实时系统能够接受偶尔的超时但又不会造成严重后果，例如12306订票系统。</p>
-<h3 id="网络操作系统和分布式计算机系统"><a href="#网络操作系统和分布式计算机系统" class="headerlink" title="网络操作系统和分布式计算机系统"></a>网络操作系统和分布式计算机系统</h3><p>网络操作系统将网络中的计算机连接起来，实现计算机之间的数据通信。分布式计算机有多台计算机组成，每台计算机拥有相同的地位，没有主从关系。分布式操作系统与网络操作系统之间的不同之处在于分布式操作系统是协同完成同一任务的计算机集群。</p>
-<h3 id="个人计算机操作系统"><a href="#个人计算机操作系统" class="headerlink" title="个人计算机操作系统"></a>个人计算机操作系统</h3><p>常见的个人操作系统有Windows和Linux等。</p>
-<h2 id="操作系统运行环境"><a href="#操作系统运行环境" class="headerlink" title="操作系统运行环境"></a>操作系统运行环境</h2><h3 id="内核态和用户态"><a href="#内核态和用户态" class="headerlink" title="内核态和用户态"></a>内核态和用户态</h3><p>内核态又称核心态、管态，通常是系统内核执行特权指令时的状态，特权指令是指不能由应用程序直接执行的指令，如IO指令、置中断指令等。用户态又称目态，是上层应用程序运行时CPU的状态。</p>
-<h3 id="原语"><a href="#原语" class="headerlink" title="原语"></a>原语</h3><p>原语是一些位于操作系统底层，最接近硬件的小程序。这些程序具有原子性，运行时间短且频繁执行。</p>
-<h3 id="系统调用"><a href="#系统调用" class="headerlink" title="系统调用"></a>系统调用</h3><p>系统调用是操作系统为应用程序提供的接口，是为了避免应用程序直接访问内核态而采取的保护措施。</p>
-<h3 id="中断和异常"><a href="#中断和异常" class="headerlink" title="中断和异常"></a>中断和异常</h3><p>中断一般与当前运行的程序无关，比如当设备完成IO操作时向处理机发出的结束中断，时间片用完发出的时钟中断。异常一般与程序相关，如地址越界、算术溢出等事件。</p>
-<h2 id="操作系统体系结构"><a href="#操作系统体系结构" class="headerlink" title="操作系统体系结构"></a>操作系统体系结构</h2><p>现代操作系统的体系结构主要分为两种：大内核和微内核。大内核是将系统主要模块集中在内核态，提供高性能的系统服务。但随着系统日益复杂，操作系统规模也急剧增大，为此又提出了微内核，微内核在内核态中只保留了最基本的功能，其他不需要内核态关注的功能都移到了用户态中，降低了内核的复杂性。被移出内核的功能借助微内核进行通信，但微内核的一个问题是性能不如大内核，因为需要在内核态和用户态之间频繁切换，系统开销比较大。</p>
-]]></content>
-      <categories>
-        <category>操作系统</category>
-      </categories>
-      <tags>
-        <tag>操作系统</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>快速排序Java代码简洁实现</title>
     <url>/2020/04/29/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8FJava%E4%BB%A3%E7%A0%81%E7%AE%80%E6%B4%81%E5%AE%9E%E7%8E%B0/</url>
     <content><![CDATA[<p>学习过数据结构的同学们都知道，快速排序算法是一种时间复杂度为O(nlogn)的排序算法，在各种排序算法中算是较为高效的方法，企业面试中也经常有手撕快排的环节。本文将阐述算法的基本思想，并用Java代码的形式实现快速排序代码。</p>
@@ -729,6 +656,243 @@
       </tags>
   </entry>
   <entry>
+    <title>本科数据结构课程的漏网之鱼-红黑树（上）</title>
+    <url>/2020/06/22/%E6%9C%AC%E7%A7%91%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AF%BE%E7%A8%8B%E7%9A%84%E6%BC%8F%E7%BD%91%E4%B9%8B%E9%B1%BC-%E7%BA%A2%E9%BB%91%E6%A0%91%EF%BC%88%E4%B8%8A%EF%BC%89/</url>
+    <content><![CDATA[<p>在我大学的时候，就曾经从参加面试的学长那里知道红黑树这种数据结构，但是经过我的观察，绝大部分的本科数据结构课程里都没有这部分内容。本文将介绍这种被本科教学体系遗弃，但却常常被工作面试中提到的数据结构，并且为后面的HashMap的内容做铺垫。</p>
+<a id="more"></a>
+
+<h2 id="定义与性质"><a href="#定义与性质" class="headerlink" title="定义与性质"></a>定义与性质</h2><p>首先需要明确的是，红黑树是一棵<strong>二叉搜索树</strong>，如果不了解二叉搜索树的朋友可以先去了解一下。这里想到了本人在研究生复试的时候被问到什么是二叉搜索树，一时竟然没想起来。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200623144444818.png#pic_center" alt=""></p>
+<p>下面是一棵典型的红黑树，我们可以看到这颗红黑树的确是一棵二叉搜索树。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200623155717535.jpg#pic_center" alt="红黑树"></p>
+<p>一般来说，红黑树具有以下5个性质：</p>
+<ul>
+<li><p>节点由红色和黑色组成</p>
+</li>
+<li><p>且根节点是黑色</p>
+</li>
+<li><p>所有的叶子节点都是黑色</p>
+</li>
+<li><p>根节点到叶子节点的路径上不可能出现两个连续的红色节点</p>
+</li>
+<li><p>从任一节点出发到每个叶子节点都包含相同数量的黑色节点</p>
+</li>
+</ul>
+<h2 id="红黑树的查找"><a href="#红黑树的查找" class="headerlink" title="红黑树的查找"></a>红黑树的查找</h2><p>因为红黑树是一棵二叉搜索树，所以同样具有二叉树的性质：左子树的所有节点都小于当前节点的值，右子树的所有节点都大于当前节点的值。所以，查找节点的算法就很简单了，我们来了解一下查找的流程。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200623151509296.png#pic_center" alt="红黑树查找流程"></p>
+<h2 id="红黑树的插入"><a href="#红黑树的插入" class="headerlink" title="红黑树的插入"></a>红黑树的插入</h2><p>介绍红黑树的插入之前，先讲一下红黑树的三种调整方式：<strong>变色</strong>、<strong>左旋</strong>和<strong>右旋</strong>。变色很好理解，红色变黑色，黑色变红色，主要是左旋和右旋，我在网上找到一张图，很好的解释了左旋和右旋的含义。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200623161819607.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="左旋与右旋"></p>
+<p>下面开始进入难点——红黑树的插入。待插入的节点是红色的，因为如果插入的节点是黑色，原来已经平衡的红黑树一定会不平衡，也就一定会进行调整。</p>
+<p><strong>情况一：红黑树为空</strong></p>
+<p>当红黑树为空的情况下，一目了然，直接插入，然后将节点变成黑色，是不是就符合5个性质了？</p>
+<p><strong>情况二：插入节点的父节点是黑色</strong></p>
+<p>直接插入节点即可，因为插入的节点是红色的，所以并不影响红黑树的平衡。</p>
+<p><strong>情况三：插入节点的父节点和叔叔节点是红色</strong></p>
+<p>分析一下这种情形，由于插入节点的父节点和叔叔节点都是红色，所以插入节点的祖父节点一定是黑色，因为不可能出现父子节点均为红色的情形。以前面的那棵红黑树为例，我们试着向里面插入一个值为21的节点。插入后的情形：</p>
+<p><img src="https://img-blog.csdnimg.cn/20200623222028640.jpg#pic_center" alt="情况三的第一次调整"></p>
+<p>结束了吗？没有。22和21是两个连续的红色节点，需要进行调整。插入节点的父节点和叔叔节点都是红色，因此将这两个节点变黑。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020062322291227.jpg#pic_center" alt="情况三的第二次调整"></p>
+<p>再仔细观察一下，好像是可以了，但是尝试从根节点到叶子节点，不是每条路径上的黑色节点数都是相同的。再把插入节点的祖父节点25改成红色。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200624091332271.jpg#pic_center" alt="情况三的第三次调整"></p>
+<p>17和25又是连续的红色节点了，这时把25当作新插入的节点，是不是回到了这种情况开始的状态？这时，给8和17变成黑色就可以满足所有的性质。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020062414045744.jpg#pic_center" alt="情况三的第四次调整"></p>
+<p><strong>情况四：插入节点的父节点是红色，叔叔节点是黑色或缺少，插入节点是父节点的左子节点，父节点是祖父节点的左子节点</strong></p>
+<p><img src="https://img-blog.csdnimg.cn/20200624152342709.jpg#pic_center" alt="情况四"></p>
+<p>要在上图插入一个值为1的节点，这时会满足情况四。我们看一下插入这个节点以后的情况。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200624152830533.jpg#pic_center" alt="情况四插入节点后"></p>
+<p>显然这里不满足不能有两个连续红色节点的性质，我们绕节点13进行右旋。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200624153529403.jpg#pic_center" alt="情况四的第一次调整"></p>
+<p>接下来对8和13变色，就调整完成了。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200624153742773.jpg#pic_center" alt="情况四的第二次调整"></p>
+<p><strong>情况五：插入节点的父节点是红色，叔叔节点是黑色或缺少，插入节点是父节点的右子节点，父节点是祖父节点的左子节点</strong></p>
+<p>最后一种情况了，我们还是使用情况四的初始状态，往里面插入一个值为10的新节点。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200624154816264.jpg#pic_center" alt="情况五插入节点后"></p>
+<p>我们对节点8通过一次左旋交换插入节点和其父节点的位置，大家看一下是不是变成了情况四？然后我们按照情况四的方式进行调整即可。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200624160013634.jpg#pic_center" alt="情况五的第一次调整"></p>
+<p>以上是本文的内容，红黑树的删除操作将在下一篇文章中进行介绍。</p>
+]]></content>
+      <categories>
+        <category>数据结构</category>
+      </categories>
+      <tags>
+        <tag>数据结构</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>关于HashMap，你想知道的可能都有</title>
+    <url>/2020/07/08/%E5%85%B3%E4%BA%8EHashMap%EF%BC%8C%E4%BD%A0%E6%83%B3%E7%9F%A5%E9%81%93%E7%9A%84%E5%8F%AF%E8%83%BD%E9%83%BD%E6%9C%89/</url>
+    <content><![CDATA[<p>在现在的互联网大厂面试中，HashMap几乎是必问的知识点。因此本文对HashMap进行系统性的总结，将HashMap常见的知识点都整理出来。</p>
+<a id="more"></a>
+
+<p>前面铺垫了两篇红黑树的文章，终于进入这篇HashMap了。如果有不知道什么是红黑树的同学，先去看一下我前面讲红黑树的文章。<br><a href="https://mp.weixin.qq.com/s/znClfHriql7LOUi_eRq5lA" target="_blank" rel="noopener">本科数据结构课程的漏网之鱼-红黑树（上）</a><br><a href="https://mp.weixin.qq.com/s/38M5RAFaYTIabIU3ovK0Ew" target="_blank" rel="noopener">本科数据结构课程的漏网之鱼-红黑树（下）</a></p>
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>相信大家之前或多或少都接触过HashMap，这是一种用来存放键值对的数据结构。它实现了Map接口，是最常用的Java容器之一。在JDK7及之前版本中，HashMap实现方式都是通过<code>数组+链表</code>，而JDK8开始，HashMap底层通过<code>数组+链表+红黑树</code>的数据结构实现。下面就将开始详细介绍这部分内容。</p>
+<h2 id="底层数据结构"><a href="#底层数据结构" class="headerlink" title="底层数据结构"></a>底层数据结构</h2><p>在JDK7及之前的版本中，HashMap都是通过数组+链表实现的，大致结构如下图。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020070817345065.png#pic_center" alt="JDK7及之前的HashMap底层结构"></p>
+<p>然而这种数据结构有一定局限性，当某个链表特别长的话，搜索效率就大大降低，因此，JDK8中引入了红黑树，目的就是减少查找次数。当链表长度大于阈值（默认为8）时，就会转换成红黑树。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200708172215166.png#pic_center" alt="JDK8的HashMap底层结构"></p>
+<p>在JDK7中，插入结点都叫Entry，这结构就是散列表中常见的“拉链法”。而在JDK8中，结点变成了Node。</p>
+<h2 id="插入结点"><a href="#插入结点" class="headerlink" title="插入结点"></a>插入结点</h2><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> V <span class="title">put</span><span class="params">(K key, V value)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> putVal(hash(key), key, value, <span class="keyword">false</span>, <span class="keyword">true</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">hash</span><span class="params">(Object key)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> h;</span><br><span class="line">    <span class="keyword">return</span> (key == <span class="keyword">null</span>) ? <span class="number">0</span> : (h = key.hashCode()) ^ (h &gt;&gt;&gt; <span class="number">16</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">final</span> V <span class="title">putVal</span><span class="params">(<span class="keyword">int</span> hash, K key, V value, <span class="keyword">boolean</span> onlyIfAbsent,</span></span></span><br><span class="line"><span class="function"><span class="params">               <span class="keyword">boolean</span> evict)</span> </span>&#123;</span><br><span class="line">    Node&lt;K,V&gt;[] tab; Node&lt;K,V&gt; p; <span class="keyword">int</span> n, i;</span><br><span class="line">    <span class="keyword">if</span> ((tab = table) == <span class="keyword">null</span> || (n = tab.length) == <span class="number">0</span>)</span><br><span class="line">        n = (tab = resize()).length;</span><br><span class="line">    <span class="keyword">if</span> ((p = tab[i = (n - <span class="number">1</span>) &amp; hash]) == <span class="keyword">null</span>)</span><br><span class="line">        tab[i] = newNode(hash, key, value, <span class="keyword">null</span>);</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">        Node&lt;K,V&gt; e; K k;</span><br><span class="line">        <span class="keyword">if</span> (p.hash == hash &amp;&amp;</span><br><span class="line">            ((k = p.key) == key || (key != <span class="keyword">null</span> &amp;&amp; key.equals(k))))</span><br><span class="line">            e = p;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (p <span class="keyword">instanceof</span> TreeNode)</span><br><span class="line">            e = ((TreeNode&lt;K,V&gt;)p).putTreeVal(<span class="keyword">this</span>, tab, hash, key, value);</span><br><span class="line">        <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> binCount = <span class="number">0</span>; ; ++binCount) &#123;</span><br><span class="line">                <span class="keyword">if</span> ((e = p.next) == <span class="keyword">null</span>) &#123;</span><br><span class="line">                    p.next = newNode(hash, key, value, <span class="keyword">null</span>);</span><br><span class="line">                    <span class="keyword">if</span> (binCount &gt;= TREEIFY_THRESHOLD - <span class="number">1</span>) <span class="comment">// -1 for 1st</span></span><br><span class="line">                        treeifyBin(tab, hash);</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">if</span> (e.hash == hash &amp;&amp;</span><br><span class="line">                    ((k = e.key) == key || (key != <span class="keyword">null</span> &amp;&amp; key.equals(k))))</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                p = e;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (e != <span class="keyword">null</span>) &#123; <span class="comment">// existing mapping for key</span></span><br><span class="line">            V oldValue = e.value;</span><br><span class="line">            <span class="keyword">if</span> (!onlyIfAbsent || oldValue == <span class="keyword">null</span>)</span><br><span class="line">                e.value = value;</span><br><span class="line">            afterNodeAccess(e);</span><br><span class="line">            <span class="keyword">return</span> oldValue;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    ++modCount;</span><br><span class="line">    <span class="keyword">if</span> (++size &gt; threshold)</span><br><span class="line">        resize();</span><br><span class="line">    afterNodeInsertion(evict);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面是JDK8中截取的插入结点的核心源码，我们一步一步分解上面的源码。首先看到<code>put</code>方法里面对key进行了一次hash运算，传入到<code>putVal</code>中帮助计算下标值，接着往下看<code>putVal</code>方法。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Node&lt;K,V&gt;[] tab; Node&lt;K,V&gt; p; <span class="keyword">int</span> n, i;</span><br><span class="line"><span class="keyword">if</span> ((tab = table) == <span class="keyword">null</span> || (n = tab.length) == <span class="number">0</span>)</span><br><span class="line">    n = (tab = resize()).length;</span><br></pre></td></tr></table></figure>
+
+<p>tab是数组名，p是待插入结点，n是数组长度，这就很明朗了。如果是空数组，那么会进入这个判断语句中，此时tab被<code>resize</code>方法赋值后，取tab的长度给n。这里先不展开介绍<code>resize</code>方法，只需知道tab被赋的初始长度是16。接着往下看。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> ((p = tab[i = (n - <span class="number">1</span>) &amp; hash]) == <span class="keyword">null</span>)</span><br><span class="line">    tab[i] = newNode(hash, key, value, <span class="keyword">null</span>);</span><br></pre></td></tr></table></figure>
+
+<p>上面这段代码就有意思了，重点在<code>(n - 1) &amp; hash</code>。我们前面说到hash是通过<code>hash(key)</code>计算得到的，这里和<code>n-1</code>进行按位与运算实际上等同于<code>hash % n</code>。在HashMap中，数组的长度n一定是2的幂。以n=16为例，n-1的值就是15。我们随便写一个hash值与15进行按位与运算，如下图。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200709190427437.jpg#pic_center" alt="(n - 1) &amp; hash运算"></p>
+<p>我们可以发现15的二进制只有后四位是1，前面全部都是0，进行按位与运算后的结果只与hash的后四位相关，前面全部都是0，也就验证了我们前面所说的<code>(n - 1) &amp; hash</code>等效于<code>hash % n</code>，并由此计算出数组下标值i。很显然如果在数组中下表为i的位置为空，就创建一个新结点放入数组中。</p>
+<p>继续往下看是一个else语句，也就是数组的下标i位置已经有值了，我们需要解决hash冲突。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Node&lt;K,V&gt; e; K k;</span><br><span class="line"><span class="keyword">if</span> (p.hash == hash &amp;&amp;</span><br><span class="line">    ((k = p.key) == key || (key != <span class="keyword">null</span> &amp;&amp; key.equals(k))))</span><br><span class="line">    e = p;</span><br></pre></td></tr></table></figure>
+
+<p>上面这段代码描述了存入一个已存在的key值将会将原来的结点替换成新的结点。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">else</span> <span class="keyword">if</span> (p <span class="keyword">instanceof</span> TreeNode)</span><br><span class="line">    e = ((TreeNode&lt;K,V&gt;)p).putTreeVal(<span class="keyword">this</span>, tab, hash, key, value);</span><br></pre></td></tr></table></figure>
+
+<p>这段代码是指如果当前这个下标的结点是红黑树结点，那么就按照红黑树的插入方式插入结点。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> binCount = <span class="number">0</span>; ; ++binCount) &#123;</span><br><span class="line">        <span class="keyword">if</span> ((e = p.next) == <span class="keyword">null</span>) &#123;</span><br><span class="line">            p.next = newNode(hash, key, value, <span class="keyword">null</span>);</span><br><span class="line">            <span class="keyword">if</span> (binCount &gt;= TREEIFY_THRESHOLD - <span class="number">1</span>) <span class="comment">// -1 for 1st</span></span><br><span class="line">                treeifyBin(tab, hash);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (e.hash == hash &amp;&amp;</span><br><span class="line">            ((k = e.key) == key || (key != <span class="keyword">null</span> &amp;&amp; key.equals(k))))</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        p = e;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>还剩这一种情况就是当结点是链表结点时，顺着链表从头开始往后找，如果找到最后没有相同key值的结点，就将结点插到链表末尾，插入后大于等于8个结点，就把链表转成红黑树；如果在链表中找到了key相同的结点，就替换原来的结点。在JDK8中，插入链表的方式是采用尾插法，而在JDK7中是采用头插法。而在多线程环境下，头插法有可能会出现环形链表。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200709212719737.png#pic_center" alt="头插法导致环形链表"></p>
+<p>但是这并不意味着使用尾插法在多线程环境下就是安全的，因为<code>put/get</code>方法没有加同步锁，因此无法确保线程安全。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (e != <span class="keyword">null</span>) &#123; <span class="comment">// existing mapping for key</span></span><br><span class="line">    V oldValue = e.value;</span><br><span class="line">    <span class="keyword">if</span> (!onlyIfAbsent || oldValue == <span class="keyword">null</span>)</span><br><span class="line">        e.value = value;</span><br><span class="line">    afterNodeAccess(e);</span><br><span class="line">    <span class="keyword">return</span> oldValue;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这段代码用于替换结点后返回原结点的值。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">++modCount;</span><br><span class="line"><span class="keyword">if</span> (++size &gt; threshold)</span><br><span class="line">    resize();</span><br><span class="line">afterNodeInsertion(evict);</span><br><span class="line"><span class="keyword">return</span> <span class="keyword">null</span>;</span><br></pre></td></tr></table></figure>
+
+<p>最后这段代码主要用于收尾，修改次数+1，如果键值对个数超过了阈值就进行扩容。</p>
+<h2 id="扩容机制"><a href="#扩容机制" class="headerlink" title="扩容机制"></a>扩容机制</h2><p>当HashMap中键值对个数超过了阈值时，就会启动扩容机制，而这里的所谓“阈值”指的就是数组长度与负载因子的乘积。扩容机制的核心源码是通过<code>resize</code>方法实现的，前面我们提到过这个方法，但是没有展开讲它的细节，我们这里讲一下具体的代码细节。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">final</span> Node&lt;K,V&gt;[] resize() &#123;</span><br><span class="line">    Node&lt;K,V&gt;[] oldTab = table;</span><br><span class="line">    <span class="keyword">int</span> oldCap = (oldTab == <span class="keyword">null</span>) ? <span class="number">0</span> : oldTab.length;</span><br><span class="line">    <span class="keyword">int</span> oldThr = threshold;</span><br><span class="line">    <span class="keyword">int</span> newCap, newThr = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (oldCap &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (oldCap &gt;= MAXIMUM_CAPACITY) &#123;</span><br><span class="line">            threshold = Integer.MAX_VALUE;</span><br><span class="line">            <span class="keyword">return</span> oldTab;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> ((newCap = oldCap &lt;&lt; <span class="number">1</span>) &lt; MAXIMUM_CAPACITY &amp;&amp;</span><br><span class="line">                 oldCap &gt;= DEFAULT_INITIAL_CAPACITY)</span><br><span class="line">            newThr = oldThr &lt;&lt; <span class="number">1</span>; <span class="comment">// double threshold</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (oldThr &gt; <span class="number">0</span>) <span class="comment">// initial capacity was placed in threshold</span></span><br><span class="line">        newCap = oldThr;</span><br><span class="line">    <span class="keyword">else</span> &#123;               <span class="comment">// zero initial threshold signifies using defaults</span></span><br><span class="line">        newCap = DEFAULT_INITIAL_CAPACITY;</span><br><span class="line">        newThr = (<span class="keyword">int</span>)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (newThr == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">float</span> ft = (<span class="keyword">float</span>)newCap * loadFactor;</span><br><span class="line">        newThr = (newCap &lt; MAXIMUM_CAPACITY &amp;&amp; ft &lt; (<span class="keyword">float</span>)MAXIMUM_CAPACITY ?</span><br><span class="line">                  (<span class="keyword">int</span>)ft : Integer.MAX_VALUE);</span><br><span class="line">    &#125;</span><br><span class="line">    threshold = newThr;</span><br><span class="line">    <span class="meta">@SuppressWarnings</span>(&#123;<span class="string">"rawtypes"</span>,<span class="string">"unchecked"</span>&#125;)</span><br><span class="line">    Node&lt;K,V&gt;[] newTab = (Node&lt;K,V&gt;[])<span class="keyword">new</span> Node[newCap];</span><br><span class="line">    table = newTab;</span><br><span class="line">    <span class="keyword">if</span> (oldTab != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>; j &lt; oldCap; ++j) &#123;</span><br><span class="line">            Node&lt;K,V&gt; e;</span><br><span class="line">            <span class="keyword">if</span> ((e = oldTab[j]) != <span class="keyword">null</span>) &#123;</span><br><span class="line">                oldTab[j] = <span class="keyword">null</span>;</span><br><span class="line">                <span class="keyword">if</span> (e.next == <span class="keyword">null</span>)</span><br><span class="line">                    newTab[e.hash &amp; (newCap - <span class="number">1</span>)] = e;</span><br><span class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (e <span class="keyword">instanceof</span> TreeNode)</span><br><span class="line">                    ((TreeNode&lt;K,V&gt;)e).split(<span class="keyword">this</span>, newTab, j, oldCap);</span><br><span class="line">                <span class="keyword">else</span> &#123; <span class="comment">// preserve order</span></span><br><span class="line">                    Node&lt;K,V&gt; loHead = <span class="keyword">null</span>, loTail = <span class="keyword">null</span>;</span><br><span class="line">                    Node&lt;K,V&gt; hiHead = <span class="keyword">null</span>, hiTail = <span class="keyword">null</span>;</span><br><span class="line">                    Node&lt;K,V&gt; next;</span><br><span class="line">                    <span class="keyword">do</span> &#123;</span><br><span class="line">                        next = e.next;</span><br><span class="line">                        <span class="keyword">if</span> ((e.hash &amp; oldCap) == <span class="number">0</span>) &#123;</span><br><span class="line">                            <span class="keyword">if</span> (loTail == <span class="keyword">null</span>)</span><br><span class="line">                                loHead = e;</span><br><span class="line">                            <span class="keyword">else</span></span><br><span class="line">                                loTail.next = e;</span><br><span class="line">                            loTail = e;</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="keyword">else</span> &#123;</span><br><span class="line">                            <span class="keyword">if</span> (hiTail == <span class="keyword">null</span>)</span><br><span class="line">                                hiHead = e;</span><br><span class="line">                            <span class="keyword">else</span></span><br><span class="line">                                hiTail.next = e;</span><br><span class="line">                            hiTail = e;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125; <span class="keyword">while</span> ((e = next) != <span class="keyword">null</span>);</span><br><span class="line">                    <span class="keyword">if</span> (loTail != <span class="keyword">null</span>) &#123;</span><br><span class="line">                        loTail.next = <span class="keyword">null</span>;</span><br><span class="line">                        newTab[j] = loHead;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">if</span> (hiTail != <span class="keyword">null</span>) &#123;</span><br><span class="line">                        hiTail.next = <span class="keyword">null</span>;</span><br><span class="line">                        newTab[j + oldCap] = hiHead;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> newTab;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这段代码比之前的代码片段更长，我们还是一部分一部分地看。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">Node&lt;K,V&gt;[] oldTab = table;</span><br><span class="line"><span class="keyword">int</span> oldCap = (oldTab == <span class="keyword">null</span>) ? <span class="number">0</span> : oldTab.length;</span><br><span class="line"><span class="keyword">int</span> oldThr = threshold;</span><br><span class="line"><span class="keyword">int</span> newCap, newThr = <span class="number">0</span>;</span><br></pre></td></tr></table></figure>
+
+<p>这部分没什么好说的，oldTab就是扩容前的数组，oldCap和oldThr分别是扩容前的容量和扩容前的阈值，如果是之前没有存放过元素，那么这两个属性的初始值都是0，newCap和newThr是扩容后的数组长度和阈值。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (oldCap &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (oldCap &gt;= MAXIMUM_CAPACITY) &#123;</span><br><span class="line">        threshold = Integer.MAX_VALUE;</span><br><span class="line">        <span class="keyword">return</span> oldTab;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> ((newCap = oldCap &lt;&lt; <span class="number">1</span>) &lt; MAXIMUM_CAPACITY &amp;&amp;</span><br><span class="line">             oldCap &gt;= DEFAULT_INITIAL_CAPACITY)</span><br><span class="line">        newThr = oldThr &lt;&lt; <span class="number">1</span>; <span class="comment">// double threshold</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里就是扩容前数组容量大于0的情况下，如果扩容前的数组容量已经达到了最大限制，那么无法继续扩容，否则新数组容量是原来的两倍，若是扩容后的容量满足要求则阈值也变为原来的二倍。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">else</span> <span class="keyword">if</span> (oldThr &gt; <span class="number">0</span>) <span class="comment">// initial capacity was placed in threshold</span></span><br><span class="line">    newCap = oldThr;</span><br><span class="line"><span class="keyword">else</span> &#123;               <span class="comment">// zero initial threshold signifies using defaults</span></span><br><span class="line">    newCap = DEFAULT_INITIAL_CAPACITY;</span><br><span class="line">    newThr = (<span class="keyword">int</span>)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果扩容前容量不大于0，而扩容前的阈值大于0，那么将新的容量设为旧的阈值。如果阈值和容量都不大于0（比如HashMap初始状态）那么将新的容量设置为16，新的阈值设置为12。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (newThr == <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">float</span> ft = (<span class="keyword">float</span>)newCap * loadFactor;</span><br><span class="line">    newThr = (newCap &lt; MAXIMUM_CAPACITY &amp;&amp; ft &lt; (<span class="keyword">float</span>)MAXIMUM_CAPACITY ?</span><br><span class="line">              (<span class="keyword">int</span>)ft : Integer.MAX_VALUE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里就是给新阈值赋值，也没什么好说的。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">threshold = newThr;</span><br><span class="line"><span class="meta">@SuppressWarnings</span>(&#123;<span class="string">"rawtypes"</span>,<span class="string">"unchecked"</span>&#125;)</span><br><span class="line">Node&lt;K,V&gt;[] newTab = (Node&lt;K,V&gt;[])<span class="keyword">new</span> Node[newCap];</span><br><span class="line">table = newTab;</span><br></pre></td></tr></table></figure>
+
+<p>这段代码就是为扩容以后做准备了，申请一段新的内存空间，赋值给数组。</p>
+<p>最后一部分的代码比较长，我们说一下基本思路。遍历扩容前的所有结点，并对其进行ReHash。为什么要进行ReHash呢？我们回顾一下算出插入位置的方法：<code>(n - 1) &amp; hash(key)</code>。数组长度变了，那么插入的位置自然也就变了，因此我们需要进行ReHash。</p>
+<h2 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h2><h3 id="线程安全"><a href="#线程安全" class="headerlink" title="线程安全"></a>线程安全</h3><p>HashMap是线程不安全的，尽管JDK8改进了之前JDK7在多线程环境下可能出现循环链表的问题，但这并不意味着HashMap就线程安全了。常见的替代HashMap的线程安全方案有HashTable和ConcurrentHashMap两种集合，但是HashTable在并发能力方面并不理想，因此使用很少。</p>
+<h3 id="负载因子"><a href="#负载因子" class="headerlink" title="负载因子"></a>负载因子</h3><p>为什么开发人员要把默认负载因子设置为0.75呢？因为根据泊松分布，使用0.75作为负载因子，链表元素达到8个是极小的概率。</p>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>Java容器</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>深入理解Java虚拟机-经典垃圾收集器介绍</title>
+    <url>/2020/06/06/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E7%BB%8F%E5%85%B8%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E4%BB%8B%E7%BB%8D/</url>
+    <content><![CDATA[<p>在前面的文章中，我们提到了几种常见的垃圾收集算法，今天咱们来说一说商用Java虚拟机中经典的垃圾收集器。</p>
+<a id="more"></a>
+
+<h2 id="新生代收集器"><a href="#新生代收集器" class="headerlink" title="新生代收集器"></a>新生代收集器</h2><p>我们首先介绍三种新生代的垃圾收集器，分别是Serial收集器、ParNew收集器和Parallel Scavenge收集器。</p>
+<h3 id="Serial收集器"><a href="#Serial收集器" class="headerlink" title="Serial收集器"></a>Serial收集器</h3><p><img src="https://img-blog.csdnimg.cn/20200606170438483.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="Serial收集器垃圾收集过程"></p>
+<p>Serial收集器是最古老的垃圾收集器，曾经是新生代垃圾收集的唯一选择。这是一种单线程的垃圾收集器，采用标记-复制算法，在进行垃圾收集时，所有的工作线程都会停止等待垃圾收集完成，也就是所谓的“Stop the world”。对于服务器来说，可能过长的暂停是不可接受的，但是对于短暂的暂停时间不敏感的客户端其实仍然是简单高效的选择。</p>
+<h3 id="ParNew收集器"><a href="#ParNew收集器" class="headerlink" title="ParNew收集器"></a>ParNew收集器</h3><p><img src="https://img-blog.csdnimg.cn/20200606192934365.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="ParNew收集器垃圾收集过程"></p>
+<p>ParNew收集器可以被看作是Serial收集器的多线程版本，比起Serial收集器并没有太大创新，只是把GC过程的单线程改成了多线程，同样也是采用复制算法。这里我们需要补充一点，当在单核CPU的场景下，由于线程切换必然会产生一定的开销，因此，在这种情况下，ParNew收集器的效率是不如Serial收集器的。</p>
+<h3 id="Parallel-Scavenge收集器"><a href="#Parallel-Scavenge收集器" class="headerlink" title="Parallel Scavenge收集器"></a>Parallel Scavenge收集器</h3><p>同样的，Parallel Scavenge收集器也是多线程版本的收集器，因此垃圾收集过程和上述的ParNew收集器很类似。与CMS等关注工作线程停顿时间（提高用户体验）不同，Parallel Scavenge收集器的特点是非常关注吞吐量的大小（高效利用CPU），吞吐量的计算公式如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">吞吐量&#x3D;工作线程运行时间&#x2F;CPU总运行时间</span><br></pre></td></tr></table></figure>
+
+<h2 id="老年代收集器"><a href="#老年代收集器" class="headerlink" title="老年代收集器"></a>老年代收集器</h2><p>几种常见的老年代垃圾收集器分别是Serial Old收集器、Parallel Old收集器和CMS收集器。</p>
+<h3 id="Serial-Old收集器"><a href="#Serial-Old收集器" class="headerlink" title="Serial Old收集器"></a>Serial Old收集器</h3><p>单从名字来看，Serial Old收集器是Serial收集器的老年代版本，事实也确实如此，这款收集器是单线程，采用标记-整理算法的收集器。在JDK 5及以前的JDK中，Serial Old收集器常常与Parallel Scavenge收集器一同使用。</p>
+<h3 id="Parallel-Old收集器"><a href="#Parallel-Old收集器" class="headerlink" title="Parallel Old收集器"></a>Parallel Old收集器</h3><p>与Serial Old收集器类似，Parallel Old收集器是Parallel Scavenge收集器的老年代版本，使用多线程和标记-整理算法收集垃圾。这款垃圾收集器是JDK 6才开始出现的，在此之前都是Serial Old收集器常常与Parallel Scavenge收集器搭配使用，但是这样的话，尽管新生代的垃圾收集是多线程的，但是老年代却是单线程的，因此实际上吞吐量可能并不是很高。Parallel Old收集器出现以后，配合Parallel Scavenge收集器才真正是高吞吐量的垃圾收集。</p>
+<h3 id="CMS收集器"><a href="#CMS收集器" class="headerlink" title="CMS收集器"></a>CMS收集器</h3><p>CMS是一款划时代的垃圾收集器，它通过较短的停顿时间进行垃圾收集，是HotSpot的第一款真正意义上的并发收集器（用户线程和GC线程并发工作），还是一种“边污染边治理”的收集器。CMS收集器的垃圾收集分为四个步骤：</p>
+<ul>
+<li><p>初始标记</p>
+</li>
+<li><p>并发标记</p>
+</li>
+<li><p>重新标记</p>
+</li>
+<li><p>并发清除</p>
+</li>
+</ul>
+<p><img src="https://img-blog.csdnimg.cn/20200607213045562.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="CMS收集器垃圾收集过程"></p>
+<p>其中，初始标记和重新标记都需要停止其他工作线程。初始标记时利用可达性分析算法从GC Roots出发进行标记，整个过程耗时非常短，而重新标记是对并发标记过程中工作线程产生的垃圾进行收集。最后是并发-清除过程，由于不需要移动对象，因此GC线程与工作线程并发运行。</p>
+<p>在整个CMS收集器收集垃圾的过程中，初始标记和重新标记的耗时是最短的，因此CMS是一款非常优秀的垃圾收集器。但是这款收集器就没有缺点吗？答案是有的。下面总结了几条CMS收集器的缺点：</p>
+<ul>
+<li><p>由于CMS采用标记-清除算法，因此会产生大量的内存碎片，将来需要分配大内存给某个对象时，可能没有足够的内存空间。</p>
+</li>
+<li><p>CMS收集器对处理器资源敏感，并发过程中CMS收集器的线程实际上是占据了一部分处理器资源的，因此造成吞吐量在一定程度上的下降。</p>
+</li>
+<li><p>难以处理并发清除阶段产生的“浮动垃圾”。在并发清理阶段尽管会回收部分垃圾，但是此时工作线程也在运行，还在产生一些垃圾，但这些垃圾因为没有被标记，因此是不可回收的。这时如果工作线程分配新的对象而没有足够的内存空间时，就会发生“并发失败”（Concurrent Mode Failure），此时虚拟机将会把CMS收集器替换成为Serial Old收集器，并冻结工作线程。</p>
+</li>
+</ul>
+<h2 id="G1收集器"><a href="#G1收集器" class="headerlink" title="G1收集器"></a>G1收集器</h2><p>G1收集器是一款面向服务器端的垃圾收集器，服务器端的多CPU和大容量内存能够满足G1收集器对于缩短GC停顿时间的需求。G1也采用分代理论，但是这些不再是之前固定大小和位置了，而是将堆内存划分为一个个小的内存块，每个内存块可以根据需求进行划分，下面的分区中Humongous区是用于存放大对象的区域。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200607162646881.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="G1收集器分区图"></p>
+<p>G1收集器的垃圾收集过程也分为4个步骤：</p>
+<ul>
+<li><p>初始标记。初始标记与CMS类似，需要进行“Stop the world”，但是是借着Minor GC的过程进行的，因此没有额外的耗时。这个过程标记GC Roots可以关联的对象，然后修改TAMS（Top at Mark Start）的指针，指针划分每一个区域中的一部分空间用于并发回收过程中的新对象分配。</p>
+</li>
+<li><p>并发标记。从GC Root开始对堆中对象进行可达性分析，找出要回收的对象，并且需要处理原始快照（SATB）记录的在并发时引用变动的对象。</p>
+</li>
+<li><p>最终标记。需要“Stop the world”并进行并发标记遗留的SATB对象的处理。</p>
+</li>
+<li><p>筛选回收。这里根据用户期望的停顿时间指定回收计划，将决定回收的区域的存活的对象复制到新的区域中，并清空旧的区域。这里同样暂停所有工作线程。</p>
+</li>
+</ul>
+<p><img src="https://img-blog.csdnimg.cn/20200607213129279.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="G1收集器垃圾收集过程"></p>
+<p>与CMS收集器的标记-清除不同，G1收集器宏观上看使用标记-整理算法，从局部来看又是使用的标记-复制算法。可以由用户指定期望的停顿时间是G1相较CMS的一个较大的优势，但是这里的停顿时间必须切合实际，因为停顿时间一定是有一个下限的，因此过小的停顿时间可能难以达到预期，甚至引发Full GC降低系统性能。</p>
+<h2 id="写在最后的话"><a href="#写在最后的话" class="headerlink" title="写在最后的话"></a>写在最后的话</h2><p>这些年JDK版本迭代速度较快，涌现了一些非常优秀的垃圾收集器，本文只是介绍了一些经典的垃圾收集器，后续还会有一些优秀的收集器，比如Shenandoah收集器和ZGC收集器，这两款都是非常优秀的低延迟垃圾收集器，在今年的春招中有些公司已经开始问到相关的问题了。</p>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>JVM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>深入理解Java虚拟机-垃圾收集算法</title>
+    <url>/2020/05/31/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95/</url>
+    <content><![CDATA[<p>今天讨论的话题是垃圾收集算法，主要介绍一下标记-清除、标记-整理和标记-复制算法，还会基于这些算法讲一下分代垃圾收集算法。</p>
+<a id="more"></a>
+
+<h2 id="标记-清除算法"><a href="#标记-清除算法" class="headerlink" title="标记-清除算法"></a>标记-清除算法</h2><p>首先讲一下标记-清除算法，这是最早出现也是最基础的一种算法。从名字就可以看出该算法分为两个过程：标记和清除。标记可以是标记存活对象，也可以是标记将要回收的对象，清除自然就是将要回收的对象的内存收回。我们通过一张图来了解标记-清除算法。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200531202410470.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="标记-清除算法"></p>
+<p>上图中青色的部分是存活对象，棕色部分是可回收的对象，空白部分是未使用的内存。在一次垃圾回收以后，标记为可回收的对象均被清除。这种算法虽然简单，但是有一定局限性。由于可回收对象在内存中的分布不均匀，导致有可能出现当一个对象需要申请较大内存时，没有连续空间分配给对象。</p>
+<h2 id="标记-整理算法"><a href="#标记-整理算法" class="headerlink" title="标记-整理算法"></a>标记-整理算法</h2><p><img src="https://img-blog.csdnimg.cn/20200531203937766.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="标记-整理算法"></p>
+<p>上图是标记-整理算法的图示，标记-整理算法与标记-清除算法不同的地方在于标记-整理算法是一种移动式的内存回收算法，它会将存活对象统一移动到一块内存并设置边界，回收边界外的所有对象。由于移动对象是一种极为负重的操作，因此在执行该算法时，其他所有的应用程序必须暂停，因此这种停顿被描述为“Stop The World”。</p>
+<h2 id="标记-复制算法"><a href="#标记-复制算法" class="headerlink" title="标记-复制算法"></a>标记-复制算法</h2><p><img src="https://img-blog.csdnimg.cn/20200531205710366.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="标记-复制算法"></p>
+<p>标记-复制算法将内存分为容量相等的两块，每次只使用其中一块区域，另一块是保留区域。每次垃圾回收，将存活着的对象复制到保留区域中。这种算法适合存活对象占少数的情况，如果存活对象占多数，将会进行大量的内存复制。IBM曾经做过一项调查显示，98%的对象都是“朝生夕灭”，但是这种算法每次保留50%的空间，实际上浪费了大量可用内存。</p>
+<h2 id="分代垃圾收集算法"><a href="#分代垃圾收集算法" class="headerlink" title="分代垃圾收集算法"></a>分代垃圾收集算法</h2><p>以上三种垃圾收集算法各有优缺点，因此在真实的商用虚拟机设计中，用到了以上算法的思想并设计出了分代算法。在Java虚拟机中，设计者会把Java堆分为新生代和老年代两个区域。其中新生代还会被划分为Eden区和Survivor区，Survivor区还被分为From Survivor和To Survivor。Eden区、From Survivor和To Survivor的内存占比是8:1:1，下图展示了新生代内存的划分。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200531213248256.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="新生代内存区域"></p>
+<p>新生代中垃圾回收采用的是标记-复制算法，算法流程如下：</p>
+<ul>
+<li><p>进行第一次垃圾收集时，垃圾收集器将Eden区的存活对象复制到From Survivor区，清空Eden区，存活对象计数加1</p>
+</li>
+<li><p>再次进行垃圾收集时，将Eden区和From Survivor区的存活对象复制到To Survivor区，清空Eden区和From Survivor区，存活对象计数加1，此时To Survivor变成了From Survivor，From Survivor变成了To Survivor</p>
+</li>
+<li><p>重复上一步</p>
+</li>
+</ul>
+<p>需要注意的是，有一种极端情况：当Eden区和From Survivor区的存活对象复制到To Survivor区，但内存不够时，会触发内存担保机制，也就是将存活对象直接放入老年代。</p>
+<p>新生代中的对象绝大多数都是朝生夕灭的，因此新生代区域是垃圾回收的主要区域。每一次的新生代的垃圾收集过程叫做Minor GC，如果经过一次Minor GC以后对象没有被回收，那么就会为这个对象的标记数加1。对于HotSpot虚拟机，当一个对象的标记数达到了15时，就会被移动到老年代。</p>
+<p>但随着时间的推移，老年代的空间也会被用完，这时就会进行一次Full GC。Full GC发生时，新生代和老年代的垃圾都会被收集，因此对系统的影响比较大，应减少Full GC的发生次数。</p>
+<p>老年代中的垃圾比较少，因此移动少量对象就可以完成垃圾清理，采用标记-整理算法可以做到回收老年代的垃圾。</p>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>JVM</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>深入理解Java虚拟机-判断对象是否存活算法与对象引用</title>
     <url>/2020/05/24/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E5%88%A4%E6%96%AD%E5%AF%B9%E8%B1%A1%E6%98%AF%E5%90%A6%E5%AD%98%E6%B4%BB%E7%AE%97%E6%B3%95%E4%B8%8E%E5%AF%B9%E8%B1%A1%E5%BC%95%E7%94%A8/</url>
     <content><![CDATA[<p>在之前的文章中我们谈到过Java内存区域的概念，我们知道Java中的对象一般存放在堆中，但是总不能让这些对象一直占着内存空间，这些对象最终都会被回收并释放内存，那么我们如何判断对象已经成为垃圾呢？这篇文章会提出两种算法解决这个问题。另外，本文还要谈一谈对象引用相关的知识，这在面试中也是经常被问到的问题。</p>
@@ -770,6 +934,190 @@
 </li>
 </ul>
 <h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p>深入理解Java虚拟机：JVM高级特性与最佳实践（第3版）<br><a href="https://next.xuetangx.com/learn/THU08091000252/THU08091000252/1511981/video/1318509" target="_blank" rel="noopener">学堂在线-JAVA程序设计进阶</a></p>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>JVM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>简单理解线段树</title>
+    <url>/2020/07/12/%E7%AE%80%E5%8D%95%E7%90%86%E8%A7%A3%E7%BA%BF%E6%AE%B5%E6%A0%91/</url>
+    <content><![CDATA[<p>线段树是二叉树的一种，常常被用于求区间和与区间最大值等操作。</p>
+<a id="more"></a>
+
+<h2 id="场景假设"><a href="#场景假设" class="headerlink" title="场景假设"></a>场景假设</h2><p>想象一下这种场景，一个数组现在需要进行两种操作：对某区间内数字进行求和与更新数组中的某个元素。对于更新元素操作很容易看出它的时间复杂度是$O(1)$，区间求和的时间复杂度是$O(n)$。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200712161116106.png#pic_center" alt=""></p>
+<p>通过下面这种方法可以降低区间元素求和的时间复杂度：设置另一个数组<code>sum_table</code>，这个数组每个位置的值存储<code>table</code>数组中当前位置及之前的所有元素之和。这样，我们可以把区间元素求和的时间复杂度降为$O(1)$，以区间[1,4]为例，计算方法为<code>sum_table[4]-sum_table[0]</code>。但这时更改元素的时间复杂度又上升了，修改了下标为8的元素，那么在<code>sum_table</code>中需要把下标为8及之后的元素都要进行修改。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200712162256110.png#pic_center" alt=""></p>
+<p>如果我们想把这两个操作的时间复杂度平均一下就需要用到今天介绍的线段树了。简单起见，我们用个短一点的数组来进行表示。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200714160113438.png#pic_center" alt=""></p>
+<p>上面这幅图，根节点是整个[0-5]范围内的区间元素之和，左孩子是前一半的数组和，右孩子是后一半的数组和，以此类推，叶子节点是每一个元素的值。这样不管是更新元素值还是求区间元素和都会是$O(logn)$的复杂度。</p>
+<p>为了方便后面进行代码表示，我们把上面那幅图稍微修改一下。给每个结点从上至下、从左至右开始编号，并且补齐空缺的结点使其成为一棵完全二叉树，根据编号将这些结点填入数组<code>tree</code>中。</p>
+<p><img src="https://img-blog.csdnimg.cn/2020071416011418.png#pic_center" alt=""></p>
+<h2 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h2><p>首先看一下构建线段树的代码实现。很明显这是一个递归调用的过程，由于每次将<code>arr</code>一分为二，因此递归出口就比较明显了，就是当区间的左边界与右边界相同时，也就是$start == end$时，进行<code>tree</code>数组填充。递归填充结点的左子树和右子树然后将左右孩子的值加起来得到当前结点的值。<code>left_node</code>和<code>right_node</code>的值是根据完全二叉树的性质得到的。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">buildTree</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span>[] tree, <span class="keyword">int</span> node, <span class="keyword">int</span> start, <span class="keyword">int</span> end)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (start == end) &#123;</span><br><span class="line">		tree[node] = arr[start];</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="keyword">int</span> mid = start + ((end - start) &gt;&gt; <span class="number">1</span>);</span><br><span class="line">		<span class="keyword">int</span> left_node = <span class="number">2</span> * node + <span class="number">1</span>;</span><br><span class="line">		<span class="keyword">int</span> right_node = <span class="number">2</span> * node + <span class="number">2</span>;</span><br><span class="line">		</span><br><span class="line">		buildTree(arr, tree, left_node, start, mid);</span><br><span class="line">		buildTree(arr, tree, right_node, mid + <span class="number">1</span>, end);</span><br><span class="line">		tree[node] = tree[left_node] + tree[right_node];</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接着是更新结点的代码，同样也是递归调用，递归出口和之前一样，还是区间边界相等时递归结束。二分查找判断需要更新哪一边的元素，找到更新结点并更新完成后逐级向上更新上层的结点。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">updateTree</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span>[] tree, <span class="keyword">int</span> node, <span class="keyword">int</span> start, <span class="keyword">int</span> end, <span class="keyword">int</span> idx, <span class="keyword">int</span> val)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (start == end) &#123;</span><br><span class="line">		arr[idx] = val;</span><br><span class="line">		tree[node] = val;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="keyword">int</span> mid = start + ((end - start) &gt;&gt; <span class="number">1</span>);</span><br><span class="line">		<span class="keyword">int</span> left_node = <span class="number">2</span> * node + <span class="number">1</span>;</span><br><span class="line">		<span class="keyword">int</span> right_node = <span class="number">2</span> * node + <span class="number">2</span>;</span><br><span class="line">		<span class="keyword">if</span> (idx &gt;= start &amp;&amp; idx &lt;= mid) &#123;</span><br><span class="line">			updateTree(arr, tree, left_node, start, mid, idx, val);</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			updateTree(arr, tree, right_node, mid + <span class="number">1</span>, end, idx, val);</span><br><span class="line">		&#125;</span><br><span class="line">		tree[node] = tree[left_node] + tree[right_node];</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>下面是区间求和部分的代码，依然是递归实现的代码。我们还是从根节点出发，求出左边的和<code>sum_left</code>与右边的和<code>sum_right</code>，然后加起来就是区间和了。当然左边或右边也许并不在区间内，这就需要考虑递归出口了。首先我们需要考虑待求和区间与当前递归区间不重合的情况，这时返回0，结束当前递归。接着是当前区间是待求和区间的子区间的情况，直接返回当前区间的和，也就是当前结点的值。第三种情况其实可以算是第二种情况的特殊情形，也就是遇到结点是待求和区间中的元素，同样返回结点值。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">queryTree</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span>[] tree, <span class="keyword">int</span> node, <span class="keyword">int</span> start, <span class="keyword">int</span> end, <span class="keyword">int</span> L, <span class="keyword">int</span> R)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (end &lt; L || start &gt; R) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (L &lt;= start &amp;&amp; end &lt;= R) &#123;</span><br><span class="line">		<span class="keyword">return</span> tree[node];</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (start == end) &#123;</span><br><span class="line">		<span class="keyword">return</span> tree[node];</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="keyword">int</span> mid = start + ((end - start) &gt;&gt; <span class="number">1</span>);</span><br><span class="line">		<span class="keyword">int</span> left_node = <span class="number">2</span> * node + <span class="number">1</span>;</span><br><span class="line">		<span class="keyword">int</span> right_node = <span class="number">2</span> * node + <span class="number">2</span>;</span><br><span class="line">		<span class="keyword">int</span> sum_left = queryTree(arr, tree, left_node, start, mid, L, R);</span><br><span class="line">		<span class="keyword">int</span> sum_right = queryTree(arr, tree, right_node, mid + <span class="number">1</span>, end, L, R);</span><br><span class="line">		<span class="keyword">return</span> sum_left + sum_right;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>下面是测试代码的部分。将数组<code>arr</code>构建成一棵线段树，需要注意的部分是<code>tree_size</code>也就是<code>tree</code>长度的计算，首先需要求出线段树的高度$h$为$\lceil log_2{size} \rceil+1$，然后根据完全二叉树的性质得到<code>tree_size</code>为$2^h-1$。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span>[] arr = &#123;<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>&#125;;</span><br><span class="line">	<span class="keyword">int</span> size = <span class="number">6</span>;</span><br><span class="line">	<span class="keyword">int</span> tree_size = (<span class="keyword">int</span>) (Math.pow(<span class="number">2</span>, Math.ceil(Math.log(size) / Math.log(<span class="number">2</span>)) + <span class="number">1</span>) - <span class="number">1</span>);</span><br><span class="line">	<span class="keyword">int</span>[] tree = <span class="keyword">new</span> <span class="keyword">int</span>[tree_size];</span><br><span class="line">	SegmentTree sTree = <span class="keyword">new</span> SegmentTree();</span><br><span class="line">	sTree.buildTree(arr, tree, <span class="number">0</span>, <span class="number">0</span>, size - <span class="number">1</span>);</span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tree_size; ++i) &#123;</span><br><span class="line">		System.out.printf(<span class="string">"tree[%d] = %d\n"</span>, i, tree[i]);</span><br><span class="line">	&#125;</span><br><span class="line">	System.out.println();</span><br><span class="line">	</span><br><span class="line">	sTree.updateTree(arr, tree, <span class="number">0</span>, <span class="number">0</span>, size - <span class="number">1</span>, <span class="number">4</span>, <span class="number">6</span>);</span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tree_size; ++i) &#123;</span><br><span class="line">		System.out.printf(<span class="string">"tree[%d] = %d\n"</span>, i, tree[i]);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">int</span> s = sTree.queryTree(arr, tree, <span class="number">0</span>, <span class="number">0</span>, size - <span class="number">1</span>, <span class="number">2</span>, <span class="number">5</span>);</span><br><span class="line">	System.out.println(<span class="string">"s = "</span> + s);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>下面是线段树的完整Java代码实现。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SegmentTree</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">buildTree</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span>[] tree, <span class="keyword">int</span> node, <span class="keyword">int</span> start, <span class="keyword">int</span> end)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (start == end) &#123;</span><br><span class="line">			tree[node] = arr[start];</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">int</span> mid = start + ((end - start) &gt;&gt; <span class="number">1</span>);</span><br><span class="line">			<span class="keyword">int</span> left_node = <span class="number">2</span> * node + <span class="number">1</span>;</span><br><span class="line">			<span class="keyword">int</span> right_node = <span class="number">2</span> * node + <span class="number">2</span>;</span><br><span class="line">			</span><br><span class="line">			buildTree(arr, tree, left_node, start, mid);</span><br><span class="line">			buildTree(arr, tree, right_node, mid + <span class="number">1</span>, end);</span><br><span class="line">			tree[node] = tree[left_node] + tree[right_node];</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">updateTree</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span>[] tree, <span class="keyword">int</span> node, <span class="keyword">int</span> start, <span class="keyword">int</span> end, <span class="keyword">int</span> idx, <span class="keyword">int</span> val)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (start == end) &#123;</span><br><span class="line">			arr[idx] = val;</span><br><span class="line">			tree[node] = val;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">int</span> mid = start + ((end - start) &gt;&gt; <span class="number">1</span>);</span><br><span class="line">			<span class="keyword">int</span> left_node = <span class="number">2</span> * node + <span class="number">1</span>;</span><br><span class="line">			<span class="keyword">int</span> right_node = <span class="number">2</span> * node + <span class="number">2</span>;</span><br><span class="line">			<span class="keyword">if</span> (idx &gt;= start &amp;&amp; idx &lt;= mid) &#123;</span><br><span class="line">				updateTree(arr, tree, left_node, start, mid, idx, val);</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				updateTree(arr, tree, right_node, mid + <span class="number">1</span>, end, idx, val);</span><br><span class="line">			&#125;</span><br><span class="line">			tree[node] = tree[left_node] + tree[right_node];</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">queryTree</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span>[] tree, <span class="keyword">int</span> node, <span class="keyword">int</span> start, <span class="keyword">int</span> end, <span class="keyword">int</span> L, <span class="keyword">int</span> R)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (end &lt; L || start &gt; R) &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> (L &lt;= start &amp;&amp; end &lt;= R) &#123;</span><br><span class="line">			<span class="keyword">return</span> tree[node];</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> (start == end) &#123;</span><br><span class="line">			<span class="keyword">return</span> tree[node];</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">int</span> mid = start + ((end - start) &gt;&gt; <span class="number">1</span>);</span><br><span class="line">			<span class="keyword">int</span> left_node = <span class="number">2</span> * node + <span class="number">1</span>;</span><br><span class="line">			<span class="keyword">int</span> right_node = <span class="number">2</span> * node + <span class="number">2</span>;</span><br><span class="line">			<span class="keyword">int</span> sum_left = queryTree(arr, tree, left_node, start, mid, L, R);</span><br><span class="line">			<span class="keyword">int</span> sum_right = queryTree(arr, tree, right_node, mid + <span class="number">1</span>, end, L, R);</span><br><span class="line">			<span class="keyword">return</span> sum_left + sum_right;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">int</span>[] arr = &#123;<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>&#125;;</span><br><span class="line">		<span class="keyword">int</span> size = <span class="number">6</span>;</span><br><span class="line">		<span class="keyword">int</span> tree_size = (<span class="keyword">int</span>) (Math.pow(<span class="number">2</span>, Math.ceil(Math.log(size) / Math.log(<span class="number">2</span>)) + <span class="number">1</span>) - <span class="number">1</span>);</span><br><span class="line">		<span class="keyword">int</span>[] tree = <span class="keyword">new</span> <span class="keyword">int</span>[tree_size];</span><br><span class="line">		SegmentTree sTree = <span class="keyword">new</span> SegmentTree();</span><br><span class="line">		sTree.buildTree(arr, tree, <span class="number">0</span>, <span class="number">0</span>, size - <span class="number">1</span>);</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tree_size; ++i) &#123;</span><br><span class="line">			System.out.printf(<span class="string">"tree[%d] = %d\n"</span>, i, tree[i]);</span><br><span class="line">		&#125;</span><br><span class="line">		System.out.println();</span><br><span class="line">		</span><br><span class="line">		sTree.updateTree(arr, tree, <span class="number">0</span>, <span class="number">0</span>, size - <span class="number">1</span>, <span class="number">4</span>, <span class="number">6</span>);</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tree_size; ++i) &#123;</span><br><span class="line">			System.out.printf(<span class="string">"tree[%d] = %d\n"</span>, i, tree[i]);</span><br><span class="line">		&#125;</span><br><span class="line">		</span><br><span class="line">		<span class="keyword">int</span> s = sTree.queryTree(arr, tree, <span class="number">0</span>, <span class="number">0</span>, size - <span class="number">1</span>, <span class="number">2</span>, <span class="number">5</span>);</span><br><span class="line">		System.out.println(<span class="string">"s = "</span> + s);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>当然除了本文中用于求区间和的操作，线段树还可以求区间最大值，只需要将结点存放的值由子树和改成子树最大值即可。</p>
+]]></content>
+      <categories>
+        <category>数据结构</category>
+      </categories>
+      <tags>
+        <tag>数据结构</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>类加载过程</title>
+    <url>/2020/07/16/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E8%BF%87%E7%A8%8B/</url>
+    <content><![CDATA[<p>之前我们了解过class文件的存储格式，本文将介绍虚拟机如何加载class文件。</p>
+<a id="more"></a>
+
+<h2 id="类的生命周期"><a href="#类的生命周期" class="headerlink" title="类的生命周期"></a>类的生命周期</h2><p><img src="https://img-blog.csdnimg.cn/20200718102109679.png#pic_center" alt=""></p>
+<p>一般来说，类的生命周期被划分为加载、验证、准备、解析、初始化、使用和卸载几个阶段，其中验证、准备和解析被统称为连接阶段。解析的过程顺序不确定，可能在初始化开始之后才开始，这常常出现在Java的晚绑定（动态绑定）中。</p>
+<h2 id="类加载过程"><a href="#类加载过程" class="headerlink" title="类加载过程"></a>类加载过程</h2><h3 id="加载"><a href="#加载" class="headerlink" title="加载"></a>加载</h3><p>“加载”和“类加载”听起来十分相似，但是加载只是类加载的一个阶段。加载阶段的三个任务：</p>
+<ul>
+<li>通过类的全限定名获取类的二进制字节流。</li>
+<li>将二进制字节流转化成运行时数据结构。</li>
+<li>在内存中生成这个类的java.lang.Class对象，作为方法区数据结构的访问入口。</li>
+</ul>
+<p>对于第一个任务，Java虚拟机规范并没有明确要求从字节码文件中获取二进制字节流，因此一般可以从以下途径获取：</p>
+<ul>
+<li>从压缩包获取，包括zip、jar、war格式等</li>
+<li>从网络中获取，如web applet</li>
+<li>运行时计算生成，较多的使用场景是动态代理技术</li>
+<li>从数据库中获取</li>
+<li>从加密文件中获取</li>
+<li>……</li>
+</ul>
+<p>非数组类型的类加载阶段是程序员可控制性最强的阶段，程序员可以通过自定义类加载器来控制字节流的获取方式。<br>数组类型本身并不是通过类加载器进行创建，而是通过JVM在内存中直接动态创建。但数组类的元素类型（去掉所有数组维度的类型）最终还是要靠类加载器加载，数组类的创建过程遵循下列规则：</p>
+<ul>
+<li>如果数组的组件类型（去掉一个维度的类型，区别于元素类型）是引用类型，就递归加载这个组件类型，数组会被标识在加载该组件类型的类加载器的类名称空间上。</li>
+<li>如果数组的组件类型不是引用类型，JVM会将数组标记为与引导类加载器关联。</li>
+<li>数组类的可访问性和组件类型的可访问性一致，如果组件类型不是引用类型，那么它的数组类的可访问性默认是public，所有的类和接口都可以访问。</li>
+</ul>
+<h3 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h3><p>验证阶段保证class文件的字节流符合Java虚拟机规范，不会损害Java虚拟机的安全。验证阶段主要包括四个验证动作：文件格式验证、元数据验证、字节码验证和符号引用验证。</p>
+<h4 id="文件格式验证"><a href="#文件格式验证" class="headerlink" title="文件格式验证"></a>文件格式验证</h4><p>文件格式验证是要验证字节流是否符合class文件格式规范，可以验证的地方主要包括：</p>
+<ul>
+<li>开头是否是魔数0xCAFEBABE</li>
+<li>主次版本号能否被Java虚拟机接受</li>
+<li>常量池的常量中是否有不被支持的常量类型</li>
+<li>class文件本身及各个部分是否有被删除或附加的其他信息</li>
+<li>……</li>
+</ul>
+<h4 id="元数据验证"><a href="#元数据验证" class="headerlink" title="元数据验证"></a>元数据验证</h4><p>主要包括以下验证点：</p>
+<ul>
+<li>这个类是否有父类（除了Object类以外的所有类都有父类）</li>
+<li>这个类的父类是否继承了final修饰的类</li>
+<li>如果这个类不是抽象类，是否实现了父类或接口要求实现的所有方法</li>
+<li>类中的字段、方法是否与父类产生矛盾</li>
+<li>……</li>
+</ul>
+<h4 id="字节码验证"><a href="#字节码验证" class="headerlink" title="字节码验证"></a>字节码验证</h4><p>前面的元数据验证主要是用于数据类型校验，字节码校验是进行类的方法体校验，包括以下内容：</p>
+<ul>
+<li>任意时刻操作数栈的数据类型和指令代码序列都能配合工作，不会出现类似于“在操作数栈中放了一个int类型的数据，使用时按照long类型来载入本地变量表”的情况。</li>
+<li>任何指令都不会跳转到方法体外的字节码指令上。</li>
+<li>保证数据类型转换的合法性，子类对象可以赋值给父类数据类型，但反过来则不行，更不能将对象赋值给一个毫不相关的数据类型。</li>
+<li>……</li>
+</ul>
+<h4 id="符号引用验证"><a href="#符号引用验证" class="headerlink" title="符号引用验证"></a>符号引用验证</h4><p>符号引用验证主要是看该类是否缺少或者被禁止访问它依赖的某些外部类、方法、字段等资源。主要验证下列内容：</p>
+<ul>
+<li>符号引用中能否通过全限定名找到对应的类。</li>
+<li>在指定类中是否存在符合方法的字段描述符及简单名称所描述的字段和方法。</li>
+<li>符号引用中的类、字段和方法的可访问性是否可以被当前类访问。</li>
+<li>……</li>
+</ul>
+<h3 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h3><p>这个阶段是为静态变量设置初始值并分配内存的阶段，一般来说是应该在方法区上进行操作的，在JDK7之前，HotSpot使用永久代来实现方法区，但JDK8开始，永久代被移除，静态变量就和class对象一起被存放在了堆空间中。<br>准备阶段的初始值并不是代码中赋予的值，而是“赋零值”的过程，一起看一下下面的代码：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> value = <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p>尽管代码里面写的是给value赋1，但准备阶段应该是将0赋给value，真正将1赋给value的阶段应该是后面的初始化的阶段。下面列出了各种数据类型的零值表表格。</p>
+<table>
+<thead>
+<tr>
+<th align="center">数据类型</th>
+<th align="center">零值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">int</td>
+<td align="center">0</td>
+</tr>
+<tr>
+<td align="center">long</td>
+<td align="center">0L</td>
+</tr>
+<tr>
+<td align="center">short</td>
+<td align="center">(short)0</td>
+</tr>
+<tr>
+<td align="center">char</td>
+<td align="center">‘\u0000’</td>
+</tr>
+<tr>
+<td align="center">byte</td>
+<td align="center">(byte)0</td>
+</tr>
+<tr>
+<td align="center">boolean</td>
+<td align="center">false</td>
+</tr>
+<tr>
+<td align="center">float</td>
+<td align="center">0.0f</td>
+</tr>
+<tr>
+<td align="center">double</td>
+<td align="center">0.0d</td>
+</tr>
+<tr>
+<td align="center">reference</td>
+<td align="center">null</td>
+</tr>
+</tbody></table>
+<p>然而并不是所有情况都是赋零值的过程，当静态变量被final修饰时，例如下面这种情况：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> value = <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p>这种情况下，value在编译阶段就已经生成了ConstantValue属性，所以在准备阶段就会把1赋给value。</p>
+<h3 id="解析"><a href="#解析" class="headerlink" title="解析"></a>解析</h3><p>解析阶段就是将常量池中的符号引用转换为直接引用的过程。前面提到了符号引用相关的内容，这里简要说明一下符号引用和直接引用的概念。</p>
+<ul>
+<li><p><strong>符号引用</strong>：符号引用是一组用符号来描述所引用的目标，这些符号可以无歧义地定位到目标。在前面讲类文件结构时就提到过符号引用如CONSTANT_Fieldref_info、CONSTANT_Methodref_info、CONSTANT_InterfaceMethodref_info等。</p>
+</li>
+<li><p><strong>直接引用</strong>：直接引用是可以直接指向目标的指针、相对偏移量或是一个能间接定位到目标的句柄。</p>
+</li>
+</ul>
+<h3 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h3><p>初始化是类加载过程的最后一个阶段，前面的准备阶段我们说这是一个给静态变量赋零值的阶段，而到了初始化阶段就是真正给Java代码中的静态变量赋初始值的时候了。在初始化阶段，javac编译器会生成一个<clinit>()方法，用来给静态变量和静态语句块赋值。<clinit>()必须保证在多线程场景下被正确加锁同步，所以多个线程去执行<clinit>()方法时可能会遇到耗时操作导致阻塞。下面的代码进行了这种情况的演示。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestDeadLoopClass</span> </span>&#123;</span><br><span class="line">	<span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">DeadLoopClass</span> </span>&#123;</span><br><span class="line">		<span class="keyword">static</span> &#123;</span><br><span class="line">			<span class="comment">//这里不加if语句会无法编译</span></span><br><span class="line">			<span class="keyword">if</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">				System.out.println(Thread.currentThread() + <span class="string">"init DeadLoopClass"</span>);</span><br><span class="line">				<span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		Runnable script = <span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">			<span class="meta">@Override</span></span><br><span class="line">			<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">				System.out.println(Thread.currentThread() + <span class="string">" start"</span>);</span><br><span class="line">				DeadLoopClass dlc = <span class="keyword">new</span> DeadLoopClass();</span><br><span class="line">				System.out.println(Thread.currentThread() + <span class="string">" run over"</span>);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;;</span><br><span class="line">		</span><br><span class="line">		Thread thread1 = <span class="keyword">new</span> Thread(script);</span><br><span class="line">		Thread thread2 = <span class="keyword">new</span> Thread(script);</span><br><span class="line">		thread1.start();</span><br><span class="line">		thread2.start();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>运行结果如下，一个线程卡死了，另一个线程一直阻塞：</p>
+<blockquote>
+<p>Thread[Thread-0,5,main] start<br>Thread[Thread-1,5,main] start<br>Thread[Thread-0,5,main]init DeadLoopClass</p>
+</blockquote>
+<p>接下来看一下初始化的几种情况：</p>
+<p>1.遇到new、getstatic、putstatic或invokestatic时触发初始化：</p>
+<ul>
+<li>当执行new指令时会初始化一个类，即创建一个类的实例对象。</li>
+<li>当执行getstatic指令时会初始化一个类，即访问类的静态变量。</li>
+<li>当执行putstatic指令时会初始化一个类，即给静态变量赋值。</li>
+<li>当执行invokestatic指令时会初始化一个类，即调用类的静态方法。</li>
+</ul>
+<p>2.使用<code>java.lang.reflect</code>方法对类型进行反射调用的时候，如果类型没有初始化则先进行初始化。<br>3.当子类的父类没有初始化，先触发父类的初始化。<br>4.虚拟机启动时，需要指定一个要执行的主类（包含main()方法的类），虚拟机会先初始化这个类。<br>5.当使用JDK7加入的动态语言支持，如果<code>java.lang.invoke.MethodHandle</code>实例最后解析的结果是REF_getStatic、REF_putStatic、REF_invokeStatic、REF_newInvokeSpecial四种类型的方法句柄，且方法句柄对应的类没有被初始化，则先进行初始化。<br>6.当一个接口定义JDK8加入的默认方法（被default修饰的接口方法），当接口的实现类初始化，则接口要在实现类之前初始化。</p>
 ]]></content>
       <categories>
         <category>Java</category>
@@ -860,240 +1208,6 @@
       </tags>
   </entry>
   <entry>
-    <title>深入理解Java虚拟机-垃圾收集算法</title>
-    <url>/2020/05/31/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95/</url>
-    <content><![CDATA[<p>今天讨论的话题是垃圾收集算法，主要介绍一下标记-清除、标记-整理和标记-复制算法，还会基于这些算法讲一下分代垃圾收集算法。</p>
-<a id="more"></a>
-
-<h2 id="标记-清除算法"><a href="#标记-清除算法" class="headerlink" title="标记-清除算法"></a>标记-清除算法</h2><p>首先讲一下标记-清除算法，这是最早出现也是最基础的一种算法。从名字就可以看出该算法分为两个过程：标记和清除。标记可以是标记存活对象，也可以是标记将要回收的对象，清除自然就是将要回收的对象的内存收回。我们通过一张图来了解标记-清除算法。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200531202410470.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="标记-清除算法"></p>
-<p>上图中青色的部分是存活对象，棕色部分是可回收的对象，空白部分是未使用的内存。在一次垃圾回收以后，标记为可回收的对象均被清除。这种算法虽然简单，但是有一定局限性。由于可回收对象在内存中的分布不均匀，导致有可能出现当一个对象需要申请较大内存时，没有连续空间分配给对象。</p>
-<h2 id="标记-整理算法"><a href="#标记-整理算法" class="headerlink" title="标记-整理算法"></a>标记-整理算法</h2><p><img src="https://img-blog.csdnimg.cn/20200531203937766.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="标记-整理算法"></p>
-<p>上图是标记-整理算法的图示，标记-整理算法与标记-清除算法不同的地方在于标记-整理算法是一种移动式的内存回收算法，它会将存活对象统一移动到一块内存并设置边界，回收边界外的所有对象。由于移动对象是一种极为负重的操作，因此在执行该算法时，其他所有的应用程序必须暂停，因此这种停顿被描述为“Stop The World”。</p>
-<h2 id="标记-复制算法"><a href="#标记-复制算法" class="headerlink" title="标记-复制算法"></a>标记-复制算法</h2><p><img src="https://img-blog.csdnimg.cn/20200531205710366.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="标记-复制算法"></p>
-<p>标记-复制算法将内存分为容量相等的两块，每次只使用其中一块区域，另一块是保留区域。每次垃圾回收，将存活着的对象复制到保留区域中。这种算法适合存活对象占少数的情况，如果存活对象占多数，将会进行大量的内存复制。IBM曾经做过一项调查显示，98%的对象都是“朝生夕灭”，但是这种算法每次保留50%的空间，实际上浪费了大量可用内存。</p>
-<h2 id="分代垃圾收集算法"><a href="#分代垃圾收集算法" class="headerlink" title="分代垃圾收集算法"></a>分代垃圾收集算法</h2><p>以上三种垃圾收集算法各有优缺点，因此在真实的商用虚拟机设计中，用到了以上算法的思想并设计出了分代算法。在Java虚拟机中，设计者会把Java堆分为新生代和老年代两个区域。其中新生代还会被划分为Eden区和Survivor区，Survivor区还被分为From Survivor和To Survivor。Eden区、From Survivor和To Survivor的内存占比是8:1:1，下图展示了新生代内存的划分。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200531213248256.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="新生代内存区域"></p>
-<p>新生代中垃圾回收采用的是标记-复制算法，算法流程如下：</p>
-<ul>
-<li><p>进行第一次垃圾收集时，垃圾收集器将Eden区的存活对象复制到From Survivor区，清空Eden区，存活对象计数加1</p>
-</li>
-<li><p>再次进行垃圾收集时，将Eden区和From Survivor区的存活对象复制到To Survivor区，清空Eden区和From Survivor区，存活对象计数加1，此时To Survivor变成了From Survivor，From Survivor变成了To Survivor</p>
-</li>
-<li><p>重复上一步</p>
-</li>
-</ul>
-<p>需要注意的是，有一种极端情况：当Eden区和From Survivor区的存活对象复制到To Survivor区，但内存不够时，会触发内存担保机制，也就是将存活对象直接放入老年代。</p>
-<p>新生代中的对象绝大多数都是朝生夕灭的，因此新生代区域是垃圾回收的主要区域。每一次的新生代的垃圾收集过程叫做Minor GC，如果经过一次Minor GC以后对象没有被回收，那么就会为这个对象的标记数加1。对于HotSpot虚拟机，当一个对象的标记数达到了15时，就会被移动到老年代。</p>
-<p>但随着时间的推移，老年代的空间也会被用完，这时就会进行一次Full GC。Full GC发生时，新生代和老年代的垃圾都会被收集，因此对系统的影响比较大，应减少Full GC的发生次数。</p>
-<p>老年代中的垃圾比较少，因此移动少量对象就可以完成垃圾清理，采用标记-整理算法可以做到回收老年代的垃圾。</p>
-]]></content>
-      <categories>
-        <category>Java</category>
-      </categories>
-      <tags>
-        <tag>Java</tag>
-        <tag>JVM</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>简单理解线段树</title>
-    <url>/2020/07/12/%E7%AE%80%E5%8D%95%E7%90%86%E8%A7%A3%E7%BA%BF%E6%AE%B5%E6%A0%91/</url>
-    <content><![CDATA[<p>线段树是二叉树的一种，常常被用于求区间和与区间最大值等操作。</p>
-<a id="more"></a>
-
-<h2 id="场景假设"><a href="#场景假设" class="headerlink" title="场景假设"></a>场景假设</h2><p>想象一下这种场景，一个数组现在需要进行两种操作：对某区间内数字进行求和与更新数组中的某个元素。对于更新元素操作很容易看出它的时间复杂度是$O(1)$，区间求和的时间复杂度是$O(n)$。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200712161116106.png#pic_center" alt=""></p>
-<p>通过下面这种方法可以降低区间元素求和的时间复杂度：设置另一个数组<code>sum_table</code>，这个数组每个位置的值存储<code>table</code>数组中当前位置及之前的所有元素之和。这样，我们可以把区间元素求和的时间复杂度降为$O(1)$，以区间[1,4]为例，计算方法为<code>sum_table[4]-sum_table[0]</code>。但这时更改元素的时间复杂度又上升了，修改了下标为8的元素，那么在<code>sum_table</code>中需要把下标为8及之后的元素都要进行修改。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200712162256110.png#pic_center" alt=""></p>
-<p>如果我们想把这两个操作的时间复杂度平均一下就需要用到今天介绍的线段树了。简单起见，我们用个短一点的数组来进行表示。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200714160113438.png#pic_center" alt=""></p>
-<p>上面这幅图，根节点是整个[0-5]范围内的区间元素之和，左孩子是前一半的数组和，右孩子是后一半的数组和，以此类推，叶子节点是每一个元素的值。这样不管是更新元素值还是求区间元素和都会是$O(logn)$的复杂度。</p>
-<p>为了方便后面进行代码表示，我们把上面那幅图稍微修改一下。给每个结点从上至下、从左至右开始编号，并且补齐空缺的结点使其成为一棵完全二叉树，根据编号将这些结点填入数组<code>tree</code>中。</p>
-<p><img src="https://img-blog.csdnimg.cn/2020071416011418.png#pic_center" alt=""></p>
-<h2 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h2><p>首先看一下构建线段树的代码实现。很明显这是一个递归调用的过程，由于每次将<code>arr</code>一分为二，因此递归出口就比较明显了，就是当区间的左边界与右边界相同时，也就是$start == end$时，进行<code>tree</code>数组填充。递归填充结点的左子树和右子树然后将左右孩子的值加起来得到当前结点的值。<code>left_node</code>和<code>right_node</code>的值是根据完全二叉树的性质得到的。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">buildTree</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span>[] tree, <span class="keyword">int</span> node, <span class="keyword">int</span> start, <span class="keyword">int</span> end)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (start == end) &#123;</span><br><span class="line">		tree[node] = arr[start];</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="keyword">int</span> mid = start + ((end - start) &gt;&gt; <span class="number">1</span>);</span><br><span class="line">		<span class="keyword">int</span> left_node = <span class="number">2</span> * node + <span class="number">1</span>;</span><br><span class="line">		<span class="keyword">int</span> right_node = <span class="number">2</span> * node + <span class="number">2</span>;</span><br><span class="line">		</span><br><span class="line">		buildTree(arr, tree, left_node, start, mid);</span><br><span class="line">		buildTree(arr, tree, right_node, mid + <span class="number">1</span>, end);</span><br><span class="line">		tree[node] = tree[left_node] + tree[right_node];</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>接着是更新结点的代码，同样也是递归调用，递归出口和之前一样，还是区间边界相等时递归结束。二分查找判断需要更新哪一边的元素，找到更新结点并更新完成后逐级向上更新上层的结点。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">updateTree</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span>[] tree, <span class="keyword">int</span> node, <span class="keyword">int</span> start, <span class="keyword">int</span> end, <span class="keyword">int</span> idx, <span class="keyword">int</span> val)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (start == end) &#123;</span><br><span class="line">		arr[idx] = val;</span><br><span class="line">		tree[node] = val;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="keyword">int</span> mid = start + ((end - start) &gt;&gt; <span class="number">1</span>);</span><br><span class="line">		<span class="keyword">int</span> left_node = <span class="number">2</span> * node + <span class="number">1</span>;</span><br><span class="line">		<span class="keyword">int</span> right_node = <span class="number">2</span> * node + <span class="number">2</span>;</span><br><span class="line">		<span class="keyword">if</span> (idx &gt;= start &amp;&amp; idx &lt;= mid) &#123;</span><br><span class="line">			updateTree(arr, tree, left_node, start, mid, idx, val);</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			updateTree(arr, tree, right_node, mid + <span class="number">1</span>, end, idx, val);</span><br><span class="line">		&#125;</span><br><span class="line">		tree[node] = tree[left_node] + tree[right_node];</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>下面是区间求和部分的代码，依然是递归实现的代码。我们还是从根节点出发，求出左边的和<code>sum_left</code>与右边的和<code>sum_right</code>，然后加起来就是区间和了。当然左边或右边也许并不在区间内，这就需要考虑递归出口了。首先我们需要考虑待求和区间与当前递归区间不重合的情况，这时返回0，结束当前递归。接着是当前区间是待求和区间的子区间的情况，直接返回当前区间的和，也就是当前结点的值。第三种情况其实可以算是第二种情况的特殊情形，也就是遇到结点是待求和区间中的元素，同样返回结点值。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">queryTree</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span>[] tree, <span class="keyword">int</span> node, <span class="keyword">int</span> start, <span class="keyword">int</span> end, <span class="keyword">int</span> L, <span class="keyword">int</span> R)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (end &lt; L || start &gt; R) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (L &lt;= start &amp;&amp; end &lt;= R) &#123;</span><br><span class="line">		<span class="keyword">return</span> tree[node];</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> (start == end) &#123;</span><br><span class="line">		<span class="keyword">return</span> tree[node];</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="keyword">int</span> mid = start + ((end - start) &gt;&gt; <span class="number">1</span>);</span><br><span class="line">		<span class="keyword">int</span> left_node = <span class="number">2</span> * node + <span class="number">1</span>;</span><br><span class="line">		<span class="keyword">int</span> right_node = <span class="number">2</span> * node + <span class="number">2</span>;</span><br><span class="line">		<span class="keyword">int</span> sum_left = queryTree(arr, tree, left_node, start, mid, L, R);</span><br><span class="line">		<span class="keyword">int</span> sum_right = queryTree(arr, tree, right_node, mid + <span class="number">1</span>, end, L, R);</span><br><span class="line">		<span class="keyword">return</span> sum_left + sum_right;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>下面是测试代码的部分。将数组<code>arr</code>构建成一棵线段树，需要注意的部分是<code>tree_size</code>也就是<code>tree</code>长度的计算，首先需要求出线段树的高度$h$为$\lceil log_2{size} \rceil+1$，然后根据完全二叉树的性质得到<code>tree_size</code>为$2^h-1$。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">int</span>[] arr = &#123;<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>&#125;;</span><br><span class="line">	<span class="keyword">int</span> size = <span class="number">6</span>;</span><br><span class="line">	<span class="keyword">int</span> tree_size = (<span class="keyword">int</span>) (Math.pow(<span class="number">2</span>, Math.ceil(Math.log(size) / Math.log(<span class="number">2</span>)) + <span class="number">1</span>) - <span class="number">1</span>);</span><br><span class="line">	<span class="keyword">int</span>[] tree = <span class="keyword">new</span> <span class="keyword">int</span>[tree_size];</span><br><span class="line">	SegmentTree sTree = <span class="keyword">new</span> SegmentTree();</span><br><span class="line">	sTree.buildTree(arr, tree, <span class="number">0</span>, <span class="number">0</span>, size - <span class="number">1</span>);</span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tree_size; ++i) &#123;</span><br><span class="line">		System.out.printf(<span class="string">"tree[%d] = %d\n"</span>, i, tree[i]);</span><br><span class="line">	&#125;</span><br><span class="line">	System.out.println();</span><br><span class="line">	</span><br><span class="line">	sTree.updateTree(arr, tree, <span class="number">0</span>, <span class="number">0</span>, size - <span class="number">1</span>, <span class="number">4</span>, <span class="number">6</span>);</span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tree_size; ++i) &#123;</span><br><span class="line">		System.out.printf(<span class="string">"tree[%d] = %d\n"</span>, i, tree[i]);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">int</span> s = sTree.queryTree(arr, tree, <span class="number">0</span>, <span class="number">0</span>, size - <span class="number">1</span>, <span class="number">2</span>, <span class="number">5</span>);</span><br><span class="line">	System.out.println(<span class="string">"s = "</span> + s);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>下面是线段树的完整Java代码实现。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SegmentTree</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">buildTree</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span>[] tree, <span class="keyword">int</span> node, <span class="keyword">int</span> start, <span class="keyword">int</span> end)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (start == end) &#123;</span><br><span class="line">			tree[node] = arr[start];</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">int</span> mid = start + ((end - start) &gt;&gt; <span class="number">1</span>);</span><br><span class="line">			<span class="keyword">int</span> left_node = <span class="number">2</span> * node + <span class="number">1</span>;</span><br><span class="line">			<span class="keyword">int</span> right_node = <span class="number">2</span> * node + <span class="number">2</span>;</span><br><span class="line">			</span><br><span class="line">			buildTree(arr, tree, left_node, start, mid);</span><br><span class="line">			buildTree(arr, tree, right_node, mid + <span class="number">1</span>, end);</span><br><span class="line">			tree[node] = tree[left_node] + tree[right_node];</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">updateTree</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span>[] tree, <span class="keyword">int</span> node, <span class="keyword">int</span> start, <span class="keyword">int</span> end, <span class="keyword">int</span> idx, <span class="keyword">int</span> val)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (start == end) &#123;</span><br><span class="line">			arr[idx] = val;</span><br><span class="line">			tree[node] = val;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">int</span> mid = start + ((end - start) &gt;&gt; <span class="number">1</span>);</span><br><span class="line">			<span class="keyword">int</span> left_node = <span class="number">2</span> * node + <span class="number">1</span>;</span><br><span class="line">			<span class="keyword">int</span> right_node = <span class="number">2</span> * node + <span class="number">2</span>;</span><br><span class="line">			<span class="keyword">if</span> (idx &gt;= start &amp;&amp; idx &lt;= mid) &#123;</span><br><span class="line">				updateTree(arr, tree, left_node, start, mid, idx, val);</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				updateTree(arr, tree, right_node, mid + <span class="number">1</span>, end, idx, val);</span><br><span class="line">			&#125;</span><br><span class="line">			tree[node] = tree[left_node] + tree[right_node];</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">queryTree</span><span class="params">(<span class="keyword">int</span>[] arr, <span class="keyword">int</span>[] tree, <span class="keyword">int</span> node, <span class="keyword">int</span> start, <span class="keyword">int</span> end, <span class="keyword">int</span> L, <span class="keyword">int</span> R)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (end &lt; L || start &gt; R) &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> (L &lt;= start &amp;&amp; end &lt;= R) &#123;</span><br><span class="line">			<span class="keyword">return</span> tree[node];</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> (start == end) &#123;</span><br><span class="line">			<span class="keyword">return</span> tree[node];</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">int</span> mid = start + ((end - start) &gt;&gt; <span class="number">1</span>);</span><br><span class="line">			<span class="keyword">int</span> left_node = <span class="number">2</span> * node + <span class="number">1</span>;</span><br><span class="line">			<span class="keyword">int</span> right_node = <span class="number">2</span> * node + <span class="number">2</span>;</span><br><span class="line">			<span class="keyword">int</span> sum_left = queryTree(arr, tree, left_node, start, mid, L, R);</span><br><span class="line">			<span class="keyword">int</span> sum_right = queryTree(arr, tree, right_node, mid + <span class="number">1</span>, end, L, R);</span><br><span class="line">			<span class="keyword">return</span> sum_left + sum_right;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">int</span>[] arr = &#123;<span class="number">1</span>, <span class="number">3</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">9</span>, <span class="number">11</span>&#125;;</span><br><span class="line">		<span class="keyword">int</span> size = <span class="number">6</span>;</span><br><span class="line">		<span class="keyword">int</span> tree_size = (<span class="keyword">int</span>) (Math.pow(<span class="number">2</span>, Math.ceil(Math.log(size) / Math.log(<span class="number">2</span>)) + <span class="number">1</span>) - <span class="number">1</span>);</span><br><span class="line">		<span class="keyword">int</span>[] tree = <span class="keyword">new</span> <span class="keyword">int</span>[tree_size];</span><br><span class="line">		SegmentTree sTree = <span class="keyword">new</span> SegmentTree();</span><br><span class="line">		sTree.buildTree(arr, tree, <span class="number">0</span>, <span class="number">0</span>, size - <span class="number">1</span>);</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tree_size; ++i) &#123;</span><br><span class="line">			System.out.printf(<span class="string">"tree[%d] = %d\n"</span>, i, tree[i]);</span><br><span class="line">		&#125;</span><br><span class="line">		System.out.println();</span><br><span class="line">		</span><br><span class="line">		sTree.updateTree(arr, tree, <span class="number">0</span>, <span class="number">0</span>, size - <span class="number">1</span>, <span class="number">4</span>, <span class="number">6</span>);</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tree_size; ++i) &#123;</span><br><span class="line">			System.out.printf(<span class="string">"tree[%d] = %d\n"</span>, i, tree[i]);</span><br><span class="line">		&#125;</span><br><span class="line">		</span><br><span class="line">		<span class="keyword">int</span> s = sTree.queryTree(arr, tree, <span class="number">0</span>, <span class="number">0</span>, size - <span class="number">1</span>, <span class="number">2</span>, <span class="number">5</span>);</span><br><span class="line">		System.out.println(<span class="string">"s = "</span> + s);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>当然除了本文中用于求区间和的操作，线段树还可以求区间最大值，只需要将结点存放的值由子树和改成子树最大值即可。</p>
-]]></content>
-      <categories>
-        <category>数据结构</category>
-      </categories>
-      <tags>
-        <tag>数据结构</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>深入理解Java虚拟机-经典垃圾收集器介绍</title>
-    <url>/2020/06/06/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E7%BB%8F%E5%85%B8%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E4%BB%8B%E7%BB%8D/</url>
-    <content><![CDATA[<p>在前面的文章中，我们提到了几种常见的垃圾收集算法，今天咱们来说一说商用Java虚拟机中经典的垃圾收集器。</p>
-<a id="more"></a>
-
-<h2 id="新生代收集器"><a href="#新生代收集器" class="headerlink" title="新生代收集器"></a>新生代收集器</h2><p>我们首先介绍三种新生代的垃圾收集器，分别是Serial收集器、ParNew收集器和Parallel Scavenge收集器。</p>
-<h3 id="Serial收集器"><a href="#Serial收集器" class="headerlink" title="Serial收集器"></a>Serial收集器</h3><p><img src="https://img-blog.csdnimg.cn/20200606170438483.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="Serial收集器垃圾收集过程"></p>
-<p>Serial收集器是最古老的垃圾收集器，曾经是新生代垃圾收集的唯一选择。这是一种单线程的垃圾收集器，采用标记-复制算法，在进行垃圾收集时，所有的工作线程都会停止等待垃圾收集完成，也就是所谓的“Stop the world”。对于服务器来说，可能过长的暂停是不可接受的，但是对于短暂的暂停时间不敏感的客户端其实仍然是简单高效的选择。</p>
-<h3 id="ParNew收集器"><a href="#ParNew收集器" class="headerlink" title="ParNew收集器"></a>ParNew收集器</h3><p><img src="https://img-blog.csdnimg.cn/20200606192934365.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="ParNew收集器垃圾收集过程"></p>
-<p>ParNew收集器可以被看作是Serial收集器的多线程版本，比起Serial收集器并没有太大创新，只是把GC过程的单线程改成了多线程，同样也是采用复制算法。这里我们需要补充一点，当在单核CPU的场景下，由于线程切换必然会产生一定的开销，因此，在这种情况下，ParNew收集器的效率是不如Serial收集器的。</p>
-<h3 id="Parallel-Scavenge收集器"><a href="#Parallel-Scavenge收集器" class="headerlink" title="Parallel Scavenge收集器"></a>Parallel Scavenge收集器</h3><p>同样的，Parallel Scavenge收集器也是多线程版本的收集器，因此垃圾收集过程和上述的ParNew收集器很类似。与CMS等关注工作线程停顿时间（提高用户体验）不同，Parallel Scavenge收集器的特点是非常关注吞吐量的大小（高效利用CPU），吞吐量的计算公式如下：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">吞吐量&#x3D;工作线程运行时间&#x2F;CPU总运行时间</span><br></pre></td></tr></table></figure>
-
-<h2 id="老年代收集器"><a href="#老年代收集器" class="headerlink" title="老年代收集器"></a>老年代收集器</h2><p>几种常见的老年代垃圾收集器分别是Serial Old收集器、Parallel Old收集器和CMS收集器。</p>
-<h3 id="Serial-Old收集器"><a href="#Serial-Old收集器" class="headerlink" title="Serial Old收集器"></a>Serial Old收集器</h3><p>单从名字来看，Serial Old收集器是Serial收集器的老年代版本，事实也确实如此，这款收集器是单线程，采用标记-整理算法的收集器。在JDK 5及以前的JDK中，Serial Old收集器常常与Parallel Scavenge收集器一同使用。</p>
-<h3 id="Parallel-Old收集器"><a href="#Parallel-Old收集器" class="headerlink" title="Parallel Old收集器"></a>Parallel Old收集器</h3><p>与Serial Old收集器类似，Parallel Old收集器是Parallel Scavenge收集器的老年代版本，使用多线程和标记-整理算法收集垃圾。这款垃圾收集器是JDK 6才开始出现的，在此之前都是Serial Old收集器常常与Parallel Scavenge收集器搭配使用，但是这样的话，尽管新生代的垃圾收集是多线程的，但是老年代却是单线程的，因此实际上吞吐量可能并不是很高。Parallel Old收集器出现以后，配合Parallel Scavenge收集器才真正是高吞吐量的垃圾收集。</p>
-<h3 id="CMS收集器"><a href="#CMS收集器" class="headerlink" title="CMS收集器"></a>CMS收集器</h3><p>CMS是一款划时代的垃圾收集器，它通过较短的停顿时间进行垃圾收集，是HotSpot的第一款真正意义上的并发收集器（用户线程和GC线程并发工作），还是一种“边污染边治理”的收集器。CMS收集器的垃圾收集分为四个步骤：</p>
-<ul>
-<li><p>初始标记</p>
-</li>
-<li><p>并发标记</p>
-</li>
-<li><p>重新标记</p>
-</li>
-<li><p>并发清除</p>
-</li>
-</ul>
-<p><img src="https://img-blog.csdnimg.cn/20200607213045562.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="CMS收集器垃圾收集过程"></p>
-<p>其中，初始标记和重新标记都需要停止其他工作线程。初始标记时利用可达性分析算法从GC Roots出发进行标记，整个过程耗时非常短，而重新标记是对并发标记过程中工作线程产生的垃圾进行收集。最后是并发-清除过程，由于不需要移动对象，因此GC线程与工作线程并发运行。</p>
-<p>在整个CMS收集器收集垃圾的过程中，初始标记和重新标记的耗时是最短的，因此CMS是一款非常优秀的垃圾收集器。但是这款收集器就没有缺点吗？答案是有的。下面总结了几条CMS收集器的缺点：</p>
-<ul>
-<li><p>由于CMS采用标记-清除算法，因此会产生大量的内存碎片，将来需要分配大内存给某个对象时，可能没有足够的内存空间。</p>
-</li>
-<li><p>CMS收集器对处理器资源敏感，并发过程中CMS收集器的线程实际上是占据了一部分处理器资源的，因此造成吞吐量在一定程度上的下降。</p>
-</li>
-<li><p>难以处理并发清除阶段产生的“浮动垃圾”。在并发清理阶段尽管会回收部分垃圾，但是此时工作线程也在运行，还在产生一些垃圾，但这些垃圾因为没有被标记，因此是不可回收的。这时如果工作线程分配新的对象而没有足够的内存空间时，就会发生“并发失败”（Concurrent Mode Failure），此时虚拟机将会把CMS收集器替换成为Serial Old收集器，并冻结工作线程。</p>
-</li>
-</ul>
-<h2 id="G1收集器"><a href="#G1收集器" class="headerlink" title="G1收集器"></a>G1收集器</h2><p>G1收集器是一款面向服务器端的垃圾收集器，服务器端的多CPU和大容量内存能够满足G1收集器对于缩短GC停顿时间的需求。G1也采用分代理论，但是这些不再是之前固定大小和位置了，而是将堆内存划分为一个个小的内存块，每个内存块可以根据需求进行划分，下面的分区中Humongous区是用于存放大对象的区域。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200607162646881.png?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="G1收集器分区图"></p>
-<p>G1收集器的垃圾收集过程也分为4个步骤：</p>
-<ul>
-<li><p>初始标记。初始标记与CMS类似，需要进行“Stop the world”，但是是借着Minor GC的过程进行的，因此没有额外的耗时。这个过程标记GC Roots可以关联的对象，然后修改TAMS（Top at Mark Start）的指针，指针划分每一个区域中的一部分空间用于并发回收过程中的新对象分配。</p>
-</li>
-<li><p>并发标记。从GC Root开始对堆中对象进行可达性分析，找出要回收的对象，并且需要处理原始快照（SATB）记录的在并发时引用变动的对象。</p>
-</li>
-<li><p>最终标记。需要“Stop the world”并进行并发标记遗留的SATB对象的处理。</p>
-</li>
-<li><p>筛选回收。这里根据用户期望的停顿时间指定回收计划，将决定回收的区域的存活的对象复制到新的区域中，并清空旧的区域。这里同样暂停所有工作线程。</p>
-</li>
-</ul>
-<p><img src="https://img-blog.csdnimg.cn/20200607213129279.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="G1收集器垃圾收集过程"></p>
-<p>与CMS收集器的标记-清除不同，G1收集器宏观上看使用标记-整理算法，从局部来看又是使用的标记-复制算法。可以由用户指定期望的停顿时间是G1相较CMS的一个较大的优势，但是这里的停顿时间必须切合实际，因为停顿时间一定是有一个下限的，因此过小的停顿时间可能难以达到预期，甚至引发Full GC降低系统性能。</p>
-<h2 id="写在最后的话"><a href="#写在最后的话" class="headerlink" title="写在最后的话"></a>写在最后的话</h2><p>这些年JDK版本迭代速度较快，涌现了一些非常优秀的垃圾收集器，本文只是介绍了一些经典的垃圾收集器，后续还会有一些优秀的收集器，比如Shenandoah收集器和ZGC收集器，这两款都是非常优秀的低延迟垃圾收集器，在今年的春招中有些公司已经开始问到相关的问题了。</p>
-]]></content>
-      <categories>
-        <category>Java</category>
-      </categories>
-      <tags>
-        <tag>Java</tag>
-        <tag>JVM</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>本科数据结构课程的漏网之鱼-红黑树（上）</title>
-    <url>/2020/06/22/%E6%9C%AC%E7%A7%91%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AF%BE%E7%A8%8B%E7%9A%84%E6%BC%8F%E7%BD%91%E4%B9%8B%E9%B1%BC-%E7%BA%A2%E9%BB%91%E6%A0%91%EF%BC%88%E4%B8%8A%EF%BC%89/</url>
-    <content><![CDATA[<p>在我大学的时候，就曾经从参加面试的学长那里知道红黑树这种数据结构，但是经过我的观察，绝大部分的本科数据结构课程里都没有这部分内容。本文将介绍这种被本科教学体系遗弃，但却常常被工作面试中提到的数据结构，并且为后面的HashMap的内容做铺垫。</p>
-<a id="more"></a>
-
-<h2 id="定义与性质"><a href="#定义与性质" class="headerlink" title="定义与性质"></a>定义与性质</h2><p>首先需要明确的是，红黑树是一棵<strong>二叉搜索树</strong>，如果不了解二叉搜索树的朋友可以先去了解一下。这里想到了本人在研究生复试的时候被问到什么是二叉搜索树，一时竟然没想起来。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200623144444818.png#pic_center" alt=""></p>
-<p>下面是一棵典型的红黑树，我们可以看到这颗红黑树的确是一棵二叉搜索树。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200623155717535.jpg#pic_center" alt="红黑树"></p>
-<p>一般来说，红黑树具有以下5个性质：</p>
-<ul>
-<li><p>节点由红色和黑色组成</p>
-</li>
-<li><p>且根节点是黑色</p>
-</li>
-<li><p>所有的叶子节点都是黑色</p>
-</li>
-<li><p>根节点到叶子节点的路径上不可能出现两个连续的红色节点</p>
-</li>
-<li><p>从任一节点出发到每个叶子节点都包含相同数量的黑色节点</p>
-</li>
-</ul>
-<h2 id="红黑树的查找"><a href="#红黑树的查找" class="headerlink" title="红黑树的查找"></a>红黑树的查找</h2><p>因为红黑树是一棵二叉搜索树，所以同样具有二叉树的性质：左子树的所有节点都小于当前节点的值，右子树的所有节点都大于当前节点的值。所以，查找节点的算法就很简单了，我们来了解一下查找的流程。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200623151509296.png#pic_center" alt="红黑树查找流程"></p>
-<h2 id="红黑树的插入"><a href="#红黑树的插入" class="headerlink" title="红黑树的插入"></a>红黑树的插入</h2><p>介绍红黑树的插入之前，先讲一下红黑树的三种调整方式：<strong>变色</strong>、<strong>左旋</strong>和<strong>右旋</strong>。变色很好理解，红色变黑色，黑色变红色，主要是左旋和右旋，我在网上找到一张图，很好的解释了左旋和右旋的含义。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200623161819607.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="左旋与右旋"></p>
-<p>下面开始进入难点——红黑树的插入。待插入的节点是红色的，因为如果插入的节点是黑色，原来已经平衡的红黑树一定会不平衡，也就一定会进行调整。</p>
-<p><strong>情况一：红黑树为空</strong></p>
-<p>当红黑树为空的情况下，一目了然，直接插入，然后将节点变成黑色，是不是就符合5个性质了？</p>
-<p><strong>情况二：插入节点的父节点是黑色</strong></p>
-<p>直接插入节点即可，因为插入的节点是红色的，所以并不影响红黑树的平衡。</p>
-<p><strong>情况三：插入节点的父节点和叔叔节点是红色</strong></p>
-<p>分析一下这种情形，由于插入节点的父节点和叔叔节点都是红色，所以插入节点的祖父节点一定是黑色，因为不可能出现父子节点均为红色的情形。以前面的那棵红黑树为例，我们试着向里面插入一个值为21的节点。插入后的情形：</p>
-<p><img src="https://img-blog.csdnimg.cn/20200623222028640.jpg#pic_center" alt="情况三的第一次调整"></p>
-<p>结束了吗？没有。22和21是两个连续的红色节点，需要进行调整。插入节点的父节点和叔叔节点都是红色，因此将这两个节点变黑。</p>
-<p><img src="https://img-blog.csdnimg.cn/2020062322291227.jpg#pic_center" alt="情况三的第二次调整"></p>
-<p>再仔细观察一下，好像是可以了，但是尝试从根节点到叶子节点，不是每条路径上的黑色节点数都是相同的。再把插入节点的祖父节点25改成红色。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200624091332271.jpg#pic_center" alt="情况三的第三次调整"></p>
-<p>17和25又是连续的红色节点了，这时把25当作新插入的节点，是不是回到了这种情况开始的状态？这时，给8和17变成黑色就可以满足所有的性质。</p>
-<p><img src="https://img-blog.csdnimg.cn/2020062414045744.jpg#pic_center" alt="情况三的第四次调整"></p>
-<p><strong>情况四：插入节点的父节点是红色，叔叔节点是黑色或缺少，插入节点是父节点的左子节点，父节点是祖父节点的左子节点</strong></p>
-<p><img src="https://img-blog.csdnimg.cn/20200624152342709.jpg#pic_center" alt="情况四"></p>
-<p>要在上图插入一个值为1的节点，这时会满足情况四。我们看一下插入这个节点以后的情况。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200624152830533.jpg#pic_center" alt="情况四插入节点后"></p>
-<p>显然这里不满足不能有两个连续红色节点的性质，我们绕节点13进行右旋。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200624153529403.jpg#pic_center" alt="情况四的第一次调整"></p>
-<p>接下来对8和13变色，就调整完成了。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200624153742773.jpg#pic_center" alt="情况四的第二次调整"></p>
-<p><strong>情况五：插入节点的父节点是红色，叔叔节点是黑色或缺少，插入节点是父节点的右子节点，父节点是祖父节点的左子节点</strong></p>
-<p>最后一种情况了，我们还是使用情况四的初始状态，往里面插入一个值为10的新节点。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200624154816264.jpg#pic_center" alt="情况五插入节点后"></p>
-<p>我们对节点8通过一次左旋交换插入节点和其父节点的位置，大家看一下是不是变成了情况四？然后我们按照情况四的方式进行调整即可。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200624160013634.jpg#pic_center" alt="情况五的第一次调整"></p>
-<p>以上是本文的内容，红黑树的删除操作将在下一篇文章中进行介绍。</p>
-]]></content>
-      <categories>
-        <category>数据结构</category>
-      </categories>
-      <tags>
-        <tag>数据结构</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>计算机网络-网络层（更新中）</title>
-    <url>/2020/07/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E7%BD%91%E7%BB%9C%E5%B1%82/</url>
-    <content><![CDATA[<p>网络层位于TCP/IP结构中的第三层，也是计算机网络中的重点和难点之一。</p>
-<a id="more"></a>
-
-<h2 id="网络层功能"><a href="#网络层功能" class="headerlink" title="网络层功能"></a>网络层功能</h2><ul>
-<li><strong>异构网络互联</strong>。异构网络互联是指将多个计算机网络通过中继系统连接起来，这些网络在物理上是异构的。物理层和数据链路层的设备只是进行网络的扩大，而不是网络互联。</li>
-<li><strong>路由与转发</strong>。路由与转发实际上是两个部分：路由选择、分组转发。路由选择是根据特定路由选择算法从相邻路由器获得网络拓扑变化从而动态更新路由。路由转发是选择合适的端口将分组转发出去。</li>
-<li><strong>拥塞控制</strong>。随着网络负载的增大，如果吞吐量明显小于正常的吞吐量，那么网络可能就进入了拥塞状态。与流量控制不同的是，拥塞控制是一个全局性问题，涉及到网络中的所有主机、路由器等设备，而流量控制只需要控制发送端和接收端的通信量，保证接收端来得及接收发送端发来的数据。拥塞控制的方法主要有两种：开环控制和闭环控制。开环控制是一种静态方法，在系统启动之前决定何时接收新流量、丢弃分组，丢弃哪些分组等问题。而闭环控制是一种动态方法，无需提前考虑拥塞因素，一旦发现网络发生拥塞，将拥塞信息发送到合适的地方，动态调整网络系统。</li>
-</ul>
-<h2 id="路由算法"><a href="#路由算法" class="headerlink" title="路由算法"></a>路由算法</h2><p>在介绍路由算法之前，需要先介绍一下<strong>静态路由</strong>和<strong>动态路由</strong>的概念。静态路由需要网络管理员手动配置路由信息，一旦链路状态或拓扑结构发生变化，网络管理员就要去修改路由表中的静态路由信息。动态路由是路由器之间相互交换路由表信息，通过一定算法优化得出的最优寻路方式。静态路由比较适合于拓扑变化不大的小型网络或需要保证安全性和稳定性的军事系统，而动态路由适合复杂的大型网络。常见的动态路由算法有距离向量路由算法和链路状态路由算法。</p>
-<h3 id="距离向量路由算法"><a href="#距离向量路由算法" class="headerlink" title="距离向量路由算法"></a>距离向量路由算法</h3><p>距离向量路由算法中，节点之间定期向相邻节点发送路由表，路由表的内容包括每条路径的目的地和路径的距离。</p>
-<blockquote>
-<p>这里说的距离不是物理上说的距离，而是一个抽象概念，在RIP算法中将距离定义为“跳数”，也就是指从源端口到目的端口经过的路由器数量。</p>
-</blockquote>
-<p>距离向量路由算法的所有节点都在监听相邻节点的路由更新信息，并在以下两种情况下更新路由选择表信息：</p>
-<p>1.被通知有一条新的路由，这个路由在当前节点的路由表中并不存在。<br>2.到达某一目的地有比当前使用路由更短距离的路由，就用较短路由代替当前路由。</p>
-<h3 id="链路状态路由算法"><a href="#链路状态路由算法" class="headerlink" title="链路状态路由算法"></a>链路状态路由算法</h3><p>使用链路状态路由算法的网络中的节点会主动测试相邻节点的状态并在链路发生变化时将链路状态发送给网络中的<strong>全部节点</strong>。在这里每次链路状态更新时，节点都会利用迪杰斯特拉算法更新最短路径。链路状态路由算法具有以下三个特征：</p>
-<p>1.使用泛洪法向本自治系统所有的路由器发送信息，即向相邻所有节点发送信息，每个相邻节点又向除刚刚发送信息的节点继续发送信息。<br>2.发送的信息是与路由器相连的所有路由器的链路状态。<br>3.当链路状态发生改变时，路由器才会向所有路由器发送信息。</p>
-<p>与距离向量路由算法相比，链路状态路由算法不依赖中间节点的计算，并且节点通过广播的方式与所有节点交谈。</p>
-<h3 id="层次路由"><a href="#层次路由" class="headerlink" title="层次路由"></a>层次路由</h3><p>随着网络规模的逐渐扩大，路由表中的信息越来越多，因此层次路由的概念被提了出来。层次路由是将互联网划分为多个自治系统，每个自治系统又包含很多局域网。一个自治系统内部使用内部网关协议（IGP），具体的协议有RIP和OSPF等。OSPF会将一个自治系统划分成若干个区域，路由器并不知道区域内的结构细节。</p>
-<p>自治系统之间采用外部网关协议（EGP），用于不同自治系统的路由器交换路由信息，并选择最优路径，具体协议有BGP。</p>
-<h2 id="IPv4"><a href="#IPv4" class="headerlink" title="IPv4"></a>IPv4</h2><h2 id="IPv6"><a href="#IPv6" class="headerlink" title="IPv6"></a>IPv6</h2><h2 id="路由协议"><a href="#路由协议" class="headerlink" title="路由协议"></a>路由协议</h2><h2 id="IP组播"><a href="#IP组播" class="headerlink" title="IP组播"></a>IP组播</h2><h2 id="移动IP"><a href="#移动IP" class="headerlink" title="移动IP"></a>移动IP</h2><h2 id="网络层设备"><a href="#网络层设备" class="headerlink" title="网络层设备"></a>网络层设备</h2>]]></content>
-      <categories>
-        <category>计算机网络</category>
-      </categories>
-      <tags>
-        <tag>计算机网络</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>谈谈Java容器-ArrayList</title>
     <url>/2020/05/27/%E8%B0%88%E8%B0%88Java%E5%AE%B9%E5%99%A8-ArrayList/</url>
     <content><![CDATA[<p>ArrayList是面试中常见的Java容器，也算是Java中比较简单的容器，我们今天就来讲讲ArrayList的源码和常见的面试点。</p>
@@ -1136,6 +1250,27 @@
       <tags>
         <tag>Java</tag>
         <tag>Java容器</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>深入理解Java虚拟机-运行时数据区</title>
+    <url>/2020/05/21/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA/</url>
+    <content><![CDATA[<p>在Java虚拟机的概念中，运行时数据区又被称为Java内存区域。主要由线程私有的程序计数器、虚拟机栈和本地方法栈以及线程共享的堆和方法区组成。<br><img src="https://img-blog.csdnimg.cn/20200521144716505.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="Java虚拟机运行时数据区"></p>
+<a id="more"></a>
+
+<h2 id="程序计数器"><a href="#程序计数器" class="headerlink" title="程序计数器"></a>程序计数器</h2><p>程序计数器在Java内存中占据的空间比较小，是当前线程正在执行的字节码的行号指示器。字节码指令执行的过程中，分支、循环、跳转、异常处理、线程恢复等都需要通过程序计数器来完成。<br>在某一个时刻，一个内核只会执行一个线程中的指令，因此需要程序计数器来确保多线程切换后回复到某一线程能够继续之前的指令向后执行。因此，这也就决定了程序计数器必须是线程私有的。<br>当线程执行的是Java方法时，程序计数器保存当前正在执行的指令的地址，而当线程执行的是native方法时，程序计数器的值为<code>undefined</code>。<br>另外值得一提的是，程序计数器是运行时数据区中唯一不会出现<code>OutOfMemoryError</code>的。</p>
+<h2 id="Java虚拟机栈"><a href="#Java虚拟机栈" class="headerlink" title="Java虚拟机栈"></a>Java虚拟机栈</h2><p>当一个线程执行到某一个方法时，对应的是Java虚拟机创建一个栈帧，并将该栈帧压入虚拟机栈的过程。相对应的，方法结束则意味着虚拟机栈弹出该栈帧。<br><img src="https://img-blog.csdnimg.cn/20200521161137845.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="栈帧结构"><br>显而易见的是，局部变量表，存储的是方法中的局部变量。当局部变量是基本数据类型时，直接存储该变量的值，如果是引用数据类型，则存储对象引用。局部变量表在栈帧中分配的空间在编译阶段就已经确认，因此不会在方法运行期间改变大小。</p>
+<h2 id="本地方法栈"><a href="#本地方法栈" class="headerlink" title="本地方法栈"></a>本地方法栈</h2><p>虚拟机栈和本地方法栈的原理十分相似，区别在于虚拟机栈执行的是Java方法，而本地方法栈执行的是Native方法。<br>由于JVM规范没有强制规定本地方法栈的实现，HotSpot虚拟机直接将本地方法栈和虚拟机栈合二为一。</p>
+<h2 id="堆"><a href="#堆" class="headerlink" title="堆"></a>堆</h2><p>对于C语言而言，堆是程序员可以直接管理的区域。程序员通过<code>malloc</code>和<code>free</code>方法申请和释放内存。<br>对于Java而言，堆存储着对象及对象数组。因此，也是垃圾回收器主要管理的区域。<br>根据JVM的规范，Java堆可以存储在物理不连续的区域，但逻辑上是连续的。对于大对象（如数组对象），很多虚拟机直接将它们存储在物理上连续的内存区域。另外，堆是所有线程共享的区域，因此JVM中只有一个堆。</p>
+<h2 id="方法区"><a href="#方法区" class="headerlink" title="方法区"></a>方法区</h2><p>方法区和堆一样，都是线程共享的区域。方法区存放了类的信息（类名、字段信息、方法信息）、静态变量、常量以及编译后的代码缓存等数据。<br>很多人将方法区和“永久代”混为一谈，原因是HotSpot把垃圾收集器的设计扩展到了方法区，从而省去为方法区专门编写内存管理代码的工作。<br>运行时常量池是方法区的一部分，用于存放常量池表，常量池表中存放了编译期生成的各种符号字面量和符号引用。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p><a href="https://www.cnblogs.com/dolphin0520/p/3613043.html" target="_blank" rel="noopener">JVM的内存区域划分</a><br>深入理解Java虚拟机：JVM高级特性与最佳实践（第3版）</p>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>Java</tag>
+        <tag>JVM</tag>
       </tags>
   </entry>
   <entry>
@@ -1185,24 +1320,34 @@
       </tags>
   </entry>
   <entry>
-    <title>深入理解Java虚拟机-运行时数据区</title>
-    <url>/2020/05/21/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA/</url>
-    <content><![CDATA[<p>在Java虚拟机的概念中，运行时数据区又被称为Java内存区域。主要由线程私有的程序计数器、虚拟机栈和本地方法栈以及线程共享的堆和方法区组成。<br><img src="https://img-blog.csdnimg.cn/20200521144716505.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="Java虚拟机运行时数据区"></p>
+    <title>计算机网络-网络层（更新中）</title>
+    <url>/2020/07/07/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-%E7%BD%91%E7%BB%9C%E5%B1%82/</url>
+    <content><![CDATA[<p>网络层位于TCP/IP结构中的第三层，也是计算机网络中的重点和难点之一。</p>
 <a id="more"></a>
 
-<h2 id="程序计数器"><a href="#程序计数器" class="headerlink" title="程序计数器"></a>程序计数器</h2><p>程序计数器在Java内存中占据的空间比较小，是当前线程正在执行的字节码的行号指示器。字节码指令执行的过程中，分支、循环、跳转、异常处理、线程恢复等都需要通过程序计数器来完成。<br>在某一个时刻，一个内核只会执行一个线程中的指令，因此需要程序计数器来确保多线程切换后回复到某一线程能够继续之前的指令向后执行。因此，这也就决定了程序计数器必须是线程私有的。<br>当线程执行的是Java方法时，程序计数器保存当前正在执行的指令的地址，而当线程执行的是native方法时，程序计数器的值为<code>undefined</code>。<br>另外值得一提的是，程序计数器是运行时数据区中唯一不会出现<code>OutOfMemoryError</code>的。</p>
-<h2 id="Java虚拟机栈"><a href="#Java虚拟机栈" class="headerlink" title="Java虚拟机栈"></a>Java虚拟机栈</h2><p>当一个线程执行到某一个方法时，对应的是Java虚拟机创建一个栈帧，并将该栈帧压入虚拟机栈的过程。相对应的，方法结束则意味着虚拟机栈弹出该栈帧。<br><img src="https://img-blog.csdnimg.cn/20200521161137845.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="栈帧结构"><br>显而易见的是，局部变量表，存储的是方法中的局部变量。当局部变量是基本数据类型时，直接存储该变量的值，如果是引用数据类型，则存储对象引用。局部变量表在栈帧中分配的空间在编译阶段就已经确认，因此不会在方法运行期间改变大小。</p>
-<h2 id="本地方法栈"><a href="#本地方法栈" class="headerlink" title="本地方法栈"></a>本地方法栈</h2><p>虚拟机栈和本地方法栈的原理十分相似，区别在于虚拟机栈执行的是Java方法，而本地方法栈执行的是Native方法。<br>由于JVM规范没有强制规定本地方法栈的实现，HotSpot虚拟机直接将本地方法栈和虚拟机栈合二为一。</p>
-<h2 id="堆"><a href="#堆" class="headerlink" title="堆"></a>堆</h2><p>对于C语言而言，堆是程序员可以直接管理的区域。程序员通过<code>malloc</code>和<code>free</code>方法申请和释放内存。<br>对于Java而言，堆存储着对象及对象数组。因此，也是垃圾回收器主要管理的区域。<br>根据JVM的规范，Java堆可以存储在物理不连续的区域，但逻辑上是连续的。对于大对象（如数组对象），很多虚拟机直接将它们存储在物理上连续的内存区域。另外，堆是所有线程共享的区域，因此JVM中只有一个堆。</p>
-<h2 id="方法区"><a href="#方法区" class="headerlink" title="方法区"></a>方法区</h2><p>方法区和堆一样，都是线程共享的区域。方法区存放了类的信息（类名、字段信息、方法信息）、静态变量、常量以及编译后的代码缓存等数据。<br>很多人将方法区和“永久代”混为一谈，原因是HotSpot把垃圾收集器的设计扩展到了方法区，从而省去为方法区专门编写内存管理代码的工作。<br>运行时常量池是方法区的一部分，用于存放常量池表，常量池表中存放了编译期生成的各种符号字面量和符号引用。</p>
-<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p><a href="https://www.cnblogs.com/dolphin0520/p/3613043.html" target="_blank" rel="noopener">JVM的内存区域划分</a><br>深入理解Java虚拟机：JVM高级特性与最佳实践（第3版）</p>
-]]></content>
+<h2 id="网络层功能"><a href="#网络层功能" class="headerlink" title="网络层功能"></a>网络层功能</h2><ul>
+<li><strong>异构网络互联</strong>。异构网络互联是指将多个计算机网络通过中继系统连接起来，这些网络在物理上是异构的。物理层和数据链路层的设备只是进行网络的扩大，而不是网络互联。</li>
+<li><strong>路由与转发</strong>。路由与转发实际上是两个部分：路由选择、分组转发。路由选择是根据特定路由选择算法从相邻路由器获得网络拓扑变化从而动态更新路由。路由转发是选择合适的端口将分组转发出去。</li>
+<li><strong>拥塞控制</strong>。随着网络负载的增大，如果吞吐量明显小于正常的吞吐量，那么网络可能就进入了拥塞状态。与流量控制不同的是，拥塞控制是一个全局性问题，涉及到网络中的所有主机、路由器等设备，而流量控制只需要控制发送端和接收端的通信量，保证接收端来得及接收发送端发来的数据。拥塞控制的方法主要有两种：开环控制和闭环控制。开环控制是一种静态方法，在系统启动之前决定何时接收新流量、丢弃分组，丢弃哪些分组等问题。而闭环控制是一种动态方法，无需提前考虑拥塞因素，一旦发现网络发生拥塞，将拥塞信息发送到合适的地方，动态调整网络系统。</li>
+</ul>
+<h2 id="路由算法"><a href="#路由算法" class="headerlink" title="路由算法"></a>路由算法</h2><p>在介绍路由算法之前，需要先介绍一下<strong>静态路由</strong>和<strong>动态路由</strong>的概念。静态路由需要网络管理员手动配置路由信息，一旦链路状态或拓扑结构发生变化，网络管理员就要去修改路由表中的静态路由信息。动态路由是路由器之间相互交换路由表信息，通过一定算法优化得出的最优寻路方式。静态路由比较适合于拓扑变化不大的小型网络或需要保证安全性和稳定性的军事系统，而动态路由适合复杂的大型网络。常见的动态路由算法有距离向量路由算法和链路状态路由算法。</p>
+<h3 id="距离向量路由算法"><a href="#距离向量路由算法" class="headerlink" title="距离向量路由算法"></a>距离向量路由算法</h3><p>距离向量路由算法中，节点之间定期向相邻节点发送路由表，路由表的内容包括每条路径的目的地和路径的距离。</p>
+<blockquote>
+<p>这里说的距离不是物理上说的距离，而是一个抽象概念，在RIP算法中将距离定义为“跳数”，也就是指从源端口到目的端口经过的路由器数量。</p>
+</blockquote>
+<p>距离向量路由算法的所有节点都在监听相邻节点的路由更新信息，并在以下两种情况下更新路由选择表信息：</p>
+<p>1.被通知有一条新的路由，这个路由在当前节点的路由表中并不存在。<br>2.到达某一目的地有比当前使用路由更短距离的路由，就用较短路由代替当前路由。</p>
+<h3 id="链路状态路由算法"><a href="#链路状态路由算法" class="headerlink" title="链路状态路由算法"></a>链路状态路由算法</h3><p>使用链路状态路由算法的网络中的节点会主动测试相邻节点的状态并在链路发生变化时将链路状态发送给网络中的<strong>全部节点</strong>。在这里每次链路状态更新时，节点都会利用迪杰斯特拉算法更新最短路径。链路状态路由算法具有以下三个特征：</p>
+<p>1.使用泛洪法向本自治系统所有的路由器发送信息，即向相邻所有节点发送信息，每个相邻节点又向除刚刚发送信息的节点继续发送信息。<br>2.发送的信息是与路由器相连的所有路由器的链路状态。<br>3.当链路状态发生改变时，路由器才会向所有路由器发送信息。</p>
+<p>与距离向量路由算法相比，链路状态路由算法不依赖中间节点的计算，并且节点通过广播的方式与所有节点交谈。</p>
+<h3 id="层次路由"><a href="#层次路由" class="headerlink" title="层次路由"></a>层次路由</h3><p>随着网络规模的逐渐扩大，路由表中的信息越来越多，因此层次路由的概念被提了出来。层次路由是将互联网划分为多个自治系统，每个自治系统又包含很多局域网。一个自治系统内部使用内部网关协议（IGP），具体的协议有RIP和OSPF等。OSPF会将一个自治系统划分成若干个区域，路由器并不知道区域内的结构细节。</p>
+<p>自治系统之间采用外部网关协议（EGP），用于不同自治系统的路由器交换路由信息，并选择最优路径，具体协议有BGP。</p>
+<h2 id="IPv4"><a href="#IPv4" class="headerlink" title="IPv4"></a>IPv4</h2><h2 id="IPv6"><a href="#IPv6" class="headerlink" title="IPv6"></a>IPv6</h2><h2 id="路由协议"><a href="#路由协议" class="headerlink" title="路由协议"></a>路由协议</h2><h2 id="IP组播"><a href="#IP组播" class="headerlink" title="IP组播"></a>IP组播</h2><h2 id="移动IP"><a href="#移动IP" class="headerlink" title="移动IP"></a>移动IP</h2><h2 id="网络层设备"><a href="#网络层设备" class="headerlink" title="网络层设备"></a>网络层设备</h2>]]></content>
       <categories>
-        <category>Java</category>
+        <category>计算机网络</category>
       </categories>
       <tags>
-        <tag>Java</tag>
-        <tag>JVM</tag>
+        <tag>计算机网络</tag>
       </tags>
   </entry>
   <entry>
