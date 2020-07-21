@@ -9,7 +9,7 @@
     
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>
-    类加载机制 |  SKY技术修炼指南
+    类加载器与双亲委派模型 |  SKY技术修炼指南
   </title>
   <meta name="generator" content="hexo-theme-ayer">
   
@@ -42,7 +42,7 @@
   <div id="app">
     <main class="content on">
       <section class="outer">
-  <article id="post-类加载机制" class="article article-type-post" itemscope
+  <article id="post-类加载器与双亲委派模型" class="article article-type-post" itemscope
   itemprop="blogPost" data-scroll-reveal>
 
   <div class="article-inner">
@@ -50,7 +50,7 @@
     <header class="article-header">
        
 <h1 class="article-title sea-center" style="border-left:0" itemprop="name">
-  类加载机制
+  类加载器与双亲委派模型
 </h1>
  
 
@@ -59,8 +59,8 @@
 
     
     <div class="article-meta">
-      <a href="/2020/07/16/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/" class="article-date">
-  <time datetime="2020-07-16T03:19:07.000Z" itemprop="datePublished">2020-07-16</time>
+      <a href="/2020/07/21/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E4%B8%8E%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B/" class="article-date">
+  <time datetime="2020-07-21T08:04:10.000Z" itemprop="datePublished">2020-07-21</time>
 </a>
       
   <div class="article-category">
@@ -74,7 +74,7 @@
         <span class="post-meta-item-icon">
             <i class="ri-quill-pen-line"></i>
             <span class="post-meta-item-text"> Word count:</span>
-            <span class="post-count">2.3k</span>
+            <span class="post-count">992</span>
         </span>
     </span>
 
@@ -83,7 +83,7 @@
         <span class="post-meta-item-icon">
             <i class="ri-book-open-line"></i>
             <span class="post-meta-item-text"> Reading time≈</span>
-            <span class="post-count">8 min</span>
+            <span class="post-count">4 min</span>
         </span>
     </span>
 </div>
@@ -108,139 +108,26 @@
       
 
       
-      <p>之前我们了解过class文件的存储格式，本文将介绍虚拟机如何加载class文件。</p>
+      <p>之前说到类加载机制的相关原理，这次来谈谈类加载器以及双亲委派模型的概念。</p>
 <a id="more"></a>
 
-<h2 id="类的生命周期"><a href="#类的生命周期" class="headerlink" title="类的生命周期"></a>类的生命周期</h2><p><img src="https://img-blog.csdnimg.cn/20200718102109679.png#pic_center" alt=""></p>
-<p>一般来说，类的生命周期被划分为加载、验证、准备、解析、初始化、使用和卸载几个阶段，其中验证、准备和解析被统称为连接阶段。解析的过程顺序不确定，可能在初始化开始之后才开始，这常常出现在Java的晚绑定（动态绑定）中。</p>
-<h2 id="类加载过程"><a href="#类加载过程" class="headerlink" title="类加载过程"></a>类加载过程</h2><h3 id="加载"><a href="#加载" class="headerlink" title="加载"></a>加载</h3><p>“加载”和“类加载”听起来十分相似，但是加载只是类加载的一个阶段。加载阶段的三个任务：</p>
-<ul>
-<li>通过类的全限定名获取类的二进制字节流。</li>
-<li>将二进制字节流转化成运行时数据结构。</li>
-<li>在内存中生成这个类的<code>java.lang.Class</code>对象，作为方法区数据结构的访问入口。</li>
-</ul>
-<p>对于第一个任务，Java虚拟机规范并没有明确要求从字节码文件中获取二进制字节流，因此一般可以从以下途径获取：</p>
-<ul>
-<li>从压缩包获取，包括zip、jar、war格式等</li>
-<li>从网络中获取，如web applet</li>
-<li>运行时计算生成，较多的使用场景是动态代理技术</li>
-<li>从数据库中获取</li>
-<li>从加密文件中获取</li>
-<li>……</li>
-</ul>
-<p>非数组类型的加载阶段是程序员可控制性最强的阶段，程序员可以通过自定义类加载器来控制字节流的获取方式。<br>数组类型本身并不是通过类加载器进行创建，而是通过JVM在内存中直接动态创建。但数组类的元素类型（去掉所有数组维度的类型）最终还是要靠类加载器加载，数组类的创建过程遵循下列规则：</p>
-<ul>
-<li>如果数组的组件类型（去掉一个维度的类型，区别于元素类型）是引用类型，就递归加载这个组件类型，数组会被标识在加载该组件类型的类加载器的类名称空间上。</li>
-<li>如果数组的组件类型不是引用类型，JVM会将数组标记为与引导类加载器关联。</li>
-<li>数组类的可访问性和组件类型的可访问性一致，如果组件类型不是引用类型，那么它的数组类的可访问性默认是public，所有的类和接口都可以访问。</li>
-</ul>
-<h3 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h3><p>验证阶段保证class文件的字节流符合Java虚拟机规范，不会损害Java虚拟机的安全。验证阶段主要包括四个验证动作：文件格式验证、元数据验证、字节码验证和符号引用验证。</p>
-<h4 id="文件格式验证"><a href="#文件格式验证" class="headerlink" title="文件格式验证"></a>文件格式验证</h4><p>文件格式验证是要验证字节流是否符合class文件格式规范，可以验证的地方主要包括：</p>
-<ul>
-<li>开头是否是魔数0xCAFEBABE</li>
-<li>主次版本号能否被Java虚拟机接受</li>
-<li>常量池的常量中是否有不被支持的常量类型</li>
-<li>class文件本身及各个部分是否有被删除或附加的其他信息</li>
-<li>……</li>
-</ul>
-<h4 id="元数据验证"><a href="#元数据验证" class="headerlink" title="元数据验证"></a>元数据验证</h4><p>主要包括以下验证点：</p>
-<ul>
-<li>这个类是否有父类（除了Object类以外的所有类都有父类）</li>
-<li>这个类的父类是否继承了final修饰的类</li>
-<li>如果这个类不是抽象类，是否实现了父类或接口要求实现的所有方法</li>
-<li>类中的字段、方法是否与父类产生矛盾</li>
-<li>……</li>
-</ul>
-<h4 id="字节码验证"><a href="#字节码验证" class="headerlink" title="字节码验证"></a>字节码验证</h4><p>前面的元数据验证主要是用于数据类型校验，字节码校验是进行类的方法体校验，包括以下内容：</p>
-<ul>
-<li>任意时刻操作数栈的数据类型和指令代码序列都能配合工作，不会出现类似于“在操作数栈中放了一个int类型的数据，使用时按照long类型来载入本地变量表”的情况。</li>
-<li>任何指令都不会跳转到方法体外的字节码指令上。</li>
-<li>保证数据类型转换的合法性，子类对象可以赋值给父类数据类型，但反过来则不行，更不能将对象赋值给一个毫不相关的数据类型。</li>
-<li>……</li>
-</ul>
-<h4 id="符号引用验证"><a href="#符号引用验证" class="headerlink" title="符号引用验证"></a>符号引用验证</h4><p>符号引用验证主要是看该类是否缺少或者被禁止访问它依赖的某些外部类、方法、字段等资源。主要验证下列内容：</p>
-<ul>
-<li>符号引用中能否通过全限定名找到对应的类。</li>
-<li>在指定类中是否存在符合方法的字段描述符及简单名称所描述的字段和方法。</li>
-<li>符号引用中的类、字段和方法的可访问性是否可以被当前类访问。</li>
-<li>……</li>
-</ul>
-<h3 id="准备"><a href="#准备" class="headerlink" title="准备"></a>准备</h3><p>这个阶段是为静态变量分配内存并设置初始值的阶段，一般来说是应该在方法区上进行操作的，在JDK7之前，HotSpot使用永久代来实现方法区，但JDK8开始，永久代被移除，静态变量就和class对象一起被存放在了堆空间中。因此，静态变量是在逻辑上的方法区。<br>准备阶段的初始值并不是代码中赋予的值，而是“赋零值”的过程，一起看一下下面的代码：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> value = <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<h2 id="类加载器"><a href="#类加载器" class="headerlink" title="类加载器"></a>类加载器</h2><p>类加载器是Java进行类加载的重要部分，但它的作用又不仅仅局限于进行类加载这么简单。对于两个类，如果要比较它们是否“相等”，首先要确认这两个类来自通过一个类加载器，否则谈论这两个类是否相等将毫无意义。<br>这里的“相等”，包括代表类的Class对象的equals()方法、isAssignableFrom()方法、isInstance()方法的返回结果。</p>
+<p>类加载器一般被分为三种：启动类加载器、扩展类加载器、应用程序类加载器。</p>
+<h3 id="启动类加载器"><a href="#启动类加载器" class="headerlink" title="启动类加载器"></a>启动类加载器</h3><p>启动类加载器与其他类加载器不同，它是由C++实现的类加载器，是在虚拟机内部的一部分，而其他加载器都是独立于Java虚拟机存在的。启动类加载器用来加载<code>%JAVA_HOME%\lib</code>目录或者被<code>-Xbootclasspath</code>参数指定的目录下的类库到虚拟机内存中，且要求类库文件名是Java虚拟机能够识别的，如rt.jar和tools.jar等。</p>
+<h3 id="扩展类加载器"><a href="#扩展类加载器" class="headerlink" title="扩展类加载器"></a>扩展类加载器</h3><p>扩展类加载器负责加载<code>%JAVA_HOME%\lib\ext</code>目录或者被<code>java.ext.dirs</code>系统变量所指定的目录下的类库。</p>
+<h3 id="应用程序类加载器"><a href="#应用程序类加载器" class="headerlink" title="应用程序类加载器"></a>应用程序类加载器</h3><p>应用程序类加载器也被称为系统类加载器，负责加载用户类路径上的所有类库。如果用户没有自定义类加载器，那么默认使用该类加载器进行类加载。</p>
+<h2 id="双亲委派模型"><a href="#双亲委派模型" class="headerlink" title="双亲委派模型"></a>双亲委派模型</h2><p><img src="https://img-blog.csdnimg.cn/20200721173157703.png#pic_center" alt=""></p>
+<p>双亲委派模型结构如上图所示，除了顶层的启动类加载器外，其他类加载器都有自己的父类加载器。下面的代码演示了类加载器的层次结构。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestClassLoaderParent</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		System.out.println(<span class="string">"TestClassLoaderParent's classLoader is "</span></span><br><span class="line">				+ TestClassLoaderParent<span class="class">.<span class="keyword">class</span>.<span class="title">getClassLoader</span>())</span>;</span><br><span class="line">		System.out.println(<span class="string">"The parent of testClassLoaderParent's classLoader is "</span> </span><br><span class="line">				+ TestClassLoaderParent<span class="class">.<span class="keyword">class</span>.<span class="title">getClassLoader</span>().<span class="title">getParent</span>())</span>;</span><br><span class="line">		System.out.println(<span class="string">"The grandparent of testClassLoaderParent's classLoader is "</span> </span><br><span class="line">				+ TestClassLoaderParent<span class="class">.<span class="keyword">class</span>.<span class="title">getClassLoader</span>().<span class="title">getParent</span>().<span class="title">getParent</span>())</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>尽管代码里面写的是给value赋1，但准备阶段应该是将0赋给value，真正将1赋给value的阶段应该是后面的初始化的阶段。下面列出了各种数据类型的零值。</p>
-<table>
-<thead>
-<tr>
-<th align="center">数据类型</th>
-<th align="center">零值</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="center">int</td>
-<td align="center">0</td>
-</tr>
-<tr>
-<td align="center">long</td>
-<td align="center">0L</td>
-</tr>
-<tr>
-<td align="center">short</td>
-<td align="center">(short)0</td>
-</tr>
-<tr>
-<td align="center">char</td>
-<td align="center">‘\u0000’</td>
-</tr>
-<tr>
-<td align="center">byte</td>
-<td align="center">(byte)0</td>
-</tr>
-<tr>
-<td align="center">boolean</td>
-<td align="center">false</td>
-</tr>
-<tr>
-<td align="center">float</td>
-<td align="center">0.0f</td>
-</tr>
-<tr>
-<td align="center">double</td>
-<td align="center">0.0d</td>
-</tr>
-<tr>
-<td align="center">reference</td>
-<td align="center">null</td>
-</tr>
-</tbody></table>
-<p>然而并不是所有情况都是赋零值的过程，当静态变量被final修饰时，例如下面这种情况：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> value = <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+<p>输出结果如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">TestClassLoaderParent&#39;s classLoader is sun.misc.Launcher$AppClassLoader@73d16e93</span><br><span class="line">The parent of testClassLoaderParent&#39;s classLoader is sun.misc.Launcher$ExtClassLoader@15db9742</span><br><span class="line">The grandparent of testClassLoaderParent&#39;s classLoader is null</span><br></pre></td></tr></table></figure>
 
-<p>这种情况下，value在编译阶段就已经生成了ConstantValue属性，所以在准备阶段就会把1赋给value。</p>
-<h3 id="解析"><a href="#解析" class="headerlink" title="解析"></a>解析</h3><p>解析阶段就是将常量池中的符号引用转换为直接引用的过程。前面提到了符号引用相关的内容，这里简要说明一下符号引用和直接引用的概念。</p>
-<ul>
-<li><p><strong>符号引用</strong>：符号引用是一组用符号来描述所引用的目标，这些符号可以无歧义地定位到目标。在前面讲类文件结构时就提到过符号引用如CONSTANT_Fieldref_info、CONSTANT_Methodref_info、CONSTANT_InterfaceMethodref_info等。</p>
-</li>
-<li><p><strong>直接引用</strong>：直接引用是可以直接指向目标的指针、相对偏移量或是一个能间接定位到目标的句柄。</p>
-</li>
-</ul>
-<h3 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h3><p>初始化是类加载过程的最后一个阶段，前面的准备阶段我们说这是一个给静态变量赋零值的阶段，而到了初始化阶段就是真正给Java代码中的静态变量赋初始值的时候了。在初始化阶段，javac编译器会生成一个<code>&lt;clinit&gt;()</code>方法，用来给静态变量和静态语句块赋值。<code>&lt;clinit&gt;()</code>必须保证在多线程场景下被正确加锁同步，所以多个线程去执行<code>&lt;clinit&gt;()</code>方法时可能会遇到耗时操作导致阻塞。下面的代码进行了这种情况的演示。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestDeadLoopClass</span> </span>&#123;</span><br><span class="line">	<span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">DeadLoopClass</span> </span>&#123;</span><br><span class="line">		<span class="keyword">static</span> &#123;</span><br><span class="line">			<span class="comment">//这里不加if语句会无法编译</span></span><br><span class="line">			<span class="keyword">if</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">				System.out.println(Thread.currentThread() + <span class="string">" init DeadLoopClass"</span>);</span><br><span class="line">				<span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		Runnable script = <span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">			<span class="meta">@Override</span></span><br><span class="line">			<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">				System.out.println(Thread.currentThread() + <span class="string">" start"</span>);</span><br><span class="line">				DeadLoopClass dlc = <span class="keyword">new</span> DeadLoopClass();</span><br><span class="line">				System.out.println(Thread.currentThread() + <span class="string">" run over"</span>);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;;</span><br><span class="line">		</span><br><span class="line">		Thread thread1 = <span class="keyword">new</span> Thread(script);</span><br><span class="line">		Thread thread2 = <span class="keyword">new</span> Thread(script);</span><br><span class="line">		thread1.start();</span><br><span class="line">		thread2.start();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>最后输出的应用程序类加载器的祖父类加载器显示是null，这并不意味着这个祖父类加载器存在，而是代表启动类加载器。</p>
+<p>双亲委派模型的原理是当一个类加载器接收到类加载请求，这个类加载器不会自己尝试加载，而是让自己的父类加载器去完成，直到请求传送到最顶层的启动类加载器。如果父类加载器无法完成加载，则会让子类去加载。双亲委派模型的代码实现非常简单，代码如下所示。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> Class&lt;?&gt; loadClass(String name, <span class="keyword">boolean</span> resolve)</span><br><span class="line">    <span class="keyword">throws</span> ClassNotFoundException</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (getClassLoadingLock(name)) &#123;</span><br><span class="line">        <span class="comment">// First, check if the class has already been loaded</span></span><br><span class="line">        Class&lt;?&gt; c = findLoadedClass(name);</span><br><span class="line">        <span class="keyword">if</span> (c == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">long</span> t0 = System.nanoTime();</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (parent != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    c = parent.loadClass(name, <span class="keyword">false</span>);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    c = findBootstrapClassOrNull(name);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;</span><br><span class="line">                <span class="comment">// ClassNotFoundException thrown if class not found</span></span><br><span class="line">                <span class="comment">// from the non-null parent class loader</span></span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (c == <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="comment">// If still not found, then invoke findClass in order</span></span><br><span class="line">                <span class="comment">// to find the class.</span></span><br><span class="line">                <span class="keyword">long</span> t1 = System.nanoTime();</span><br><span class="line">                c = findClass(name);</span><br><span class="line"></span><br><span class="line">                <span class="comment">// this is the defining class loader; record the stats</span></span><br><span class="line">                sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);</span><br><span class="line">                sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);</span><br><span class="line">                sun.misc.PerfCounter.getFindClasses().increment();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (resolve) &#123;</span><br><span class="line">            resolveClass(c);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> c;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-
-<p>运行结果如下，一个线程卡死了，另一个线程一直阻塞：</p>
-<blockquote>
-<p>Thread[Thread-0,5,main] start<br>Thread[Thread-1,5,main] start<br>Thread[Thread-0,5,main] init DeadLoopClass</p>
-</blockquote>
-<p>接下来看一下初始化的几种情况：</p>
-<p>1.遇到new、getstatic、putstatic或invokestatic时触发初始化：</p>
-<ul>
-<li>当执行new指令时会初始化一个类，即创建一个类的实例对象。</li>
-<li>当执行getstatic指令时会初始化一个类，即访问类的静态变量。</li>
-<li>当执行putstatic指令时会初始化一个类，即给静态变量赋值。</li>
-<li>当执行invokestatic指令时会初始化一个类，即调用类的静态方法。</li>
-</ul>
-<p>2.使用<code>java.lang.reflect</code>方法对类型进行反射调用的时候，如果类型没有初始化则先进行初始化。<br>3.当子类的父类没有初始化，先触发父类的初始化。<br>4.虚拟机启动时，需要指定一个要执行的主类（包含main()方法的类），虚拟机会先初始化这个类。<br>5.当使用JDK7加入的动态语言支持，如果<code>java.lang.invoke.MethodHandle</code>实例最后解析的结果是REF_getStatic、REF_putStatic、REF_invokeStatic、REF_newInvokeSpecial四种类型的方法句柄，且方法句柄对应的类没有被初始化，则先进行初始化。<br>6.当一个接口定义JDK8加入的默认方法（被default修饰的接口方法），当接口的实现类初始化，则接口要在实现类之前初始化。</p>
+<p>双亲委派模型的优点是越高层级的类加载器的优先级越高，这样无论加载任何类都会优先分配给最顶端的启动类加载器进行加载。例如如果我们需要加载java.lang.Object类，那么双亲委派机制可以保证启动类加载器每次从rt.jar中进行加载，而不是由别的类加载器加载，也确保了Java基础体系的安全性。</p>
 
       
       <!-- reward -->
@@ -309,7 +196,7 @@
     <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sky-ng.github.io/2020/07/16/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/" alt="微信分享二维码">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sky-ng.github.io/2020/07/21/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E4%B8%8E%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -327,19 +214,10 @@
   
   <nav class="article-nav">
     
-      <a href="/2020/07/21/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E4%B8%8E%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B/" class="article-nav-link">
-        <strong class="article-nav-caption">上一篇</strong>
-        <div class="article-nav-title">
-          
-            类加载器与双亲委派模型
-          
-        </div>
-      </a>
     
-    
-      <a href="/2020/07/12/%E7%AE%80%E5%8D%95%E7%90%86%E8%A7%A3%E7%BA%BF%E6%AE%B5%E6%A0%91/" class="article-nav-link">
+      <a href="/2020/07/16/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/" class="article-nav-link">
         <strong class="article-nav-caption">下一篇</strong>
-        <div class="article-nav-title">简单理解线段树</div>
+        <div class="article-nav-title">类加载机制</div>
       </a>
     
   </nav>

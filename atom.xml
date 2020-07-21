@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://sky-ng.github.io/"/>
-  <updated>2020-07-20T11:13:19.265Z</updated>
+  <updated>2020-07-21T12:08:59.281Z</updated>
   <id>https://sky-ng.github.io/</id>
   
   <author>
@@ -15,6 +15,29 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>类加载器与双亲委派模型</title>
+    <link href="https://sky-ng.github.io/2020/07/21/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E4%B8%8E%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B/"/>
+    <id>https://sky-ng.github.io/2020/07/21/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E4%B8%8E%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B/</id>
+    <published>2020-07-21T08:04:10.000Z</published>
+    <updated>2020-07-21T12:08:59.281Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;之前说到类加载机制的相关原理，这次来谈谈类加载器以及双亲委派模型的概念。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+      <category term="JVM" scheme="https://sky-ng.github.io/tags/JVM/"/>
+    
+  </entry>
   
   <entry>
     <title>类加载机制</title>
@@ -436,29 +459,6 @@
     
     
       <category term="计算机网络" scheme="https://sky-ng.github.io/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>深入理解Java虚拟机-运行时数据区</title>
-    <link href="https://sky-ng.github.io/2020/05/21/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA/"/>
-    <id>https://sky-ng.github.io/2020/05/21/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA/</id>
-    <published>2020-05-21T06:52:14.000Z</published>
-    <updated>2020-05-24T13:49:15.190Z</updated>
-    
-    <summary type="html">
-    
-      &lt;p&gt;在Java虚拟机的概念中，运行时数据区又被称为Java内存区域。主要由线程私有的程序计数器、虚拟机栈和本地方法栈以及线程共享的堆和方法区组成。&lt;br&gt;&lt;img src=&quot;https://img-blog.csdnimg.cn/20200521144716505.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center&quot; alt=&quot;Java虚拟机运行时数据区&quot;&gt;&lt;/p&gt;
-    
-    </summary>
-    
-    
-      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
-    
-    
-      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
-    
-      <category term="JVM" scheme="https://sky-ng.github.io/tags/JVM/"/>
     
   </entry>
   
