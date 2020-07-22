@@ -9,7 +9,7 @@
     
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>
-    类加载器与双亲委派模型 |  SKY技术修炼指南
+    一道广联达秋招算法题 |  SKY技术修炼指南
   </title>
   <meta name="generator" content="hexo-theme-ayer">
   
@@ -42,7 +42,7 @@
   <div id="app">
     <main class="content on">
       <section class="outer">
-  <article id="post-类加载器与双亲委派模型" class="article article-type-post" itemscope
+  <article id="post-一道广联达秋招算法题" class="article article-type-post" itemscope
   itemprop="blogPost" data-scroll-reveal>
 
   <div class="article-inner">
@@ -50,7 +50,7 @@
     <header class="article-header">
        
 <h1 class="article-title sea-center" style="border-left:0" itemprop="name">
-  类加载器与双亲委派模型
+  一道广联达秋招算法题
 </h1>
  
 
@@ -59,12 +59,12 @@
 
     
     <div class="article-meta">
-      <a href="/2020/07/21/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E4%B8%8E%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B/" class="article-date">
-  <time datetime="2020-07-21T08:04:10.000Z" itemprop="datePublished">2020-07-21</time>
+      <a href="/2020/07/22/%E4%B8%80%E9%81%93%E5%B9%BF%E8%81%94%E8%BE%BE%E7%A7%8B%E6%8B%9B%E7%AE%97%E6%B3%95%E9%A2%98/" class="article-date">
+  <time datetime="2020-07-22T10:31:40.000Z" itemprop="datePublished">2020-07-22</time>
 </a>
       
   <div class="article-category">
-    <a class="article-category-link" href="/categories/Java/">Java</a>
+    <a class="article-category-link" href="/categories/%E7%AC%94%E8%AF%95%E9%9D%A2%E8%AF%95/">笔试面试</a>
   </div>
 
       
@@ -74,7 +74,7 @@
         <span class="post-meta-item-icon">
             <i class="ri-quill-pen-line"></i>
             <span class="post-meta-item-text"> Word count:</span>
-            <span class="post-count">993</span>
+            <span class="post-count">763</span>
         </span>
     </span>
 
@@ -83,7 +83,7 @@
         <span class="post-meta-item-icon">
             <i class="ri-book-open-line"></i>
             <span class="post-meta-item-text"> Reading time≈</span>
-            <span class="post-count">4 min</span>
+            <span class="post-count">3 min</span>
         </span>
     </span>
 </div>
@@ -94,8 +94,6 @@
 
     
     
-    <div class="tocbot"></div>
-
 
 
 
@@ -108,26 +106,46 @@
       
 
       
-      <p>之前说到类加载机制的相关原理，这次来谈谈类加载器以及双亲委派模型的概念。</p>
-<a id="more"></a>
+      <a id="more"></a>
 
-<h2 id="类加载器"><a href="#类加载器" class="headerlink" title="类加载器"></a>类加载器</h2><p>类加载器是Java进行类加载的重要部分，但它的作用又不仅仅局限于进行类加载这么简单。对于两个类，如果要比较它们是否“相等”，首先要确认这两个类来自通过一个类加载器，否则谈论这两个类是否相等将毫无意义。<br>这里的“相等”，包括代表类的Class对象的equals()方法、isAssignableFrom()方法、isInstance()方法的返回结果。</p>
-<p>类加载器一般被分为三种：启动类加载器、扩展类加载器、应用程序类加载器。</p>
-<h3 id="启动类加载器"><a href="#启动类加载器" class="headerlink" title="启动类加载器"></a>启动类加载器</h3><p>启动类加载器与其他类加载器不同，它是由C++实现的类加载器，是在虚拟机内部的一部分，而其他加载器都是独立于Java虚拟机存在的。启动类加载器用来加载<code>%JAVA_HOME%\lib</code>目录或者被<code>-Xbootclasspath</code>参数指定的目录下的类库到虚拟机内存中，且要求类库文件名是Java虚拟机能够识别的，如rt.jar和tools.jar等。</p>
-<h3 id="扩展类加载器"><a href="#扩展类加载器" class="headerlink" title="扩展类加载器"></a>扩展类加载器</h3><p>扩展类加载器负责加载<code>%JAVA_HOME%\lib\ext</code>目录或者被<code>java.ext.dirs</code>系统变量所指定的目录下的类库。</p>
-<h3 id="应用程序类加载器"><a href="#应用程序类加载器" class="headerlink" title="应用程序类加载器"></a>应用程序类加载器</h3><p>应用程序类加载器也被称为系统类加载器，负责加载用户类路径上的所有类库。如果用户没有自定义类加载器，那么默认使用该类加载器进行类加载。</p>
-<h2 id="双亲委派模型"><a href="#双亲委派模型" class="headerlink" title="双亲委派模型"></a>双亲委派模型</h2><p><img src="https://img-blog.csdnimg.cn/20200721173157703.png#pic_center" alt=""></p>
-<p>双亲委派模型结构如上图所示，除了顶层的启动类加载器外，其他类加载器都有自己的父类加载器。下面的代码演示了类加载器的层次结构。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestClassLoaderParent</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		System.out.println(<span class="string">"TestClassLoaderParent's classLoader is "</span></span><br><span class="line">				+ TestClassLoaderParent<span class="class">.<span class="keyword">class</span>.<span class="title">getClassLoader</span>())</span>;</span><br><span class="line">		System.out.println(<span class="string">"The parent of testClassLoaderParent's classLoader is "</span> </span><br><span class="line">				+ TestClassLoaderParent<span class="class">.<span class="keyword">class</span>.<span class="title">getClassLoader</span>().<span class="title">getParent</span>())</span>;</span><br><span class="line">		System.out.println(<span class="string">"The grandparent of testClassLoaderParent's classLoader is "</span> </span><br><span class="line">				+ TestClassLoaderParent<span class="class">.<span class="keyword">class</span>.<span class="title">getClassLoader</span>().<span class="title">getParent</span>().<span class="title">getParent</span>())</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>师兄在教研室群里发了一道热乎的广联达算法题，乍一看完全没有思路，于是实验室的小伙伴们饶有兴致地开始讨论起了这道题。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200722183430700.jpg#pic_center" alt=""></p>
+<p>先给大家看一下题目：</p>
+<p><strong>题目描述</strong></p>
+<p>有一种排序算法定义如下，该排序算法每次把一个元素提到序列的开头，例如<code>2, 1, 3, 4</code>，只需要一次操作把1提到序列起始位置就可以使得原序列从小到大有序。<br>现在给你个乱序的1-n的排列，请你计算最少需要多少次操作才可以使得原序列从小到大有序。</p>
+<p><strong>输入描述</strong></p>
+<blockquote>
+<p>输入第一行包含两个正整数n，表示序列的长度。（1 &lt;= n &lt;= 100000）<br>接下来一行有n个正整数，表示序列中的n个元素，中间用空格隔开。<br>（1 &lt;= a_i &lt;= n）</p>
+</blockquote>
+<p><strong>输出描述</strong></p>
+<blockquote>
+<p>输出仅包含一个整数，表示最少的操作次数。</p>
+</blockquote>
+<p><strong>样例输入</strong></p>
+<blockquote>
+<p>4<br>2 1 3 4</p>
+</blockquote>
+<p><strong>样例输出</strong></p>
+<blockquote>
+<p>1</p>
+</blockquote>
+<p>以上就是这道题的题干，说实话，第一眼看过去我甚至觉得这是到冒泡排序。但仔细一看，每个数必须要移动到序列起始位置。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200722184639739.jpg#pic_center" alt=""></p>
+<p>忽然，一个想法闪过我的脑海。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200722184804203.jpg#pic_center" alt=""></p>
+<p>我是这样想的：<strong>当一个数被移动到序列的起始位置，那么意味着所有比它小的数都要移动到起始位置。</strong></p>
+<p><img src="https://img-blog.csdnimg.cn/20200722185437367.jpg#pic_center" alt=""></p>
+<p>举个栗子，我们看一下下面一组序列。</p>
+<blockquote>
+<p>2 5 3 1 4 6 7 8</p>
+</blockquote>
+<p>直观地看，我们首先需要把4移到最前面，再把3移到最前面，接着是2和1两个数移到最前面。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200722190400128.png#pic_center" alt=""></p>
+<p>看到这里，大家应该看明白了。我们需要与排序后的数组对比，从后往前进行对比，看看哪个数没有在它的相对位置上。以上面的序列为例，这里说的相对位置可以理解为我们从后往前搜索分别能找到8、7、6、5，但是理应在5前面的4却不见了，所以4是不在相对位置上的。因此4需要挪到最前面，在4前面的3、2、1也需要移到最前面。于是我们需要返回至少需要移动四次。</p>
+<p>代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">fun</span><span class="params">(<span class="keyword">int</span> n, <span class="keyword">int</span>[] arr)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">int</span>[] sortArr = Arrays.copyOf(arr, n);</span><br><span class="line">		Arrays.sort(sortArr);</span><br><span class="line">		<span class="keyword">int</span> p = n - <span class="number">1</span>, q = n - <span class="number">1</span>;</span><br><span class="line">		<span class="keyword">while</span> (p &gt;= <span class="number">0</span> &amp;&amp; q &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">			<span class="keyword">if</span> (arr[p] == sortArr[q]) &#123;</span><br><span class="line">				--p;</span><br><span class="line">				--q;</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				<span class="keyword">while</span> (p &gt;= <span class="number">0</span> &amp;&amp; arr[p] != sortArr[q]) &#123;</span><br><span class="line">					--p;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> q + <span class="number">1</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		Scanner in = <span class="keyword">new</span> Scanner(System.in);</span><br><span class="line">		<span class="keyword">int</span> n = in.nextInt();</span><br><span class="line">		<span class="keyword">int</span>[] arr = <span class="keyword">new</span> <span class="keyword">int</span>[n];</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) &#123;</span><br><span class="line">			arr[i] = in.nextInt();</span><br><span class="line">		&#125;</span><br><span class="line">		</span><br><span class="line">		Solution s = <span class="keyword">new</span> Solution();</span><br><span class="line">		System.out.println(s.fun(arr.length, arr));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>输出结果如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">TestClassLoaderParent&#39;s classLoader is sun.misc.Launcher$AppClassLoader@73d16e93</span><br><span class="line">The parent of testClassLoaderParent&#39;s classLoader is sun.misc.Launcher$ExtClassLoader@15db9742</span><br><span class="line">The grandparent of testClassLoaderParent&#39;s classLoader is null</span><br></pre></td></tr></table></figure>
-
-<p>最后输出的应用程序类加载器的祖父类加载器显示是null，这并不意味着这个祖父类加载器不存在，而是代表启动类加载器。</p>
-<p>双亲委派模型的原理是当一个类加载器接收到类加载请求，这个类加载器不会自己尝试加载，而是让自己的父类加载器去完成，直到请求传送到最顶层的启动类加载器。如果父类加载器无法完成加载，则会让子类去加载。双亲委派模型的代码实现非常简单，代码如下所示。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> Class&lt;?&gt; loadClass(String name, <span class="keyword">boolean</span> resolve)</span><br><span class="line">    <span class="keyword">throws</span> ClassNotFoundException</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (getClassLoadingLock(name)) &#123;</span><br><span class="line">        <span class="comment">// First, check if the class has already been loaded</span></span><br><span class="line">        Class&lt;?&gt; c = findLoadedClass(name);</span><br><span class="line">        <span class="keyword">if</span> (c == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">long</span> t0 = System.nanoTime();</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (parent != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    c = parent.loadClass(name, <span class="keyword">false</span>);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    c = findBootstrapClassOrNull(name);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (ClassNotFoundException e) &#123;</span><br><span class="line">                <span class="comment">// ClassNotFoundException thrown if class not found</span></span><br><span class="line">                <span class="comment">// from the non-null parent class loader</span></span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (c == <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="comment">// If still not found, then invoke findClass in order</span></span><br><span class="line">                <span class="comment">// to find the class.</span></span><br><span class="line">                <span class="keyword">long</span> t1 = System.nanoTime();</span><br><span class="line">                c = findClass(name);</span><br><span class="line"></span><br><span class="line">                <span class="comment">// this is the defining class loader; record the stats</span></span><br><span class="line">                sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);</span><br><span class="line">                sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);</span><br><span class="line">                sun.misc.PerfCounter.getFindClasses().increment();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (resolve) &#123;</span><br><span class="line">            resolveClass(c);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> c;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>双亲委派模型的优点是越高层级的类加载器的优先级越高，这样无论加载任何类都会优先分配给最顶端的启动类加载器进行加载。例如如果我们需要加载java.lang.Object类，那么双亲委派机制可以保证启动类加载器每次从rt.jar中进行加载，而不是由别的类加载器加载，也确保了Java基础体系的安全性。</p>
+<p>由于没有OJ环境，以上代码仅仅测试了我自己输入的部分测试用例。各位如果发现有什么问题可以在下方进行留言与我交流。</p>
 
       
       <!-- reward -->
@@ -196,14 +214,14 @@
     <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sky-ng.github.io/2020/07/21/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E4%B8%8E%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B/" alt="微信分享二维码">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sky-ng.github.io/2020/07/22/%E4%B8%80%E9%81%93%E5%B9%BF%E8%81%94%E8%BE%BE%E7%A7%8B%E6%8B%9B%E7%AE%97%E6%B3%95%E9%A2%98/" alt="微信分享二维码">
     </div>
 </div>
 
 <div id="share-mask"></div>
       
       
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java/" rel="tag">Java</a></li></ul>
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E7%AC%94%E8%AF%95/" rel="tag">笔试</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a></li></ul>
 
 
     </footer>
@@ -214,19 +232,10 @@
   
   <nav class="article-nav">
     
-      <a href="/2020/07/22/%E4%B8%80%E9%81%93%E5%B9%BF%E8%81%94%E8%BE%BE%E7%A7%8B%E6%8B%9B%E7%AE%97%E6%B3%95%E9%A2%98/" class="article-nav-link">
-        <strong class="article-nav-caption">上一篇</strong>
-        <div class="article-nav-title">
-          
-            一道广联达秋招算法题
-          
-        </div>
-      </a>
     
-    
-      <a href="/2020/07/16/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E6%9C%BA%E5%88%B6/" class="article-nav-link">
+      <a href="/2020/07/21/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E4%B8%8E%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B/" class="article-nav-link">
         <strong class="article-nav-caption">下一篇</strong>
-        <div class="article-nav-title">类加载机制</div>
+        <div class="article-nav-title">类加载器与双亲委派模型</div>
       </a>
     
   </nav>

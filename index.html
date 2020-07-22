@@ -76,6 +76,117 @@
     
     
     
+    <article id="post-一道广联达秋招算法题" class="article article-type-post" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2020/07/22/%E4%B8%80%E9%81%93%E5%B9%BF%E8%81%94%E8%BE%BE%E7%A7%8B%E6%8B%9B%E7%AE%97%E6%B3%95%E9%A2%98/"
+    >一道广联达秋招算法题</a> 
+</h2>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2020/07/22/%E4%B8%80%E9%81%93%E5%B9%BF%E8%81%94%E8%BE%BE%E7%A7%8B%E6%8B%9B%E7%AE%97%E6%B3%95%E9%A2%98/" class="article-date">
+  <time datetime="2020-07-22T10:31:40.000Z" itemprop="datePublished">2020-07-22</time>
+</a>
+      
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E7%AC%94%E8%AF%95%E9%9D%A2%E8%AF%95/">笔试面试</a>
+  </div>
+
+      
+      
+      
+    </div>
+    
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <a id="more"></a>
+
+<p>师兄在教研室群里发了一道热乎的广联达算法题，乍一看完全没有思路，于是实验室的小伙伴们饶有兴致地开始讨论起了这道题。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200722183430700.jpg#pic_center" alt=""></p>
+<p>先给大家看一下题目：</p>
+<p><strong>题目描述</strong></p>
+<p>有一种排序算法定义如下，该排序算法每次把一个元素提到序列的开头，例如<code>2, 1, 3, 4</code>，只需要一次操作把1提到序列起始位置就可以使得原序列从小到大有序。<br>现在给你个乱序的1-n的排列，请你计算最少需要多少次操作才可以使得原序列从小到大有序。</p>
+<p><strong>输入描述</strong></p>
+<blockquote>
+<p>输入第一行包含两个正整数n，表示序列的长度。（1 &lt;= n &lt;= 100000）<br>接下来一行有n个正整数，表示序列中的n个元素，中间用空格隔开。<br>（1 &lt;= a_i &lt;= n）</p>
+</blockquote>
+<p><strong>输出描述</strong></p>
+<blockquote>
+<p>输出仅包含一个整数，表示最少的操作次数。</p>
+</blockquote>
+<p><strong>样例输入</strong></p>
+<blockquote>
+<p>4<br>2 1 3 4</p>
+</blockquote>
+<p><strong>样例输出</strong></p>
+<blockquote>
+<p>1</p>
+</blockquote>
+<p>以上就是这道题的题干，说实话，第一眼看过去我甚至觉得这是到冒泡排序。但仔细一看，每个数必须要移动到序列起始位置。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200722184639739.jpg#pic_center" alt=""></p>
+<p>忽然，一个想法闪过我的脑海。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200722184804203.jpg#pic_center" alt=""></p>
+<p>我是这样想的：<strong>当一个数被移动到序列的起始位置，那么意味着所有比它小的数都要移动到起始位置。</strong></p>
+<p><img src="https://img-blog.csdnimg.cn/20200722185437367.jpg#pic_center" alt=""></p>
+<p>举个栗子，我们看一下下面一组序列。</p>
+<blockquote>
+<p>2 5 3 1 4 6 7 8</p>
+</blockquote>
+<p>直观地看，我们首先需要把4移到最前面，再把3移到最前面，接着是2和1两个数移到最前面。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200722190400128.png#pic_center" alt=""></p>
+<p>看到这里，大家应该看明白了。我们需要与排序后的数组对比，从后往前进行对比，看看哪个数没有在它的相对位置上。以上面的序列为例，这里说的相对位置可以理解为我们从后往前搜索分别能找到8、7、6、5，但是理应在5前面的4却不见了，所以4是不在相对位置上的。因此4需要挪到最前面，在4前面的3、2、1也需要移到最前面。于是我们需要返回至少需要移动四次。</p>
+<p>代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Solution</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">fun</span><span class="params">(<span class="keyword">int</span> n, <span class="keyword">int</span>[] arr)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">int</span>[] sortArr = Arrays.copyOf(arr, n);</span><br><span class="line">		Arrays.sort(sortArr);</span><br><span class="line">		<span class="keyword">int</span> p = n - <span class="number">1</span>, q = n - <span class="number">1</span>;</span><br><span class="line">		<span class="keyword">while</span> (p &gt;= <span class="number">0</span> &amp;&amp; q &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">			<span class="keyword">if</span> (arr[p] == sortArr[q]) &#123;</span><br><span class="line">				--p;</span><br><span class="line">				--q;</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				<span class="keyword">while</span> (p &gt;= <span class="number">0</span> &amp;&amp; arr[p] != sortArr[q]) &#123;</span><br><span class="line">					--p;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> q + <span class="number">1</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		Scanner in = <span class="keyword">new</span> Scanner(System.in);</span><br><span class="line">		<span class="keyword">int</span> n = in.nextInt();</span><br><span class="line">		<span class="keyword">int</span>[] arr = <span class="keyword">new</span> <span class="keyword">int</span>[n];</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) &#123;</span><br><span class="line">			arr[i] = in.nextInt();</span><br><span class="line">		&#125;</span><br><span class="line">		</span><br><span class="line">		Solution s = <span class="keyword">new</span> Solution();</span><br><span class="line">		System.out.println(s.fun(arr.length, arr));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>由于没有OJ环境，以上代码仅仅测试了我自己输入的部分测试用例。各位如果发现有什么问题可以在下方进行留言与我交流。</p>
+
+      
+      <!-- reward -->
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+    <footer class="article-footer">
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E7%AC%94%E8%AF%95/" rel="tag">笔试</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a></li></ul>
+
+
+    </footer>
+
+  </div>
+
+  
+
+  
+  
+  
+
+  
+  
+  
+
+</article>
+    
     <article id="post-类加载器与双亲委派模型" class="article article-type-post" itemscope
   itemprop="blogPost" data-scroll-reveal>
 
@@ -724,80 +835,6 @@
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag">操作系统</a></li></ul>
-
-
-    </footer>
-
-  </div>
-
-  
-
-  
-  
-  
-
-  
-  
-  
-
-</article>
-    
-    <article id="post-后浪-下一代垃圾收集器" class="article article-type-post" itemscope
-  itemprop="blogPost" data-scroll-reveal>
-
-  <div class="article-inner">
-    
-    <header class="article-header">
-       
-<h2 itemprop="name">
-  <a class="article-title" href="/2020/06/14/%E5%90%8E%E6%B5%AA-%E4%B8%8B%E4%B8%80%E4%BB%A3%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/"
-    >后浪-下一代垃圾收集器</a> 
-</h2>
- 
-
-    </header>
-    
-
-    
-    <div class="article-meta">
-      <a href="/2020/06/14/%E5%90%8E%E6%B5%AA-%E4%B8%8B%E4%B8%80%E4%BB%A3%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/" class="article-date">
-  <time datetime="2020-06-14T09:08:56.000Z" itemprop="datePublished">2020-06-14</time>
-</a>
-      
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/Java/">Java</a>
-  </div>
-
-      
-      
-      
-    </div>
-    
-
-    
-
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-      
-
-      
-      <p>随着Java虚拟机技术的不断发展，垃圾收集器也进行了大量迭代。前面介绍了7种经典的垃圾收集器，各有优缺点。Serial GC虽然是最古老的垃圾收集器，但由于设计简单，未必就是过时的收集器。CMS收集器由于自身有些算法缺陷，在JDK9中被标记为废弃，在最新版的JDK14中，CMS已经被彻底移除，进入了历史垃圾堆。我们可以发现G1收集器在JDK的各个版本中仍然在不断改进，并且成为了JDK9到JDK13的默认垃圾收集器。今天，我们要介绍的三种垃圾收集器算是垃圾收集器的前沿成果。</p>
-      
-      <a class="article-more-link" href="/2020/06/14/%E5%90%8E%E6%B5%AA-%E4%B8%8B%E4%B8%80%E4%BB%A3%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/">阅读更多...</a>
-      
-      
-      <!-- reward -->
-      
-    </div>
-    
-    
-      <!-- copyright -->
-      
-    <footer class="article-footer">
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java/" rel="tag">Java</a></li></ul>
 
 
     </footer>
