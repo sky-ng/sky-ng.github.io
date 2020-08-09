@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://sky-ng.github.io/"/>
-  <updated>2020-08-04T12:58:38.808Z</updated>
+  <updated>2020-08-09T02:20:51.869Z</updated>
   <id>https://sky-ng.github.io/</id>
   
   <author>
@@ -15,6 +15,30 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>不会吧不会吧，不会有人连线程池都没听说过吧</title>
+    <link href="https://sky-ng.github.io/2020/08/06/%E4%B8%8D%E4%BC%9A%E5%90%A7%E4%B8%8D%E4%BC%9A%E5%90%A7%EF%BC%8C%E4%B8%8D%E4%BC%9A%E6%9C%89%E4%BA%BA%E8%BF%9E%E7%BA%BF%E7%A8%8B%E6%B1%A0%E9%83%BD%E6%B2%A1%E5%90%AC%E8%AF%B4%E8%BF%87%E5%90%A7/"/>
+    <id>https://sky-ng.github.io/2020/08/06/%E4%B8%8D%E4%BC%9A%E5%90%A7%E4%B8%8D%E4%BC%9A%E5%90%A7%EF%BC%8C%E4%B8%8D%E4%BC%9A%E6%9C%89%E4%BA%BA%E8%BF%9E%E7%BA%BF%E7%A8%8B%E6%B1%A0%E9%83%BD%E6%B2%A1%E5%90%AC%E8%AF%B4%E8%BF%87%E5%90%A7/</id>
+    <published>2020-08-06T13:34:41.000Z</published>
+    <updated>2020-08-09T02:20:51.869Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在上一篇文章中，我们介绍了创建线程的三种方法，但实际开发中如果需要频繁创建线程则不会使用前文说的那三种方法，而是选择使用线程池创建线程。使用线程池可以有限减少在手动创建线程过程中产生的开销，方便线程进行统一管理，提高系统资源利用率。&lt;/p&gt;
+&lt;p&gt;在阿里巴巴Java开发手册中也强制规定了要使用线程资源必须通过线程池创建，不允许在应用中自行显式创建线程。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+      <category term="Java多线程" scheme="https://sky-ng.github.io/tags/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/"/>
+    
+  </entry>
   
   <entry>
     <title>从Java创建线程入门多线程</title>
@@ -438,29 +462,6 @@
       <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
     
       <category term="JVM" scheme="https://sky-ng.github.io/tags/JVM/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>谈谈Java容器-ArrayList</title>
-    <link href="https://sky-ng.github.io/2020/05/27/%E8%B0%88%E8%B0%88Java%E5%AE%B9%E5%99%A8-ArrayList/"/>
-    <id>https://sky-ng.github.io/2020/05/27/%E8%B0%88%E8%B0%88Java%E5%AE%B9%E5%99%A8-ArrayList/</id>
-    <published>2020-05-27T10:17:45.000Z</published>
-    <updated>2020-05-28T10:59:16.505Z</updated>
-    
-    <summary type="html">
-    
-      &lt;p&gt;ArrayList是面试中常见的Java容器，也算是Java中比较简单的容器，我们今天就来讲讲ArrayList的源码和常见的面试点。&lt;/p&gt;
-    
-    </summary>
-    
-    
-      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
-    
-    
-      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
-    
-      <category term="Java容器" scheme="https://sky-ng.github.io/tags/Java%E5%AE%B9%E5%99%A8/"/>
     
   </entry>
   
