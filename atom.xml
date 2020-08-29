@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://sky-ng.github.io/"/>
-  <updated>2020-08-09T02:31:33.462Z</updated>
+  <updated>2020-08-29T07:21:10.238Z</updated>
   <id>https://sky-ng.github.io/</id>
   
   <author>
@@ -15,6 +15,27 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>电路交换、报文交换与分组交换</title>
+    <link href="https://sky-ng.github.io/2020/08/27/%E7%94%B5%E8%B7%AF%E4%BA%A4%E6%8D%A2%E3%80%81%E6%8A%A5%E6%96%87%E4%BA%A4%E6%8D%A2%E4%B8%8E%E5%88%86%E7%BB%84%E4%BA%A4%E6%8D%A2/"/>
+    <id>https://sky-ng.github.io/2020/08/27/%E7%94%B5%E8%B7%AF%E4%BA%A4%E6%8D%A2%E3%80%81%E6%8A%A5%E6%96%87%E4%BA%A4%E6%8D%A2%E4%B8%8E%E5%88%86%E7%BB%84%E4%BA%A4%E6%8D%A2/</id>
+    <published>2020-08-27T07:08:15.000Z</published>
+    <updated>2020-08-29T07:21:10.238Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;在计算机网络中有三种主要的数据交换方式，分别是电路交换、报文交换和分组交换。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="计算机网络" scheme="https://sky-ng.github.io/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/"/>
+    
+    
+      <category term="计算机网络" scheme="https://sky-ng.github.io/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/"/>
+    
+  </entry>
   
   <entry>
     <title>不会吧不会吧，不会有人连线程池都没听说过吧</title>
@@ -369,9 +390,9 @@
       <category term="数据结构" scheme="https://sky-ng.github.io/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
     
     
-      <category term="算法" scheme="https://sky-ng.github.io/tags/%E7%AE%97%E6%B3%95/"/>
-    
       <category term="数据结构" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
+    
+      <category term="算法" scheme="https://sky-ng.github.io/tags/%E7%AE%97%E6%B3%95/"/>
     
   </entry>
   
@@ -439,29 +460,6 @@
     
     
       <category term="操作系统" scheme="https://sky-ng.github.io/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>深入理解Java虚拟机-垃圾收集算法</title>
-    <link href="https://sky-ng.github.io/2020/05/31/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95/"/>
-    <id>https://sky-ng.github.io/2020/05/31/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3Java%E8%99%9A%E6%8B%9F%E6%9C%BA-%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95/</id>
-    <published>2020-05-31T12:06:31.000Z</published>
-    <updated>2020-06-01T09:15:27.879Z</updated>
-    
-    <summary type="html">
-    
-      &lt;p&gt;今天讨论的话题是垃圾收集算法，主要介绍一下标记-清除、标记-整理和标记-复制算法，还会基于这些算法讲一下分代垃圾收集算法。&lt;/p&gt;
-    
-    </summary>
-    
-    
-      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
-    
-    
-      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
-    
-      <category term="JVM" scheme="https://sky-ng.github.io/tags/JVM/"/>
     
   </entry>
   
