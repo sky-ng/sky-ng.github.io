@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://sky-ng.github.io/"/>
-  <updated>2020-08-29T07:21:10.238Z</updated>
+  <updated>2020-09-12T14:45:15.198Z</updated>
   <id>https://sky-ng.github.io/</id>
   
   <author>
@@ -15,6 +15,29 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Java线程通信</title>
+    <link href="https://sky-ng.github.io/2020/09/08/Java%E7%BA%BF%E7%A8%8B%E9%80%9A%E4%BF%A1/"/>
+    <id>https://sky-ng.github.io/2020/09/08/Java%E7%BA%BF%E7%A8%8B%E9%80%9A%E4%BF%A1/</id>
+    <published>2020-09-08T13:05:39.000Z</published>
+    <updated>2020-09-12T14:45:15.198Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;线程通信是Java线程部分的重点，我们介绍一下常见的几种线程通信方式。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+      <category term="Java多线程" scheme="https://sky-ng.github.io/tags/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/"/>
+    
+  </entry>
   
   <entry>
     <title>电路交换、报文交换与分组交换</title>
@@ -390,9 +413,9 @@
       <category term="数据结构" scheme="https://sky-ng.github.io/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
     
     
-      <category term="数据结构" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
-    
       <category term="算法" scheme="https://sky-ng.github.io/tags/%E7%AE%97%E6%B3%95/"/>
+    
+      <category term="数据结构" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
     
   </entry>
   
@@ -439,27 +462,6 @@
       <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
     
       <category term="Java容器" scheme="https://sky-ng.github.io/tags/Java%E5%AE%B9%E5%99%A8/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>操作系统-概述</title>
-    <link href="https://sky-ng.github.io/2020/06/01/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E6%A6%82%E8%BF%B0/"/>
-    <id>https://sky-ng.github.io/2020/06/01/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E6%A6%82%E8%BF%B0/</id>
-    <published>2020-06-01T10:40:34.000Z</published>
-    <updated>2020-06-03T13:38:07.784Z</updated>
-    
-    <summary type="html">
-    
-      &lt;p&gt;本文是操作系统系列文章的第一篇，后续将陆续更新操作系统相关的文章。&lt;/p&gt;
-    
-    </summary>
-    
-    
-      <category term="操作系统" scheme="https://sky-ng.github.io/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
-    
-    
-      <category term="操作系统" scheme="https://sky-ng.github.io/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
     
   </entry>
   
