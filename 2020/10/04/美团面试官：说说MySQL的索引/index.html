@@ -9,7 +9,7 @@
     
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>
-    Java内存模型 |  SKY技术修炼指南
+    美团面试官：说说MySQL的索引 |  SKY技术修炼指南
   </title>
   <meta name="generator" content="hexo-theme-ayer">
   
@@ -42,7 +42,7 @@
   <div id="app">
     <main class="content on">
       <section class="outer">
-  <article id="post-Java内存模型" class="article article-type-post" itemscope
+  <article id="post-美团面试官：说说MySQL的索引" class="article article-type-post" itemscope
   itemprop="blogPost" data-scroll-reveal>
 
   <div class="article-inner">
@@ -50,7 +50,7 @@
     <header class="article-header">
        
 <h1 class="article-title sea-center" style="border-left:0" itemprop="name">
-  Java内存模型
+  美团面试官：说说MySQL的索引
 </h1>
  
 
@@ -59,12 +59,12 @@
 
     
     <div class="article-meta">
-      <a href="/2020/09/13/Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="article-date">
-  <time datetime="2020-09-13T12:31:58.000Z" itemprop="datePublished">2020-09-13</time>
+      <a href="/2020/10/04/%E7%BE%8E%E5%9B%A2%E9%9D%A2%E8%AF%95%E5%AE%98%EF%BC%9A%E8%AF%B4%E8%AF%B4MySQL%E7%9A%84%E7%B4%A2%E5%BC%95/" class="article-date">
+  <time datetime="2020-10-04T03:15:33.000Z" itemprop="datePublished">2020-10-04</time>
 </a>
       
   <div class="article-category">
-    <a class="article-category-link" href="/categories/Java/">Java</a>
+    <a class="article-category-link" href="/categories/MySQL/">MySQL</a>
   </div>
 
       
@@ -74,7 +74,7 @@
         <span class="post-meta-item-icon">
             <i class="ri-quill-pen-line"></i>
             <span class="post-meta-item-text"> Word count:</span>
-            <span class="post-count">597</span>
+            <span class="post-count">1.9k</span>
         </span>
     </span>
 
@@ -83,7 +83,7 @@
         <span class="post-meta-item-icon">
             <i class="ri-book-open-line"></i>
             <span class="post-meta-item-text"> Reading time≈</span>
-            <span class="post-count">2 min</span>
+            <span class="post-count">6 min</span>
         </span>
     </span>
 </div>
@@ -94,6 +94,8 @@
 
     
     
+    <div class="tocbot"></div>
+
 
 
 
@@ -106,17 +108,45 @@
       
 
       
-      <p>本文介绍一下Java多线程中比较重要的部分——Java内存模型，也就是我们说的JMM。</p>
+      <p>从本文开始，选取牛客网上大厂的面试题，整理出相关内容的知识点。</p>
 <a id="more"></a>
 
-<p>很多人会把Java内存模型和Java内存区域弄混，Java内存区域又叫运行时数据区，我们之前在介绍Java虚拟机的文章中也已经讲过了，有兴趣的朋友可以翻一翻我之前的文章。但是这两个概念也并不是完全没有关系，我们先简单回顾一下Java内存区域的概念。Java内存区域主要分为线程共享的堆和方法区以及线程私有的程序计数器、虚拟机栈和本地方法栈。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200521144716505.jpg#pic_center" alt=""></p>
-<p>下图展示了Java内存模型的结构。主内存是多个线程共享的区域，对应上面的Java内存区域中的堆区和方法区，本地内存为线程所私有，对应了Java内存区域的程序计数器、虚拟机栈和本地方法栈。当然，Java内存模型本质上只是抽象的概念。</p>
-<p><img src="https://img-blog.csdnimg.cn/2020091321254596.png#pic_center" alt=""></p>
-<p>上图的线程A和线程B都拥有各自的本地内存，本地内存相当于是每个线程将主存中的变量存在本地的一个副本。因为CPU的速度远远高于主存，因此本地内存的作用是缓解CPU与主存之间速度不匹配的矛盾。但本地内存也因此带来了一些问题，比如多个线程同时操作一个变量，实际上操作的都是本地内存中的变量而非主存中的，因此一个线程修改数据后另一个线程并不能感知到修改的数据，这就带来了线程安全问题。</p>
-<p>因此，为线程提供内存的可见性保障就成了比较重要的问题。这里必须要提一下Java中的<code>volatile</code>关键字，它的一个重要特征就是能够保证内存可见性。下面这个图演示了线程A和线程B通过<code>volatile</code>进行线程通信的过程。</p>
-<p><img src="https://img-blog.csdnimg.cn/20200913221347651.png#pic_center" alt=""></p>
-<p>当线程A往本地内存中写入一个变量<code>x=1</code>时，会同时将变量刷新到主存中去，当线程B在本地内存中获取<code>x</code>的值时，会从主存中将<code>x</code>同步到线程B的本地内存，然后读取本地内存。</p>
+<h2 id="什么是索引"><a href="#什么是索引" class="headerlink" title="什么是索引"></a>什么是索引</h2><p>小学时我们经常用到的字典里有音节索引和部首目录，当我们查字典时，常常用音节索引和部首目录帮助我们提高查找汉字的速度。MySQL中同样也有索引，当MySQL需要查找数据时，索引也会提高检索数据的速度。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201004112603676.jpg#pic_center" alt=""></p>
+<h2 id="索引的优缺点"><a href="#索引的优缺点" class="headerlink" title="索引的优缺点"></a>索引的优缺点</h2><p>创建索引的一个最重要的原因是索引能够快速检索数据，极大减少了数据检索量。创建唯一索引能够保证数据表中数据的唯一性。当我们需要进行表连接操作时，索引加速表连接操作。进行分组或排序查询时，也能够加速查询。</p>
+<p>以上都是索引的优点，绝大部分优点都是帮助MySQL变得更快。那索引有什么缺点呢？首先索引作为数据库的一部分，本身就需要占用一定的物理空间。另外，当我们需要对数据表进行频繁插入、删除操作时，MySQL也需要动态维护索引。</p>
+<h2 id="有哪些常见的索引"><a href="#有哪些常见的索引" class="headerlink" title="有哪些常见的索引"></a>有哪些常见的索引</h2><p><strong>主键索引：</strong>一张表只有一个主键索引，不允许重复，不允许为null。<br><strong>唯一索引：</strong>一张表可以有多个唯一索引，不允许重复，允许为null。<br><strong>普通索引：</strong>基本的索引类型，允许数据重复，允许为null。<br><strong>前缀索引：</strong>前缀索引用于字符串类型，取文本的前几个字符创建索引。<br><strong>全文索引：</strong>一般用于大文本数据检索，是当前搜索引擎中使用的关键技术。</p>
+<p>以上索引中，除了主键索引外，其他四种索引统称为二级索引。</p>
+<p>对于InnoDB引擎，一定存在主键索引。大家可能会奇怪，明明我在创建表的时候没有设置主键为什么我也能够创建成功？主要原因是InnoDB对于没有手动创建主键的表会选择一个唯一非空列作为主键，如果仍然不存在就设置一个隐藏的列作为主键。</p>
+<h2 id="索引的数据结构"><a href="#索引的数据结构" class="headerlink" title="索引的数据结构"></a>索引的数据结构</h2><p>MySQL中最多的两种索引是哈希索引和B树索引。哈希索引底层使用哈希表，在绝大部分情况下，查询单条记录使用哈希索引性能最快。B树索引是InnoDB存储引擎默认的索引实现方式，但实际底层使用的是B+树（MySQL打印表索引显示BTREE而不是B+TREE），在大部分场景下建议使用B树索引。</p>
+<h3 id="哈希索引"><a href="#哈希索引" class="headerlink" title="哈希索引"></a>哈希索引</h3><p>哈希索引的实现主要通过将数据库中的字段数据转换成为定长的hash值并与指向数据的指针一并放入hash表。如果发生hash碰撞，则在对应的hash键上使用拉链法进行存储。下图模拟了哈希索引的基本思路。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201004161204867.png#pic_center" alt=""></p>
+<h3 id="B树索引"><a href="#B树索引" class="headerlink" title="B树索引"></a>B树索引</h3><p><img src="https://img-blog.csdnimg.cn/20201004165407101.jpg#pic_center" alt=""></p>
+<p>上图是一棵B+树，每一个结点是一个磁盘块，结点中的深蓝色部分表示数据项、黄色部分表示指针。磁盘块1上有17和35两个数据项，还有P1、P2和P3三个指针。P1指向比17小的磁盘块，P2指向比17大比35小的磁盘块，P3指向比35大的磁盘块。磁盘块5~磁盘块11表示叶子节点。当我们要查找数据项10时，首先将磁盘块1加载到内存中，使用二分查找确定10比17小，接着加载指针P1指向的磁盘块2到内存中，同样使用二分查找找到磁盘2的P2指针指向的磁盘块6，将其加载到内存中，同时用二分查找找到数据项10。本次查询一共进行了三次IO操作，如果没有索引，每个数据项进行一次IO，那么将极大增加数据检索的成本。</p>
+<h2 id="最左前缀原则"><a href="#最左前缀原则" class="headerlink" title="最左前缀原则"></a>最左前缀原则</h2><p>最左前缀原则是指当建立了联合索引如(a,b,c)时，可以根据a/(a AND b)/(a AND b AND c)三种条件使索引进行检索，一般需要将最频繁使用的列放到最左边。当使用<code>=</code>或<code>in</code>时可以乱序a、b、c三个条件，MySQL会自动优化索引可识别的形式。<br>另外，当遇到范围查询（LIKE、BETWEEN、&gt;、&lt;）则会停止匹配。</p>
+<blockquote>
+<p>SELECT * FROM user WHERE a=1 AND b=1 AND c&gt;1 AND d=1</p>
+</blockquote>
+<p>上面的SQL语句建立了(a,b,c,d)的索引，只能匹配到(a AND b)，遇到<code>d&gt;1</code>直接停止使用索引匹配，不过如果建立(a,b,d,c)的索引就可以匹配到d。</p>
+<h2 id="聚集索引和非聚集索引"><a href="#聚集索引和非聚集索引" class="headerlink" title="聚集索引和非聚集索引"></a>聚集索引和非聚集索引</h2><p><img src="https://img-blog.csdnimg.cn/20201006143938577.png#pic_center" alt=""></p>
+<p>首先解释一下聚集索引又被称为聚簇索引，是指将数据和索引放到一起的索引，当找到索引也就找到了数据。在InnoDB引擎中，B+树的非叶子结点存放的都是索引，而叶子结点存放的是索引和数据。非聚集索引又被称为非聚簇索引，是将数据和索引分开存储。InnoDB的主键索引是聚集索引，MyISAM的主键索引和二级索引都是非聚集索引。InnoDB的非主键索引的叶子结点上存放着行的主键值，当找到索引数据时可能需要根据主键值回表，也就是说当查到主键后会根据主键值回到表中查询。</p>
+<h3 id="聚集索引的优缺点"><a href="#聚集索引的优缺点" class="headerlink" title="聚集索引的优缺点"></a>聚集索引的优缺点</h3><p>聚集索引查询往往非常快，因为当定位到索引时，也就直接定位到了数据。但是聚集索引非常依赖有序数据，当插入或查找类似于UUID这种复杂的字符串时，往往速度很慢。还有就是聚集索引的更新代价很大，一般来说如果更新索引列数据，那么索引结构也要修改，所以主键是不建议被修改的。</p>
+<h3 id="非聚集索引的优缺点"><a href="#非聚集索引的优缺点" class="headerlink" title="非聚集索引的优缺点"></a>非聚集索引的优缺点</h3><p>非聚集索引的更新代价较小，因为叶子节点不存放数据。但非聚集索引也非常依赖有序的数据，另外非聚集索引可能需要回表。</p>
+<h2 id="覆盖索引"><a href="#覆盖索引" class="headerlink" title="覆盖索引"></a>覆盖索引</h2><p>当索引中包含要查找的字段的值，那么我们称其为覆盖索引。我们用一个例子解释一下什么是覆盖索引。</p>
+<blockquote>
+<p>SELECT age FROM user WHERE age&lt;40</p>
+</blockquote>
+<p>我们创建了age的索引，当我们检索到索引的时候，待查询的数据也已经存在，此时我们就不需要回表。当我们在写SQL时，要尽量只查询必要的字段，增加覆盖索引的概率。</p>
+<h2 id="创建索引注意事项"><a href="#创建索引注意事项" class="headerlink" title="创建索引注意事项"></a>创建索引注意事项</h2><ul>
+<li>被频繁检索的字段可以考虑创建索引。</li>
+<li>频繁修改的字段不适合创建索引。</li>
+<li>被索引的字段不适合为null。</li>
+<li>where子句中的列可以考虑创建索引。</li>
+<li>对于经常进行表连接和排序的字段可以创建索引。</li>
+<li>避免创建冗余索引，例如(a,b)和(a)就是冗余索引，能够命中后者的索引也可以命中前者的索引。</li>
+<li>一般来说没有太大区分度的列（例如性别只有男和女）就不要使用索引了。</li>
+<li>尽量扩展索引而不是创建索引，例如表中已有a的索引，要加上(a,b)的索引，可以考虑扩展原来a的索引。</li>
+</ul>
 
       
       <!-- reward -->
@@ -185,14 +215,14 @@
     <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sky-ng.github.io/2020/09/13/Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" alt="微信分享二维码">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sky-ng.github.io/2020/10/04/%E7%BE%8E%E5%9B%A2%E9%9D%A2%E8%AF%95%E5%AE%98%EF%BC%9A%E8%AF%B4%E8%AF%B4MySQL%E7%9A%84%E7%B4%A2%E5%BC%95/" alt="微信分享二维码">
     </div>
 </div>
 
 <div id="share-mask"></div>
       
       
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/" rel="tag">Java多线程</a></li></ul>
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/MySQL/" rel="tag">MySQL</a></li></ul>
 
 
     </footer>
@@ -203,19 +233,10 @@
   
   <nav class="article-nav">
     
-      <a href="/2020/10/04/%E7%BE%8E%E5%9B%A2%E9%9D%A2%E8%AF%95%E5%AE%98%EF%BC%9A%E8%AF%B4%E8%AF%B4MySQL%E7%9A%84%E7%B4%A2%E5%BC%95/" class="article-nav-link">
-        <strong class="article-nav-caption">上一篇</strong>
-        <div class="article-nav-title">
-          
-            美团面试官：说说MySQL的索引
-          
-        </div>
-      </a>
     
-    
-      <a href="/2020/09/08/Java%E7%BA%BF%E7%A8%8B%E9%80%9A%E4%BF%A1/" class="article-nav-link">
+      <a href="/2020/09/13/Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="article-nav-link">
         <strong class="article-nav-caption">下一篇</strong>
-        <div class="article-nav-title">Java线程通信</div>
+        <div class="article-nav-title">Java内存模型</div>
       </a>
     
   </nav>
