@@ -115,7 +115,7 @@
 <p><img src="https://img-blog.csdnimg.cn/20201004112603676.jpg#pic_center" alt=""></p>
 <h2 id="索引的优缺点"><a href="#索引的优缺点" class="headerlink" title="索引的优缺点"></a>索引的优缺点</h2><p>创建索引的一个最重要的原因是索引能够快速检索数据，极大减少了数据检索量。创建唯一索引能够保证数据表中数据的唯一性。当我们需要进行表连接操作时，索引加速表连接操作。进行分组或排序查询时，也能够加速查询。</p>
 <p>以上都是索引的优点，绝大部分优点都是帮助MySQL变得更快。那索引有什么缺点呢？首先索引作为数据库的一部分，本身就需要占用一定的物理空间。另外，当我们需要对数据表进行频繁插入、删除操作时，MySQL也需要动态维护索引。</p>
-<h2 id="有哪些常见的索引"><a href="#有哪些常见的索引" class="headerlink" title="有哪些常见的索引"></a>有哪些常见的索引</h2><p><strong>主键索引：</strong>一张表只有一个主键索引，不允许重复，不允许为null。<br><strong>唯一索引：</strong>一张表可以有多个唯一索引，不允许重复，允许为null。<br><strong>普通索引：</strong>基本的索引类型，允许数据重复，允许为null。<br><strong>前缀索引：</strong>前缀索引用于字符串类型，取文本的前几个字符创建索引。<br><strong>全文索引：</strong>一般用于大文本数据检索，是当前搜索引擎中使用的关键技术。</p>
+<h2 id="有哪些常见的索引"><a href="#有哪些常见的索引" class="headerlink" title="有哪些常见的索引"></a>有哪些常见的索引</h2><p><strong>主键索引</strong>：一张表只有一个主键索引，不允许重复，不允许为null。<br><strong>唯一索引</strong>：一张表可以有多个唯一索引，不允许重复，允许为null。<br><strong>普通索引</strong>：基本的索引类型，允许数据重复，允许为null。<br><strong>前缀索引</strong>：前缀索引用于字符串类型，取文本的前几个字符创建索引。<br><strong>全文索引</strong>：一般用于大文本数据检索，是当前搜索引擎中使用的关键技术。</p>
 <p>以上索引中，除了主键索引外，其他四种索引统称为二级索引。</p>
 <p>对于InnoDB引擎，一定存在主键索引。大家可能会奇怪，明明我在创建表的时候没有设置主键为什么我也能够创建成功？主要原因是InnoDB对于没有手动创建主键的表会选择一个唯一非空列作为主键，如果仍然不存在就设置一个隐藏的列作为主键。</p>
 <h2 id="索引的数据结构"><a href="#索引的数据结构" class="headerlink" title="索引的数据结构"></a>索引的数据结构</h2><p>MySQL中最多的两种索引是哈希索引和B树索引。哈希索引底层使用哈希表，在绝大部分情况下，查询单条记录使用哈希索引性能最快。B树索引是InnoDB存储引擎默认的索引实现方式，但实际底层使用的是B+树（MySQL打印表索引显示BTREE而不是B+TREE），在大部分场景下建议使用B树索引。</p>
@@ -232,6 +232,15 @@
   
   
   <nav class="article-nav">
+    
+      <a href="/2020/10/07/%E7%BE%8E%E5%9B%A2%E9%9D%A2%E8%AF%95%E5%AE%98%EF%BC%9A%E8%AF%B4%E8%AF%B4Redis%E7%9A%84%E7%BC%93%E5%AD%98%E9%9B%AA%E5%B4%A9%E3%80%81%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E5%92%8C%E7%BC%93%E5%AD%98%E5%87%BB%E7%A9%BF/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            美团面试官：说说Redis的缓存雪崩、缓存穿透和缓存击穿
+          
+        </div>
+      </a>
     
     
       <a href="/2020/09/13/Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="article-nav-link">
