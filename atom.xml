@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://sky-ng.github.io/"/>
-  <updated>2020-10-07T06:22:38.708Z</updated>
+  <updated>2020-10-09T12:22:46.007Z</updated>
   <id>https://sky-ng.github.io/</id>
   
   <author>
@@ -21,17 +21,11 @@
     <link href="https://sky-ng.github.io/2020/10/07/%E7%BE%8E%E5%9B%A2%E9%9D%A2%E8%AF%95%E5%AE%98%EF%BC%9A%E8%AF%B4%E8%AF%B4Redis%E7%9A%84%E7%BC%93%E5%AD%98%E9%9B%AA%E5%B4%A9%E3%80%81%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E5%92%8C%E7%BC%93%E5%AD%98%E5%87%BB%E7%A9%BF/"/>
     <id>https://sky-ng.github.io/2020/10/07/%E7%BE%8E%E5%9B%A2%E9%9D%A2%E8%AF%95%E5%AE%98%EF%BC%9A%E8%AF%B4%E8%AF%B4Redis%E7%9A%84%E7%BC%93%E5%AD%98%E9%9B%AA%E5%B4%A9%E3%80%81%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F%E5%92%8C%E7%BC%93%E5%AD%98%E5%87%BB%E7%A9%BF/</id>
     <published>2020-10-07T06:21:07.000Z</published>
-    <updated>2020-10-07T06:22:38.708Z</updated>
+    <updated>2020-10-09T12:22:46.007Z</updated>
     
     <summary type="html">
     
-      
-      
-        
-        
-          &lt;h2 id=&quot;缓存雪崩&quot;&gt;&lt;a href=&quot;#缓存雪崩&quot; class=&quot;headerlink&quot;
-        
-      
+      &lt;h2 id=&quot;缓存雪崩&quot;&gt;&lt;a href=&quot;#缓存雪崩&quot; class=&quot;headerlink&quot; title=&quot;缓存雪崩&quot;&gt;&lt;/a&gt;缓存雪崩&lt;/h2&gt;&lt;p&gt;想象这样一个场景，当我们的Redis服务器中的缓存在某一段时间内大量失效或者Redis服务器瘫痪，用户的请求没有了缓存的拦截直接落在了数据库服务器上导致数据库服务器直接瘫痪，这就是我们今天要介绍的缓存雪崩。&lt;/p&gt;
     
     </summary>
     

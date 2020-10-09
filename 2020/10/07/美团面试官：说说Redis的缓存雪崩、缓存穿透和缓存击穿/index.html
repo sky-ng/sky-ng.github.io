@@ -74,7 +74,7 @@
         <span class="post-meta-item-icon">
             <i class="ri-quill-pen-line"></i>
             <span class="post-meta-item-text"> Word count:</span>
-            <span class="post-count">4</span>
+            <span class="post-count">1.1k</span>
         </span>
     </span>
 
@@ -83,7 +83,7 @@
         <span class="post-meta-item-icon">
             <i class="ri-book-open-line"></i>
             <span class="post-meta-item-text"> Reading time≈</span>
-            <span class="post-count">1 min</span>
+            <span class="post-count">3 min</span>
         </span>
     </span>
 </div>
@@ -108,7 +108,48 @@
       
 
       
-      <h2 id="缓存雪崩"><a href="#缓存雪崩" class="headerlink" title="缓存雪崩"></a>缓存雪崩</h2>
+      <h2 id="缓存雪崩"><a href="#缓存雪崩" class="headerlink" title="缓存雪崩"></a>缓存雪崩</h2><p>想象这样一个场景，当我们的Redis服务器中的缓存在某一段时间内大量失效或者Redis服务器瘫痪，用户的请求没有了缓存的拦截直接落在了数据库服务器上导致数据库服务器直接瘫痪，这就是我们今天要介绍的缓存雪崩。</p>
+<a id="more"></a>
+
+<p>对于缓存雪崩常见的解决方法主要有以下几种：</p>
+<ul>
+<li><p>随机设置key的过期时间。由于缓存雪崩的产生原因是短时间内key大量失效，我们可以将key的过期时间进行随机设置，防止这种情况发生。</p>
+</li>
+<li><p>如果是使用Redis集群部署，防止因为某个Redis服务器故障导致MySQL服务器瘫痪。</p>
+</li>
+<li><p>采用服务降级。所谓服务降级是指服务器压力骤增，选择性地关闭一些功能。比如双十一当天由于下单数过大，淘宝是禁止取消订单的，只能等到第二天才能取消订单，这就是常见的服务降级。</p>
+</li>
+</ul>
+<h2 id="缓存穿透"><a href="#缓存穿透" class="headerlink" title="缓存穿透"></a>缓存穿透</h2><p>缓存穿透最常见的场景是黑客攻击。比如当我们访问一个网站的url为<code>XXXXX?id=1</code>，这是能够正常访问的页面。但是一些黑客通过使用一些本身不存在的id来频繁访问服务器，而我们的Redis里本身并没有存储这些不存在的key值，于是这些请求就直接打在数据库服务器上导致服务器瘫痪，这就是缓存穿透。</p>
+<p>对于缓存穿透有一些常见的解决方法：</p>
+<ul>
+<li><p>对请求参数进行校验。对上面的这种情况来说，我们可以直接拦截不合法的id值，比如当id小于0时我们直接返回不存在。</p>
+</li>
+<li><p>在数据库中找不到数据时直接往Redis里写一个空值。比如当请求一个<code>id=-1</code>时数据库显然拿不到数据，可以直接将key为-1的value写一个空值到redis里，以后再有请求就能使用Redis查找了。</p>
+</li>
+<li><p>拉黑同一个频繁访问不存在数据的IP。</p>
+</li>
+<li><p>使用布隆过滤器。</p>
+</li>
+</ul>
+<p>下面详细介绍一下布隆过滤器的原理。布隆过滤器采用一个bit数组，类似于下面这样，初始状态下布隆过滤器的bit数组都是值都为0。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201009194712681.png#pic_center" alt=""></p>
+<p>我们还有一些hash函数，我们假设有一个字符串通过这些hash函数映射到不同的bit位上，如下所示。</p>
+<p><img src="https://img-blog.csdnimg.cn/20201009195314620.png#pic_center" alt=""></p>
+<p>一个字符串通过不同hash函数映射到不同bit位后将这些bit位上的0改为1，以后再有相同字符串来时再通过这些hash函数映射到对应的bit位上只要看是否全为1即可。</p>
+<p>布隆过滤器虽然很方便但却存在一些缺点。</p>
+<p>能够保证找不到的数据一定不存在，但无法保证找到的数据一定存在。这句话听起来很拗口，简单地说，一个字符串通过多个hash函数映射到的bit位有0的那么一定不存在这个数据，但是一些字符串映射后得到的bit位有可能被其他数据置为1了，那么即使这个数据并不存在也有概率被判断为存在。</p>
+<p>还有一个缺点是很难支持删除某个元素，因为当删除了某个元素（将bit位由1置为0时）有可能把别的数据的同一个bit位也给置为0了。</p>
+<p>对于布隆过滤器来说，存储空间（bit数组）越大，误判率就会越低，数据越多，误判率就越高。</p>
+<h2 id="缓存击穿"><a href="#缓存击穿" class="headerlink" title="缓存击穿"></a>缓存击穿</h2><p>缓存击穿和缓存雪崩非常类似但又不太相同，缓存击穿是指某些热点数据key值突然过期，导致这些请求直接打在数据库服务器上，于是服务器又瘫痪了。总的来说这两种情况都是由于key过期导致数据库崩溃的。</p>
+<p>缓存击穿的解决方法主要包括下面几种：</p>
+<ul>
+<li><p>热点数据设置为永不过期。</p>
+</li>
+<li><p>使用zookeeper或者Redis实现互斥锁，等待第一个请求创建完缓存之后才允许后续请求继续访问。</p>
+</li>
+</ul>
+
       
       <!-- reward -->
       
