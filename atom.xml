@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://sky-ng.github.io/"/>
-  <updated>2020-10-09T12:22:46.007Z</updated>
+  <updated>2020-10-10T14:11:49.047Z</updated>
   <id>https://sky-ng.github.io/</id>
   
   <author>
@@ -15,6 +15,36 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>滴滴面试官：如何实现一个线程安全的单例模式</title>
+    <link href="https://sky-ng.github.io/2020/10/09/%E6%BB%B4%E6%BB%B4%E9%9D%A2%E8%AF%95%E5%AE%98%EF%BC%9A%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%9A%84%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/"/>
+    <id>https://sky-ng.github.io/2020/10/09/%E6%BB%B4%E6%BB%B4%E9%9D%A2%E8%AF%95%E5%AE%98%EF%BC%9A%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E4%B8%80%E4%B8%AA%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E7%9A%84%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/</id>
+    <published>2020-10-09T14:20:34.000Z</published>
+    <updated>2020-10-10T14:11:49.047Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;p&gt;单例模式作为最常见的设计模式，有很多实现方式，今天介绍一下单例模式相关的内容。&lt;/p&gt;
+&lt;h2 id=&quot;什么是单例模式&quot;&gt;&lt;a href=&quot;#什么是单例模式&quot; class=&quot;headerlink&quot;
+        
+      
+    
+    </summary>
+    
+    
+      <category term="设计模式" scheme="https://sky-ng.github.io/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"/>
+    
+    
+      <category term="Java多线程" scheme="https://sky-ng.github.io/tags/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/"/>
+    
+      <category term="设计模式" scheme="https://sky-ng.github.io/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/"/>
+    
+  </entry>
   
   <entry>
     <title>美团面试官：说说Redis的缓存雪崩、缓存穿透和缓存击穿</title>
@@ -437,27 +467,6 @@
       <category term="算法" scheme="https://sky-ng.github.io/tags/%E7%AE%97%E6%B3%95/"/>
     
       <category term="排序" scheme="https://sky-ng.github.io/tags/%E6%8E%92%E5%BA%8F/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>操作系统-进程与线程</title>
-    <link href="https://sky-ng.github.io/2020/06/10/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/"/>
-    <id>https://sky-ng.github.io/2020/06/10/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/</id>
-    <published>2020-06-10T08:19:36.000Z</published>
-    <updated>2020-06-11T11:02:12.671Z</updated>
-    
-    <summary type="html">
-    
-      &lt;p&gt;本文是进程管理中的第一部分，进程管理的内容是操作系统的核心，也是考试和面试的重点内容，本文将对进程与线程相关的内容进行梳理。&lt;/p&gt;
-    
-    </summary>
-    
-    
-      <category term="操作系统" scheme="https://sky-ng.github.io/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
-    
-    
-      <category term="操作系统" scheme="https://sky-ng.github.io/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
     
   </entry>
   
