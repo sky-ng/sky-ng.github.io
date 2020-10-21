@@ -535,9 +535,9 @@
 <p>总结一下上面两种方法的原理就是，<code>synchronized</code>修饰方法时使用<code>ACC_SYNCHRONIZED</code>标志，而修饰代码块时使用<code>monitorenter</code>和<code>monitorexit</code>指令，这两者本质上都是获取监视器锁monitor。</p>
 <h1 id="synchronized的优化"><a href="#synchronized的优化" class="headerlink" title="synchronized的优化"></a>synchronized的优化</h1><p>JDK6之前，<code>synchronized</code>使用重量级锁保证线程间同步，每次加锁和释放锁的开销都很大，从JDK6开始引入了一系列<code>synchronized</code>优化的部分，如适应性自旋锁、锁消除、锁粗化、偏向锁、轻量级锁等，下面介绍一下这些优化的内容。</p>
 <p>首先我们需要了解一个内容，经过优化后的<code>synchronized</code>锁的级别不再是单一的重量级锁了，而是有无锁、偏向锁、轻量级锁和重量级锁四种状态。<code>synchronized</code>通过偏向锁到轻量级锁，再到重量级锁的升级，进行了较大优化。</p>
-<h2 id="适应性自旋锁"><a href="#适应性自旋锁" class="headerlink" title="适应性自旋锁"></a>适应性自旋锁</h2><p>为了帮助大家理解自旋锁，我们来想象一个场景。我们在食堂吃饭时，有的窗口需要领号码牌，一般这种窗口需要的时间都比较久，比如做麻辣烫的窗口，有的窗口只需要在后面排队很快就能打到饭了，比如快餐窗口。快餐窗口不需要领号码牌去等待而是直接在窗口前排队的样子非常类似我们的自旋锁。自旋锁就是一些线程执行速度较快，加锁反而会增加线程切换的开销，得不偿失。因此，自旋锁让线程等一下，不放弃CPU执行时间，等别的线程自旋结束后当前线程就可以直接获得同步资源避免产生线程切换的开销。</p>
+<h2 id="适应性自旋锁"><a href="#适应性自旋锁" class="headerlink" title="适应性自旋锁"></a>适应性自旋锁</h2><p>为了帮助大家理解自旋锁，我们来想象一个场景。我们在食堂吃饭时，有的窗口需要领号码牌，一般这种窗口需要的时间都比较久，比如做麻辣烫的窗口，有的窗口只需要在后面排队很快就能打到饭了，比如快餐窗口。快餐窗口不需要领号码牌去等待而是直接在窗口前排队的样子非常类似我们的自旋锁。自旋锁就是一些线程执行速度较快，加锁反而会增加线程切换的开销，得不偿失。因此，自旋锁让线程等一下，不放弃CPU执行时间，等别的线程运行结束后当前线程就可以直接获得同步资源避免产生线程切换的开销。</p>
 <p>而自旋锁在JDK1.4时就已经被加入了，只不过是默认关闭的，从JDK6开始自旋锁默认开启，并且引入了适应性自旋锁。自旋锁在自旋等待了一定次数而没有获得同步资源后就会使用传统方法挂起线程以免白白浪费CPU资源，而适应性自旋锁比起自旋锁将更加灵活。比如在同一个锁对象上，刚刚别的线程成功自旋等待成功，那么虚拟机认定自旋可能再次成功的概率很大，可能自旋会持续较长时间，而如果自旋很少成功，可能获取同步资源时会省略自旋的过程。</p>
-<h2 id="锁消除"><a href="#锁消除" class="headerlink" title="锁消除"></a>锁消除</h2><p>还用上面食堂的例子来解释锁消除，当麻辣烫窗口只有你一个人时，还需要发放号码牌吗？显然就没有必要了。其实这就是所谓的锁消除，这是JIT对锁的一种优化，利用逃逸分析技术判断锁对象是否只被一个线程访问，如果是的话就取消同步的过程。</p>
+<h2 id="锁消除"><a href="#锁消除" class="headerlink" title="锁消除"></a>锁消除</h2><p>还用上面食堂的例子来解释锁消除，当麻辣烫窗口只有你一个人时，还需要发放号码牌吗？显然就没有必要了。其实这就是所谓的锁消除，这是JIT对锁的一种优化，利用逃逸分析技术判断锁对象是否只被一个线程访问，如果是的话就取消上锁的过程。</p>
 <h2 id="锁粗化"><a href="#锁粗化" class="headerlink" title="锁粗化"></a>锁粗化</h2><p>大部分情况下，我们对一段程序加锁需要尽量缩小范围，因为如果范围太大，执行时间也会增加。但是也有特殊情况，我们看看下面这种情况。</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">LockDemo</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">fun</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; ++i) &#123;</span><br><span class="line">			<span class="keyword">synchronized</span>(LockDemo<span class="class">.<span class="keyword">class</span>) </span>&#123;</span><br><span class="line">				System.out.println(<span class="string">"test..."</span>);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -551,10 +551,10 @@
 <h2 id="重量级锁"><a href="#重量级锁" class="headerlink" title="重量级锁"></a>重量级锁</h2><p>如果线程1和线程2交替获取锁资源，那么轻量级锁还是可以完成任务的。但是如果线程1正占有锁资源，线程2就开始请求锁资源了，然后又有线程3、线程4都竞争锁资源，那么就需要重量级锁了。</p>
 <h1 id="并发三大特性分析"><a href="#并发三大特性分析" class="headerlink" title="并发三大特性分析"></a>并发三大特性分析</h1><h2 id="原子性"><a href="#原子性" class="headerlink" title="原子性"></a>原子性</h2><p>原子性指的是一个或多个操作执行过程中不被打断的特性。被<code>synchronized</code>修饰的代码是具有原子性的，要么全部都能执行成功，要么都不成功。</p>
 <p>前面我们提到过，<code>synchronized</code>无论是修饰代码块还是修饰方法，本质上都是获取监视器锁monitor。获取了锁的线程就进入了临界区，锁释放之前别的线程都无法获得处理器资源，保证了不会发生时间片轮转，因此也就保证了原子性。</p>
-<h2 id="可见性"><a href="#可见性" class="headerlink" title="可见性"></a>可见性</h2><p>所谓可见性，就是指一个线程改变了共享变量之后，其他线程能够理解知道这个变量被修改。我们知道在Java内存模型中，不同线程拥有自己的本地内存，而本地内存是主内存的副本。如果线程修改了本地内存而没有去更新主内存，那么就无法保证可见性。</p>
+<h2 id="可见性"><a href="#可见性" class="headerlink" title="可见性"></a>可见性</h2><p>所谓可见性，就是指一个线程改变了共享变量之后，其他线程能够立即知道这个变量被修改。我们知道在Java内存模型中，不同线程拥有自己的本地内存，而本地内存是主内存的副本。如果线程修改了本地内存而没有去更新主内存，那么就无法保证可见性。</p>
 <p><code>synchronized</code>在修改了本地内存中的变量后，解锁前会将本地内存修改的内容刷新到主内存中，确保了共享变量的值是最新的，也就保证了可见性。</p>
 <h2 id="有序性"><a href="#有序性" class="headerlink" title="有序性"></a>有序性</h2><p>有序性是指程序按照代码先后顺序执行。</p>
-<p><code>synchronized</code>是能够保证有序性的。根据<code>as-if-serial</code>语义，无论编译器和处理器怎么优化或指令重排，单线程下的运行结果一定是正确的。而<code>synchronized</code>保证了单线程独占CPU，也就保证了有序性。</p>
+<p><code>synchronized</code>是能够保证有序性的。根据as-if-serial语义，无论编译器和处理器怎么优化或指令重排，单线程下的运行结果一定是正确的。而<code>synchronized</code>保证了单线程独占CPU，也就保证了有序性。</p>
 ]]></content>
       <categories>
         <category>Java</category>
