@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://sky-ng.github.io/"/>
-  <updated>2020-10-21T12:28:55.764Z</updated>
+  <updated>2020-10-25T14:15:28.202Z</updated>
   <id>https://sky-ng.github.io/</id>
   
   <author>
@@ -17,11 +17,32 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
+    <title>小米面试官：说说Java的反射</title>
+    <link href="https://sky-ng.github.io/2020/10/25/%E5%B0%8F%E7%B1%B3%E9%9D%A2%E8%AF%95%E5%AE%98%EF%BC%9A%E8%AF%B4%E8%AF%B4Java%E7%9A%84%E5%8F%8D%E5%B0%84/"/>
+    <id>https://sky-ng.github.io/2020/10/25/%E5%B0%8F%E7%B1%B3%E9%9D%A2%E8%AF%95%E5%AE%98%EF%BC%9A%E8%AF%B4%E8%AF%B4Java%E7%9A%84%E5%8F%8D%E5%B0%84/</id>
+    <published>2020-10-25T03:36:13.000Z</published>
+    <updated>2020-10-25T14:15:28.202Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;反射是框架设计的灵魂。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+  </entry>
+  
+  <entry>
     <title>字节面试官：synchronized能保证可见性吗</title>
     <link href="https://sky-ng.github.io/2020/10/15/%E5%AD%97%E8%8A%82%E9%9D%A2%E8%AF%95%E5%AE%98%EF%BC%9Asynchronized%E8%83%BD%E4%BF%9D%E8%AF%81%E5%8F%AF%E8%A7%81%E6%80%A7%E5%90%97/"/>
     <id>https://sky-ng.github.io/2020/10/15/%E5%AD%97%E8%8A%82%E9%9D%A2%E8%AF%95%E5%AE%98%EF%BC%9Asynchronized%E8%83%BD%E4%BF%9D%E8%AF%81%E5%8F%AF%E8%A7%81%E6%80%A7%E5%90%97/</id>
     <published>2020-10-15T12:59:46.000Z</published>
-    <updated>2020-10-21T12:28:55.764Z</updated>
+    <updated>2020-10-21T12:40:13.169Z</updated>
     
     <summary type="html">
     
@@ -56,9 +77,9 @@
       <category term="数据库" scheme="https://sky-ng.github.io/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
     
     
-      <category term="MySQL" scheme="https://sky-ng.github.io/tags/MySQL/"/>
-    
       <category term="数据库" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
+    
+      <category term="MySQL" scheme="https://sky-ng.github.io/tags/MySQL/"/>
     
   </entry>
   
@@ -102,9 +123,9 @@
       <category term="数据库" scheme="https://sky-ng.github.io/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
     
     
-      <category term="数据库" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
-    
       <category term="Redis" scheme="https://sky-ng.github.io/tags/Redis/"/>
+    
+      <category term="数据库" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
     
   </entry>
   
@@ -125,9 +146,9 @@
       <category term="数据库" scheme="https://sky-ng.github.io/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
     
     
-      <category term="MySQL" scheme="https://sky-ng.github.io/tags/MySQL/"/>
-    
       <category term="数据库" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
+    
+      <category term="MySQL" scheme="https://sky-ng.github.io/tags/MySQL/"/>
     
   </entry>
   
@@ -441,27 +462,6 @@
       <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
     
       <category term="JVM" scheme="https://sky-ng.github.io/tags/JVM/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>操作系统-处理机调度</title>
-    <link href="https://sky-ng.github.io/2020/06/17/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%A4%84%E7%90%86%E6%9C%BA%E8%B0%83%E5%BA%A6/"/>
-    <id>https://sky-ng.github.io/2020/06/17/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%A4%84%E7%90%86%E6%9C%BA%E8%B0%83%E5%BA%A6/</id>
-    <published>2020-06-17T13:58:03.000Z</published>
-    <updated>2020-06-18T08:01:21.195Z</updated>
-    
-    <summary type="html">
-    
-      &lt;p&gt;本文介绍处理机调度相关的内容，主要涉及三级调度与调度算法等知识。&lt;/p&gt;
-    
-    </summary>
-    
-    
-      <category term="操作系统" scheme="https://sky-ng.github.io/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
-    
-    
-      <category term="操作系统" scheme="https://sky-ng.github.io/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
     
   </entry>
   
