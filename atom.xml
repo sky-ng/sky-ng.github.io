@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://sky-ng.github.io/"/>
-  <updated>2020-10-25T14:32:56.331Z</updated>
+  <updated>2020-10-30T13:47:59.067Z</updated>
   <id>https://sky-ng.github.io/</id>
   
   <author>
@@ -15,6 +15,27 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>聊聊Java 8的Lambda表达式和函数式接口</title>
+    <link href="https://sky-ng.github.io/2020/10/27/%E8%81%8A%E8%81%8AJava-8%E7%9A%84Lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F%E5%92%8C%E5%87%BD%E6%95%B0%E5%BC%8F%E6%8E%A5%E5%8F%A3/"/>
+    <id>https://sky-ng.github.io/2020/10/27/%E8%81%8A%E8%81%8AJava-8%E7%9A%84Lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F%E5%92%8C%E5%87%BD%E6%95%B0%E5%BC%8F%E6%8E%A5%E5%8F%A3/</id>
+    <published>2020-10-27T11:37:42.000Z</published>
+    <updated>2020-10-30T13:47:59.067Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;Java 8作为Java的一个里程碑版本，提供了很多特性，本文主要介绍Java 8的Lambda表达式及函数式接口的内容。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+  </entry>
   
   <entry>
     <title>小米面试官：说说Java的反射</title>
@@ -77,9 +98,9 @@
       <category term="数据库" scheme="https://sky-ng.github.io/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
     
     
-      <category term="数据库" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
-    
       <category term="MySQL" scheme="https://sky-ng.github.io/tags/MySQL/"/>
+    
+      <category term="数据库" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
     
   </entry>
   
@@ -123,9 +144,9 @@
       <category term="数据库" scheme="https://sky-ng.github.io/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
     
     
-      <category term="Redis" scheme="https://sky-ng.github.io/tags/Redis/"/>
-    
       <category term="数据库" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
+    
+      <category term="Redis" scheme="https://sky-ng.github.io/tags/Redis/"/>
     
   </entry>
   
@@ -146,9 +167,9 @@
       <category term="数据库" scheme="https://sky-ng.github.io/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
     
     
-      <category term="数据库" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
-    
       <category term="MySQL" scheme="https://sky-ng.github.io/tags/MySQL/"/>
+    
+      <category term="数据库" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
     
   </entry>
   
@@ -439,29 +460,6 @@
     
     
       <category term="数据结构" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>class类文件结构（这是一篇非常枯燥的文章）</title>
-    <link href="https://sky-ng.github.io/2020/06/20/class%E7%B1%BB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%EF%BC%88%E8%BF%99%E6%98%AF%E4%B8%80%E7%AF%87%E9%9D%9E%E5%B8%B8%E6%9E%AF%E7%87%A5%E7%9A%84%E6%96%87%E7%AB%A0%EF%BC%89/"/>
-    <id>https://sky-ng.github.io/2020/06/20/class%E7%B1%BB%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%EF%BC%88%E8%BF%99%E6%98%AF%E4%B8%80%E7%AF%87%E9%9D%9E%E5%B8%B8%E6%9E%AF%E7%87%A5%E7%9A%84%E6%96%87%E7%AB%A0%EF%BC%89/</id>
-    <published>2020-06-20T08:10:19.000Z</published>
-    <updated>2020-06-21T14:36:54.584Z</updated>
-    
-    <summary type="html">
-    
-      &lt;p&gt;我们知道，Java文件编译后会产生一个字节码文件（&lt;code&gt;.class&lt;/code&gt;文件），本文介绍字节码文件的文件结构相关内容。&lt;/p&gt;
-    
-    </summary>
-    
-    
-      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
-    
-    
-      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
-    
-      <category term="JVM" scheme="https://sky-ng.github.io/tags/JVM/"/>
     
   </entry>
   

@@ -76,6 +76,80 @@
     
     
     
+    <article id="post-聊聊Java-8的Lambda表达式和函数式接口" class="article article-type-post" itemscope
+  itemprop="blogPost" data-scroll-reveal>
+
+  <div class="article-inner">
+    
+    <header class="article-header">
+       
+<h2 itemprop="name">
+  <a class="article-title" href="/2020/10/27/%E8%81%8A%E8%81%8AJava-8%E7%9A%84Lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F%E5%92%8C%E5%87%BD%E6%95%B0%E5%BC%8F%E6%8E%A5%E5%8F%A3/"
+    >聊聊Java 8的Lambda表达式和函数式接口</a> 
+</h2>
+ 
+
+    </header>
+    
+
+    
+    <div class="article-meta">
+      <a href="/2020/10/27/%E8%81%8A%E8%81%8AJava-8%E7%9A%84Lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F%E5%92%8C%E5%87%BD%E6%95%B0%E5%BC%8F%E6%8E%A5%E5%8F%A3/" class="article-date">
+  <time datetime="2020-10-27T11:37:42.000Z" itemprop="datePublished">2020-10-27</time>
+</a>
+      
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Java/">Java</a>
+  </div>
+
+      
+      
+      
+    </div>
+    
+
+    
+
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+      
+
+      
+      <p>Java 8作为Java的一个里程碑版本，提供了很多特性，本文主要介绍Java 8的Lambda表达式及函数式接口的内容。</p>
+      
+      <a class="article-more-link" href="/2020/10/27/%E8%81%8A%E8%81%8AJava-8%E7%9A%84Lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F%E5%92%8C%E5%87%BD%E6%95%B0%E5%BC%8F%E6%8E%A5%E5%8F%A3/">阅读更多...</a>
+      
+      
+      <!-- reward -->
+      
+    </div>
+    
+    
+      <!-- copyright -->
+      
+    <footer class="article-footer">
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java/" rel="tag">Java</a></li></ul>
+
+
+    </footer>
+
+  </div>
+
+  
+
+  
+  
+  
+
+  
+  
+  
+
+</article>
+    
     <article id="post-小米面试官：说说Java的反射" class="article article-type-post" itemscope
   itemprop="blogPost" data-scroll-reveal>
 
@@ -724,81 +798,6 @@
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag">计算机网络</a></li></ul>
-
-
-    </footer>
-
-  </div>
-
-  
-
-  
-  
-  
-
-  
-  
-  
-
-</article>
-    
-    <article id="post-不会吧不会吧，不会有人连线程池都没听说过吧" class="article article-type-post" itemscope
-  itemprop="blogPost" data-scroll-reveal>
-
-  <div class="article-inner">
-    
-    <header class="article-header">
-       
-<h2 itemprop="name">
-  <a class="article-title" href="/2020/08/06/%E4%B8%8D%E4%BC%9A%E5%90%A7%E4%B8%8D%E4%BC%9A%E5%90%A7%EF%BC%8C%E4%B8%8D%E4%BC%9A%E6%9C%89%E4%BA%BA%E8%BF%9E%E7%BA%BF%E7%A8%8B%E6%B1%A0%E9%83%BD%E6%B2%A1%E5%90%AC%E8%AF%B4%E8%BF%87%E5%90%A7/"
-    >不会吧不会吧，不会有人连线程池都没听说过吧</a> 
-</h2>
- 
-
-    </header>
-    
-
-    
-    <div class="article-meta">
-      <a href="/2020/08/06/%E4%B8%8D%E4%BC%9A%E5%90%A7%E4%B8%8D%E4%BC%9A%E5%90%A7%EF%BC%8C%E4%B8%8D%E4%BC%9A%E6%9C%89%E4%BA%BA%E8%BF%9E%E7%BA%BF%E7%A8%8B%E6%B1%A0%E9%83%BD%E6%B2%A1%E5%90%AC%E8%AF%B4%E8%BF%87%E5%90%A7/" class="article-date">
-  <time datetime="2020-08-06T13:34:41.000Z" itemprop="datePublished">2020-08-06</time>
-</a>
-      
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/Java/">Java</a>
-  </div>
-
-      
-      
-      
-    </div>
-    
-
-    
-
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-      
-
-      
-      <p>在上一篇文章中，我们介绍了创建线程的三种方法，但实际开发中如果需要频繁创建线程则不会使用前文说的那三种方法，而是选择使用线程池创建线程。使用线程池可以有效减少在手动创建线程过程中产生的开销，方便线程进行统一管理，提高系统资源利用率。</p>
-<p>在阿里巴巴Java开发手册中也强制规定了要使用线程资源必须通过线程池创建，不允许在应用中自行显式创建线程。</p>
-      
-      <a class="article-more-link" href="/2020/08/06/%E4%B8%8D%E4%BC%9A%E5%90%A7%E4%B8%8D%E4%BC%9A%E5%90%A7%EF%BC%8C%E4%B8%8D%E4%BC%9A%E6%9C%89%E4%BA%BA%E8%BF%9E%E7%BA%BF%E7%A8%8B%E6%B1%A0%E9%83%BD%E6%B2%A1%E5%90%AC%E8%AF%B4%E8%BF%87%E5%90%A7/">阅读更多...</a>
-      
-      
-      <!-- reward -->
-      
-    </div>
-    
-    
-      <!-- copyright -->
-      
-    <footer class="article-footer">
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/" rel="tag">Java多线程</a></li></ul>
 
 
     </footer>
