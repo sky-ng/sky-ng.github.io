@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://sky-ng.github.io/"/>
-  <updated>2020-10-30T13:57:51.334Z</updated>
+  <updated>2020-11-08T12:12:25.875Z</updated>
   <id>https://sky-ng.github.io/</id>
   
   <author>
@@ -15,6 +15,29 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>腾讯面试官：ThreadLocal会产生内存泄露的原因是什么</title>
+    <link href="https://sky-ng.github.io/2020/11/08/%E8%85%BE%E8%AE%AF%E9%9D%A2%E8%AF%95%E5%AE%98%EF%BC%9AThreadLocal%E4%BC%9A%E4%BA%A7%E7%94%9F%E5%86%85%E5%AD%98%E6%B3%84%E9%9C%B2%E7%9A%84%E5%8E%9F%E5%9B%A0%E6%98%AF%E4%BB%80%E4%B9%88/"/>
+    <id>https://sky-ng.github.io/2020/11/08/%E8%85%BE%E8%AE%AF%E9%9D%A2%E8%AF%95%E5%AE%98%EF%BC%9AThreadLocal%E4%BC%9A%E4%BA%A7%E7%94%9F%E5%86%85%E5%AD%98%E6%B3%84%E9%9C%B2%E7%9A%84%E5%8E%9F%E5%9B%A0%E6%98%AF%E4%BB%80%E4%B9%88/</id>
+    <published>2020-11-08T02:52:31.000Z</published>
+    <updated>2020-11-08T12:12:25.875Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;通常情况下，我们在内存中创建的变量是可被多个线程同时访问的，Java通过ThreadLocal实现了线程数据隔离的机制。&lt;/p&gt;
+    
+    </summary>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
+    
+    
+      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
+    
+      <category term="Java多线程" scheme="https://sky-ng.github.io/tags/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/"/>
+    
+  </entry>
   
   <entry>
     <title>聊聊Java 8的Lambda表达式和函数式接口</title>
@@ -431,27 +454,6 @@
     <summary type="html">
     
       &lt;p&gt;红黑树删除节点的操作与插入操作相比难度大大提高，以至很多博客讲的很不细致，但是为了内容的完整性，还是决定尝试写一下这篇红黑树删除节点的文章。&lt;/p&gt;
-    
-    </summary>
-    
-    
-      <category term="数据结构" scheme="https://sky-ng.github.io/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
-    
-    
-      <category term="数据结构" scheme="https://sky-ng.github.io/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>本科数据结构课程的漏网之鱼-红黑树（上）</title>
-    <link href="https://sky-ng.github.io/2020/06/22/%E6%9C%AC%E7%A7%91%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AF%BE%E7%A8%8B%E7%9A%84%E6%BC%8F%E7%BD%91%E4%B9%8B%E9%B1%BC-%E7%BA%A2%E9%BB%91%E6%A0%91%EF%BC%88%E4%B8%8A%EF%BC%89/"/>
-    <id>https://sky-ng.github.io/2020/06/22/%E6%9C%AC%E7%A7%91%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AF%BE%E7%A8%8B%E7%9A%84%E6%BC%8F%E7%BD%91%E4%B9%8B%E9%B1%BC-%E7%BA%A2%E9%BB%91%E6%A0%91%EF%BC%88%E4%B8%8A%EF%BC%89/</id>
-    <published>2020-06-22T14:01:43.000Z</published>
-    <updated>2020-06-26T09:08:22.832Z</updated>
-    
-    <summary type="html">
-    
-      &lt;p&gt;在我大学的时候，就曾经从参加面试的学长那里知道红黑树这种数据结构，但是经过我的观察，绝大部分的本科数据结构课程里都没有这部分内容。本文将介绍这种被本科教学体系遗弃，但却常常被工作面试中提到的数据结构，并且为后面的HashMap的内容做铺垫。&lt;/p&gt;
     
     </summary>
     

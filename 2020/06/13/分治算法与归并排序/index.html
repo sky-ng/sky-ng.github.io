@@ -132,7 +132,7 @@
 
 <p>咱们来梳理一下上面的代码，首先是<code>mergeSort</code>方法，当起始位置小于终止位置的时候才会执行代码，否则直接结束这个方法。再看看这个判断语句里的内容，首先是求出数组的中点，对数组一分为二进行分治，然后这两个数组又递归调用这个方法，最后对两个已经排好序的数组执行<code>merge</code>方法，进行归并操作。我们可以知道的是，当分到一定程度（s和e指向相同的元素）时，会结束递归，进行归并。我们用一组数据来模拟这个过程。</p>
 <p><img src="https://img-blog.csdnimg.cn/20200613171107537.jpg#pic_center" alt="待排序数组"></p>
-<p>以上是一个待排序的数组，数组长度为10，因此传入的s和e分别为0和9，求出的m值为4，于是将数组分为下标0<del>4和下标5</del>9的两个数组再分别进行归并排序。</p>
+<p>以上是一个待排序的数组，数组长度为10，因此传入的s和e分别为0和9，求出的m值为4，于是将数组分为下标0-4和下标5-9的两个数组再分别进行归并排序。</p>
 <p>为了简化内容，我们尝试对前一个数组进行递归。此时传入的s和e分别是0和4，则m是2，再对前一个数组进行递归，s和e是0和2，m是1，继续递归，s和e是0和1，m是0，这时候两个数组都只有一个数了，这时候就需要对这两个数进行<code>merge</code>操作。所谓的<code>merge</code>操作，就是将两个数组中的元素按从小到大的顺序复制到tmp数组中，然后复制回arr数组中。咱们下面用图片来展示一下上面的代码到底对这个数组干了些什么。</p>
 <p><img src="https://img-blog.csdnimg.cn/20200613184701300.jpg?x-oss-process=type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMyMjczNDE3,size_16,color_FFFFFF,t_70#pic_center" alt="归并排序过程"></p>
 <p>实际上，上述过程只是逻辑上的切分和归并，事实上由于递归需要不断压栈以及以上代码需要顺序执行，切分和归并的次数还要更多一些。</p>
@@ -704,7 +704,7 @@
     
     
     <iframe frameborder="no" border="1" marginwidth="0" marginheight="0" width="200" height="52"
-        src="//music.163.com/outchain/player?type=2&id=1482101374&auto=1&height=32"></iframe>
+        src="//music.163.com/outchain/player?type=2&id=1490555291&auto=1&height=32"></iframe>
 </div>
 
 <style>
