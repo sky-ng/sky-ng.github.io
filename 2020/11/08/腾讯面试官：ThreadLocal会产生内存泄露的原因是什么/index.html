@@ -74,7 +74,7 @@
         <span class="post-meta-item-icon">
             <i class="ri-quill-pen-line"></i>
             <span class="post-meta-item-text"> Word count:</span>
-            <span class="post-count">798</span>
+            <span class="post-count">946</span>
         </span>
     </span>
 
@@ -83,7 +83,7 @@
         <span class="post-meta-item-icon">
             <i class="ri-book-open-line"></i>
             <span class="post-meta-item-text"> Reading time≈</span>
-            <span class="post-count">3 min</span>
+            <span class="post-count">4 min</span>
         </span>
     </span>
 </div>
@@ -131,7 +131,9 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> T <span class="title">get</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    Thread t = Thread.currentThread();</span><br><span class="line">    ThreadLocalMap map = getMap(t);</span><br><span class="line">    <span class="keyword">if</span> (map != <span class="keyword">null</span>) &#123;</span><br><span class="line">        ThreadLocalMap.Entry e = map.getEntry(<span class="keyword">this</span>);</span><br><span class="line">        <span class="keyword">if</span> (e != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="meta">@SuppressWarnings</span>(<span class="string">"unchecked"</span>)</span><br><span class="line">            T result = (T)e.value;</span><br><span class="line">            <span class="keyword">return</span> result;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> setInitialValue();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> T <span class="title">setInitialValue</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    T value = initialValue();</span><br><span class="line">    Thread t = Thread.currentThread();</span><br><span class="line">    ThreadLocalMap map = getMap(t);</span><br><span class="line">    <span class="keyword">if</span> (map != <span class="keyword">null</span>)</span><br><span class="line">        map.set(<span class="keyword">this</span>, value);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        createMap(t, value);</span><br><span class="line">    <span class="keyword">return</span> value;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> T <span class="title">initialValue</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>看看<code>get()</code>方法是不是豁然开朗？同样是获取当前线程，然后通过线程拿到ThreadLocalMap对象，再通过ThreadLocalMap对象获取存储的值。当然如果ThreadLocalMap对象不存在那就去初始化一下。</p>
-<h2 id="ThreadLocal是怎么内存泄漏的"><a href="#ThreadLocal是怎么内存泄漏的" class="headerlink" title="ThreadLocal是怎么内存泄漏的"></a>ThreadLocal是怎么内存泄漏的</h2><p>由于ThreadLocalMap中的key是ThreadLocal的弱引用，一旦发生GC便会回收ThreadLocal，那么此时的ThreadLocalMap存储的key便是null。如果不通过手动<code>remove()</code>那么ThreadLocalMap的Entry便伴随线程的整个生命周期造成内存泄漏，大致就是一个<code>thread ref -&gt; thread -&gt; threadLocals -&gt; entry -&gt; value</code>的强引用关系。</p>
+<h2 id="ThreadLocal是怎么内存泄漏的"><a href="#ThreadLocal是怎么内存泄漏的" class="headerlink" title="ThreadLocal是怎么内存泄漏的"></a>ThreadLocal是怎么内存泄漏的</h2><p>由于ThreadLocalMap中的key是ThreadLocal的弱引用，一旦发生GC便会回收ThreadLocal，那么此时的ThreadLocalMap存储的key便是null。如果不通过手动<code>remove()</code>那么ThreadLocalMap的Entry便伴随线程的整个生命周期造成内存泄漏，大致就是一个<code>thread ref -&gt; thread -&gt; threadLocals -&gt; entry -&gt; value</code>的强引用关系。因此Java其实是有对于内存泄漏的一些预防机制的，每次调用ThreadLocal的<code>set()</code>、<code>get()</code>、<code>remove()</code>方法时都会回收key为空的Entry的value。</p>
+<p>那么为什么ThreadLocalMap的key要设计成弱引用呢？其实很简单，如果key设计成强引用且没有手动<code>remove()</code>，那么key会和value一样伴随线程的整个生命周期，如果key是弱引用，被GC后至少ThreadLocal被回收了，在下一次的<code>set()</code>、<code>get()</code>、<code>remove()</code>还会回收key为null的Entry的value。</p>
+<p>喜欢本文的朋友欢迎关注我的公众号：<strong>SKY技术修炼指南</strong></p>
 
       
       <!-- reward -->
@@ -218,6 +220,15 @@
   
   <nav class="article-nav">
     
+      <a href="/2021/01/21/HTTPS%E7%9A%84%E5%8E%9F%E7%90%86%E6%98%AF%E4%BB%80%E4%B9%88/" class="article-nav-link">
+        <strong class="article-nav-caption">上一篇</strong>
+        <div class="article-nav-title">
+          
+            HTTPS的原理是什么
+          
+        </div>
+      </a>
+    
     
       <a href="/2020/10/27/%E8%81%8A%E8%81%8AJava-8%E7%9A%84Lambda%E8%A1%A8%E8%BE%BE%E5%BC%8F%E5%92%8C%E5%87%BD%E6%95%B0%E5%BC%8F%E6%8E%A5%E5%8F%A3/" class="article-nav-link">
         <strong class="article-nav-caption">下一篇</strong>
@@ -296,7 +307,7 @@
     <ul>
       <li>
         Copyrights &copy;
-        2015-2020
+        2015-2021
         <i class="ri-heart-fill heart_icon"></i> sky-ng
       </li>
     </ul>

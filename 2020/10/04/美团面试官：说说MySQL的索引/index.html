@@ -127,14 +127,14 @@
 <blockquote>
 <p>SELECT * FROM user WHERE a=1 AND b=1 AND c&gt;1 AND d=1</p>
 </blockquote>
-<p>上面的SQL语句建立了(a,b,c,d)的索引，只能匹配到(a AND b)，遇到<code>d&gt;1</code>直接停止使用索引匹配，不过如果建立(a,b,d,c)的索引就可以匹配到d。</p>
+<p>上面的SQL语句建立了(a,b,c,d)的索引，只能匹配到(a AND b)，遇到<code>c&gt;1</code>直接停止使用索引匹配，不过如果建立(a,b,d,c)的索引就可以匹配到d。</p>
 <h2 id="聚集索引和非聚集索引"><a href="#聚集索引和非聚集索引" class="headerlink" title="聚集索引和非聚集索引"></a>聚集索引和非聚集索引</h2><p><img src="https://img-blog.csdnimg.cn/20201006143938577.png#pic_center" alt=""></p>
 <p>首先解释一下聚集索引又被称为聚簇索引，是指将数据和索引放到一起的索引，当找到索引也就找到了数据。在InnoDB引擎中，B+树的非叶子结点存放的都是索引，而叶子结点存放的是索引和数据。非聚集索引又被称为非聚簇索引，是将数据和索引分开存储。InnoDB的主键索引是聚集索引，MyISAM的主键索引和二级索引都是非聚集索引。InnoDB的非主键索引的叶子结点上存放着行的主键值，当找到索引数据时可能需要根据主键值回表，也就是说当查到主键后会根据主键值回到表中查询。</p>
 <h3 id="聚集索引的优缺点"><a href="#聚集索引的优缺点" class="headerlink" title="聚集索引的优缺点"></a>聚集索引的优缺点</h3><p>聚集索引查询往往非常快，因为当定位到索引时，也就直接定位到了数据。但是聚集索引非常依赖有序数据，当插入或查找类似于UUID这种复杂的字符串时，往往速度很慢。还有就是聚集索引的更新代价很大，一般来说如果更新索引列数据，那么索引结构也要修改，所以主键是不建议被修改的。</p>
 <h3 id="非聚集索引的优缺点"><a href="#非聚集索引的优缺点" class="headerlink" title="非聚集索引的优缺点"></a>非聚集索引的优缺点</h3><p>非聚集索引的更新代价较小，因为叶子节点不存放数据。但非聚集索引也非常依赖有序的数据，另外非聚集索引可能需要回表。</p>
 <h2 id="覆盖索引"><a href="#覆盖索引" class="headerlink" title="覆盖索引"></a>覆盖索引</h2><p>当索引中包含要查找的字段的值，那么我们称其为覆盖索引。我们用一个例子解释一下什么是覆盖索引。</p>
 <blockquote>
-<p>SELECT age FROM user WHERE age&lt;40</p>
+<p>SELECT age FROM user WHERE age=40</p>
 </blockquote>
 <p>我们创建了age的索引，当我们检索到索引的时候，待查询的数据也已经存在，此时我们就不需要回表。当我们在写SQL时，要尽量只查询必要的字段，增加覆盖索引的概率。</p>
 <h2 id="创建索引注意事项"><a href="#创建索引注意事项" class="headerlink" title="创建索引注意事项"></a>创建索引注意事项</h2><ul>
@@ -320,7 +320,7 @@
     <ul>
       <li>
         Copyrights &copy;
-        2015-2020
+        2015-2021
         <i class="ri-heart-fill heart_icon"></i> sky-ng
       </li>
     </ul>
