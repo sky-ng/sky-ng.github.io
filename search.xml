@@ -2325,4 +2325,50 @@
         <tag>Java容器</tag>
       </tags>
   </entry>
+  <entry>
+    <title>毕业前学学git(1)</title>
+    <url>/2021/09/24/%E6%AF%95%E4%B8%9A%E5%89%8D%E5%AD%A6%E5%AD%A6git-1/</url>
+    <content><![CDATA[<p>作为一名人类高质量程序员，是一定要会使用Git的，毕竟现在没几个公司不用Git了，本文是Git系列第一篇文章。</p>
+<a id="more"></a>
+
+<p>Git是一款分布式版本控制系统，它允许每个程序员的电脑上都有一个版本库，这样即使没有网络也可以保证代码可以继续开发。除此之外，Git对于分支管理的支持也使它成为了优秀的版本管理系统。</p>
+<h2 id="下载安装Git"><a href="#下载安装Git" class="headerlink" title="下载安装Git"></a>下载安装Git</h2><p>国内访问Git官网下载Git速度可能比较慢，因此推荐使用<a href="https://npm.taobao.org/mirrors/git-for-windows" target="_blank" rel="noopener">淘宝镜像下载</a>。这里选择最新的v2.33.0.windows.2版本为例，进入该目录，点击Git-2.33.0.2-64-bit.exe进行下载。安装过程只需一直选择next即可。</p>
+<p>安装完毕，在桌面上右键<code>Git Bash Here</code>弹出命令行窗口，在命令行输入用户名和邮箱：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git config --global user.name <span class="string">"Your Name"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> git config --global user.email <span class="string">"email@example.com"</span></span></span><br></pre></td></tr></table></figure>
+
+<p>如下图所示：</p>
+<p><img src="https://img-blog.csdnimg.cn/0f19e52e1d7746f3b5f0196131d0398f.png#pic_center" alt=""></p>
+<p>这样下载安装Git的部分就结束了。</p>
+<h2 id="创建本地仓库"><a href="#创建本地仓库" class="headerlink" title="创建本地仓库"></a>创建本地仓库</h2><p>我们尝试用Eclipse创建一个新项目，打开项目所在目录，打开命令行窗口。输入以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git init</span></span><br></pre></td></tr></table></figure>
+
+<p>此时我们就创建好了一个仓库，这个仓库是一个Eclipse项目，仔细看的话会发现项目根目录多了一个名为<code>.git</code>的隐藏文件夹。</p>
+<p><img src="https://img-blog.csdnimg.cn/be2f07cbb9ea41adb05fd35118e22a51.png#pic_center" alt=""></p>
+<h2 id="忽略部分文件"><a href="#忽略部分文件" class="headerlink" title="忽略部分文件"></a>忽略部分文件</h2><p>当我们的项目中需要忽略一些不需要添加到仓库中的文件时（比如IDE自动生成的文件以及一些中间文件），我们可以在项目根目录下新建一个<code>.gitignore</code>文件，并在其中写入我们需要忽略的文件及文件夹，就可以避免将其添加到本地仓库中。</p>
+<p>以我们当前创建的Eclipse项目为例，Github为我们提供了一份Eclipse专用的<code>.gitignore</code>文件，我们只需要把文件中的内容复制到我们的<code>.gitignore</code>文件中即可，下面是文件的详细内容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.metadata</span><br><span class="line">bin&#x2F;</span><br><span class="line">tmp&#x2F;</span><br><span class="line">*.tmp</span><br><span class="line">*.bak</span><br><span class="line">*.swp</span><br><span class="line">*~.nib</span><br><span class="line">local.properties</span><br><span class="line">.settings&#x2F;</span><br><span class="line">.loadpath</span><br><span class="line">.recommenders</span><br><span class="line"></span><br><span class="line"># External tool builders</span><br><span class="line">.externalToolBuilders&#x2F;</span><br><span class="line"></span><br><span class="line"># Locally stored &quot;Eclipse launch configurations&quot;</span><br><span class="line">*.launch</span><br><span class="line"></span><br><span class="line"># PyDev specific (Python IDE for Eclipse)</span><br><span class="line">*.pydevproject</span><br><span class="line"></span><br><span class="line"># CDT-specific (C&#x2F;C++ Development Tooling)</span><br><span class="line">.cproject</span><br><span class="line"></span><br><span class="line"># CDT- autotools</span><br><span class="line">.autotools</span><br><span class="line"></span><br><span class="line"># Java annotation processor (APT)</span><br><span class="line">.factorypath</span><br><span class="line"></span><br><span class="line"># PDT-specific (PHP Development Tools)</span><br><span class="line">.buildpath</span><br><span class="line"></span><br><span class="line"># sbteclipse plugin</span><br><span class="line">.target</span><br><span class="line"></span><br><span class="line"># Tern plugin</span><br><span class="line">.tern-project</span><br><span class="line"></span><br><span class="line"># TeXlipse plugin</span><br><span class="line">.texlipse</span><br><span class="line"></span><br><span class="line"># STS (Spring Tool Suite)</span><br><span class="line">.springBeans</span><br><span class="line"></span><br><span class="line"># Code Recommenders</span><br><span class="line">.recommenders&#x2F;</span><br><span class="line"></span><br><span class="line"># Annotation Processing</span><br><span class="line">.apt_generated&#x2F;</span><br><span class="line">.apt_generated_test&#x2F;</span><br><span class="line"></span><br><span class="line"># Scala IDE specific (Scala &amp; Java development for Eclipse)</span><br><span class="line">.cache-main</span><br><span class="line">.scala_dependencies</span><br><span class="line">.worksheet</span><br><span class="line"></span><br><span class="line"># Uncomment this line if you wish to ignore the project description file.</span><br><span class="line"># Typically, this file would be tracked if it contains build&#x2F;dependency configurations:</span><br><span class="line">#.project</span><br></pre></td></tr></table></figure>
+
+<p>经过上面的操作，版本管理就会忽略上面这些文件然后才进行管理。</p>
+<h2 id="添加文件到版本库"><a href="#添加文件到版本库" class="headerlink" title="添加文件到版本库"></a>添加文件到版本库</h2><p>前面的内容虽然我们已经创建了一个Git仓库，但是我们还没有把文件放入到版本库中。因此我们下面将文件放入到版本库中，我们在前面的Eclipse项目中创建java文件用于演示添加文件。</p>
+<p><img src="https://img-blog.csdnimg.cn/e7306e5adcff42c2b456112575bf8278.png#pic_center" alt=""></p>
+<p>我们输入以下命令进行将文件添加到暂存区：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git add .</span></span><br></pre></td></tr></table></figure>
+
+<p>解释一下，一般我们需要进行代码版本提交都要分为两步：</p>
+<ol>
+<li>使用<code>git add</code>命令将修改的文件添加到暂存区。</li>
+<li>使用<code>git commit</code>命令将暂存区的修改内容进行提交。</li>
+</ol>
+<p>所以我们完成了上面的<code>git add .</code>之后还需要继续使用下面的命令保证本次顺利提交：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git commit -m <span class="string">"first commit"</span></span></span><br></pre></td></tr></table></figure>
+
+<p>其中<code>-m</code>在<code>git commit</code>里表示本次提交内容的一个说明。</p>
+<h3 id="Git结构"><a href="#Git结构" class="headerlink" title="Git结构"></a>Git结构</h3><p>Git的结构一般是包含工作区和版本库，工作区很好理解，就是能够看到的文件区域，根目录下除了隐藏文件夹<code>.git</code>之外的其他内容都在工作区，<code>.git</code>目录是版本库。</p>
+<p><img src="https://img-blog.csdnimg.cn/7eef2155e8ca466d936c46f80bf8fea4.png#pic_center" alt=""></p>
+<p>前面说的<code>git add</code>命令实际上是将文件的修改内容放到版本库的暂存区中，而<code>git commit</code>则是将暂存区修改的文件提交到当前分支。当执行完<code>git commit</code>之后暂存区也就被清空。</p>
+]]></content>
+      <tags>
+        <tag>Git</tag>
+      </tags>
+  </entry>
 </search>

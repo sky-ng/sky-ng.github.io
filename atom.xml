@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://sky-ng.github.io/"/>
-  <updated>2021-07-28T13:25:41.743Z</updated>
+  <updated>2021-10-17T13:19:56.854Z</updated>
   <id>https://sky-ng.github.io/</id>
   
   <author>
@@ -15,6 +15,25 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>毕业前学学git(1)</title>
+    <link href="https://sky-ng.github.io/2021/09/24/%E6%AF%95%E4%B8%9A%E5%89%8D%E5%AD%A6%E5%AD%A6git-1/"/>
+    <id>https://sky-ng.github.io/2021/09/24/%E6%AF%95%E4%B8%9A%E5%89%8D%E5%AD%A6%E5%AD%A6git-1/</id>
+    <published>2021-09-24T04:42:34.000Z</published>
+    <updated>2021-10-17T13:19:56.854Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;作为一名人类高质量程序员，是一定要会使用Git的，毕竟现在没几个公司不用Git了，本文是Git系列第一篇文章。&lt;/p&gt;
+    
+    </summary>
+    
+    
+    
+      <category term="Git" scheme="https://sky-ng.github.io/tags/Git/"/>
+    
+  </entry>
   
   <entry>
     <title>HashSet能同时存入引号包围和new出来的两个String对象吗</title>
@@ -449,29 +468,6 @@
       <category term="算法" scheme="https://sky-ng.github.io/tags/%E7%AE%97%E6%B3%95/"/>
     
       <category term="笔试" scheme="https://sky-ng.github.io/tags/%E7%AC%94%E8%AF%95/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>类加载器与双亲委派模型</title>
-    <link href="https://sky-ng.github.io/2020/07/21/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E4%B8%8E%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B/"/>
-    <id>https://sky-ng.github.io/2020/07/21/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8%E4%B8%8E%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%A8%A1%E5%9E%8B/</id>
-    <published>2020-07-21T08:04:10.000Z</published>
-    <updated>2020-07-21T14:10:02.270Z</updated>
-    
-    <summary type="html">
-    
-      &lt;p&gt;之前说到类加载机制的相关原理，这次来谈谈类加载器以及双亲委派模型的概念。&lt;/p&gt;
-    
-    </summary>
-    
-    
-      <category term="Java" scheme="https://sky-ng.github.io/categories/Java/"/>
-    
-    
-      <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
-    
-      <category term="JVM" scheme="https://sky-ng.github.io/tags/JVM/"/>
     
   </entry>
   
