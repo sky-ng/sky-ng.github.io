@@ -2332,7 +2332,7 @@
 <a id="more"></a>
 
 <p>Git是一款分布式版本控制系统，它允许每个程序员的电脑上都有一个版本库，这样即使没有网络也可以保证代码可以继续开发。除此之外，Git对于分支管理的支持也使它成为了优秀的版本管理系统。</p>
-<h2 id="下载安装Git"><a href="#下载安装Git" class="headerlink" title="下载安装Git"></a>下载安装Git</h2><p>国内访问Git官网下载Git速度可能比较慢，因此推荐使用<a href="https://npm.taobao.org/mirrors/git-for-windows" target="_blank" rel="noopener">淘宝镜像下载</a>。这里选择最新的v2.33.0.windows.2版本为例，进入该目录，点击Git-2.33.0.2-64-bit.exe进行下载。安装过程只需一直选择next即可。</p>
+<h2 id="下载安装Git"><a href="#下载安装Git" class="headerlink" title="下载安装Git"></a>下载安装Git</h2><p>国内访问Git官网下载Git速度可能比较慢，因此推荐使用<a href="https://npm.taobao.org/mirrors/git-for-windows" target="_blank" rel="noopener">淘宝镜像下载</a>。这里选择最新的v2.33.1.windows.1版本为例，进入该目录，点击Git-2.33.1-64-bit.exe进行下载。安装过程只需一直选择next即可。</p>
 <p>安装完毕，在桌面上右键<code>Git Bash Here</code>弹出命令行窗口，在命令行输入用户名和邮箱：</p>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git config --global user.name <span class="string">"Your Name"</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> git config --global user.email <span class="string">"email@example.com"</span></span></span><br></pre></td></tr></table></figure>
 
@@ -2365,7 +2365,7 @@
 <p>其中<code>-m</code>在<code>git commit</code>里表示本次提交内容的一个说明。</p>
 <h3 id="Git结构"><a href="#Git结构" class="headerlink" title="Git结构"></a>Git结构</h3><p>Git的结构一般是包含工作区和版本库，工作区很好理解，就是能够看到的文件区域，根目录下除了隐藏文件夹<code>.git</code>之外的其他内容都在工作区，<code>.git</code>目录是版本库。</p>
 <p><img src="https://img-blog.csdnimg.cn/7eef2155e8ca466d936c46f80bf8fea4.png#pic_center" alt=""></p>
-<p>前面说的<code>git add</code>命令实际上是将文件的修改内容放到版本库的暂存区中，而<code>git commit</code>则是将暂存区修改的文件提交到当前分支。当执行完<code>git commit</code>之后暂存区也就被清空。</p>
+<p>前面说的<code>git add</code>命令实际上是将文件的修改内容放到版本库的暂存区中，而<code>git commit</code>则是将暂存区修改的文件提交到当前分支，当执行完<code>git commit</code>之后暂存区也就被清空。</p>
 ]]></content>
       <tags>
         <tag>Git</tag>
