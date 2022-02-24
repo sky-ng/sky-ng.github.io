@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="https://sky-ng.github.io/"/>
-  <updated>2021-10-17T13:32:01.778Z</updated>
+  <updated>2022-02-12T07:47:12.128Z</updated>
   <id>https://sky-ng.github.io/</id>
   
   <author>
@@ -15,6 +15,25 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>毕业前学学git(2)</title>
+    <link href="https://sky-ng.github.io/2022/01/29/%E6%AF%95%E4%B8%9A%E5%89%8D%E5%AD%A6%E5%AD%A6git-2/"/>
+    <id>https://sky-ng.github.io/2022/01/29/%E6%AF%95%E4%B8%9A%E5%89%8D%E5%AD%A6%E5%AD%A6git-2/</id>
+    <published>2022-01-29T04:41:30.000Z</published>
+    <updated>2022-02-12T07:47:12.128Z</updated>
+    
+    <summary type="html">
+    
+      &lt;p&gt;接上次文章内容，这次本文主要介绍常用的Git命令。&lt;/p&gt;
+    
+    </summary>
+    
+    
+    
+      <category term="Git" scheme="https://sky-ng.github.io/tags/Git/"/>
+    
+  </entry>
   
   <entry>
     <title>毕业前学学git(1)</title>
@@ -445,29 +464,6 @@
       <category term="Java" scheme="https://sky-ng.github.io/tags/Java/"/>
     
       <category term="Java多线程" scheme="https://sky-ng.github.io/tags/Java%E5%A4%9A%E7%BA%BF%E7%A8%8B/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>一道广联达秋招算法题</title>
-    <link href="https://sky-ng.github.io/2020/07/22/%E4%B8%80%E9%81%93%E5%B9%BF%E8%81%94%E8%BE%BE%E7%A7%8B%E6%8B%9B%E7%AE%97%E6%B3%95%E9%A2%98/"/>
-    <id>https://sky-ng.github.io/2020/07/22/%E4%B8%80%E9%81%93%E5%B9%BF%E8%81%94%E8%BE%BE%E7%A7%8B%E6%8B%9B%E7%AE%97%E6%B3%95%E9%A2%98/</id>
-    <published>2020-07-22T10:31:40.000Z</published>
-    <updated>2020-08-03T14:14:50.533Z</updated>
-    
-    <summary type="html">
-    
-      &lt;p&gt;今天下午师兄在教研室群里发了一道热乎的广联达算法题，乍一看完全没有思路，于是实验室的小伙伴们饶有兴致地开始讨论起了这道题。&lt;/p&gt;
-    
-    </summary>
-    
-    
-      <category term="笔试面试" scheme="https://sky-ng.github.io/categories/%E7%AC%94%E8%AF%95%E9%9D%A2%E8%AF%95/"/>
-    
-    
-      <category term="算法" scheme="https://sky-ng.github.io/tags/%E7%AE%97%E6%B3%95/"/>
-    
-      <category term="笔试" scheme="https://sky-ng.github.io/tags/%E7%AC%94%E8%AF%95/"/>
     
   </entry>
   

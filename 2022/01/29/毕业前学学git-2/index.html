@@ -9,7 +9,7 @@
     
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>
-    动态代理了解一下？ |  SKY技术修炼指南
+    毕业前学学git(2) |  SKY技术修炼指南
   </title>
   <meta name="generator" content="hexo-theme-ayer">
   
@@ -42,7 +42,7 @@
   <div id="app">
     <main class="content on">
       <section class="outer">
-  <article id="post-动态代理了解一下？" class="article article-type-post" itemscope
+  <article id="post-毕业前学学git-2" class="article article-type-post" itemscope
   itemprop="blogPost" data-scroll-reveal>
 
   <div class="article-inner">
@@ -50,7 +50,7 @@
     <header class="article-header">
        
 <h1 class="article-title sea-center" style="border-left:0" itemprop="name">
-  动态代理了解一下？
+  毕业前学学git(2)
 </h1>
  
 
@@ -59,14 +59,10 @@
 
     
     <div class="article-meta">
-      <a href="/2021/01/30/%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86%E4%BA%86%E8%A7%A3%E4%B8%80%E4%B8%8B%EF%BC%9F/" class="article-date">
-  <time datetime="2021-01-30T12:00:23.000Z" itemprop="datePublished">2021-01-30</time>
+      <a href="/2022/01/29/%E6%AF%95%E4%B8%9A%E5%89%8D%E5%AD%A6%E5%AD%A6git-2/" class="article-date">
+  <time datetime="2022-01-29T04:41:30.000Z" itemprop="datePublished">2022-01-29</time>
 </a>
       
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/Java/">Java</a>
-  </div>
-
       
       
 <div class="word_count">
@@ -74,7 +70,7 @@
         <span class="post-meta-item-icon">
             <i class="ri-quill-pen-line"></i>
             <span class="post-meta-item-text"> Word count:</span>
-            <span class="post-count">1.2k</span>
+            <span class="post-count">1.3k</span>
         </span>
     </span>
 
@@ -94,8 +90,6 @@
 
     
     
-    <div class="tocbot"></div>
-
 
 
 
@@ -108,57 +102,122 @@
       
 
       
-      <p>介绍动态代理之前，先介绍一下什么是代理模式。当我们不想访问或者不能直接访问一个对象的时候，我们就需要用到代理模式。代理模式一般涉及到委托类与代理类两个概念，代理类用于为委托类处理一些事务，代理类对象常常与委托类对象相关联。代理模式可以分为静态代理和动态代理，静态代理需要为每一个委托类实现一个代理类，程序运行之前代理类的.class文件就已经存在了，而动态代理则是在运行时利用反射机制动态生成的。</p>
+      <p>接上次文章内容，这次本文主要介绍常用的Git命令。</p>
 <a id="more"></a>
 
-<h2 id="静态代理"><a href="#静态代理" class="headerlink" title="静态代理"></a>静态代理</h2><p>为了帮助大家看懂静态代理，我们举个简单的例子，小丽要买一只口红，但是这只口红在国内买不到，只有美国有得卖，这时就需要代购（代理）帮助小丽去美国买口红。我们尝试实现一下这个过程。</p>
-<p>首先我们定义一个<code>Subject</code>接口如下，主要用于声明真实对象要让代理对象做的事情。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Subject</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">buy</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>为了将暂存区与工作区的文件恢复到HEAD指针指向的状态，可以使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git reset --hard</span></span><br></pre></td></tr></table></figure>
 
-<p>然后创建委托类。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RealSubject</span> <span class="keyword">implements</span> <span class="title">Subject</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">buy</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		System.out.println(<span class="string">"我要买口红"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>仅需要将暂存区的文件恢复到HEAD指针指向的状态，可以使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git reset HEAD</span></span><br></pre></td></tr></table></figure>
 
-<p>然后创建代理类，也就是我们说的代购。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">StaticProxy</span> <span class="keyword">implements</span> <span class="title">Subject</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> Subject subject;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">StaticProxy</span><span class="params">(Subject subject)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">this</span>.subject = subject;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">buy</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		subject.buy();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>需要将暂存区的某个文件恢复到HEAD指针指向的状态，可以使用一下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git reset HEAD -- [file]</span></span><br></pre></td></tr></table></figure>
 
-<p>我们创建一个测试类测试一下代码。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestProxy</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		Subject subject = <span class="keyword">new</span> StaticProxy(<span class="keyword">new</span> RealSubject());</span><br><span class="line">		subject.buy();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>需要将工作区某个文件恢复到暂存区的状态，用一下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git checkout -- [file]</span></span><br></pre></td></tr></table></figure>
 
-<p>上面的代码演示了静态代理的过程，可以看到我们用代理类<code>StaticProxy</code>实现了<code>Subject</code>接口，接下来我们看看动态代理的实现方式。</p>
-<h2 id="动态代理"><a href="#动态代理" class="headerlink" title="动态代理"></a>动态代理</h2><p>我们重新创建一个动态代理的类，该类实现了<code>InvocationHandler</code>接口。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DynamicProxy</span> <span class="keyword">implements</span> <span class="title">InvocationHandler</span> </span>&#123;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">private</span> Object object;</span><br><span class="line">	</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">DynamicProxy</span><span class="params">(Object object)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">this</span>.object = object;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> Object <span class="title">invoke</span><span class="params">(Object proxy, Method method, Object[] args)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">		<span class="comment">//调用委托类对象的方法</span></span><br><span class="line">		Object result = method.invoke(object, args);</span><br><span class="line">		<span class="keyword">return</span> result;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>取消最近几次commit，也就是HEAD指针指向某一次commit：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git reset --hard [commit]</span></span><br></pre></td></tr></table></figure>
 
-<p>上面代码展示了动态代理的基本实现思路，定义object对象为委托类的对象，而实际执行的方法是在<code>invoke()</code>方法中完成的。此时我们不用再关心代理的对象是谁，只需要实现一套逻辑即可。下面我们修改一下测试类。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestProxy</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">		Subject subject = <span class="keyword">new</span> RealSubject();</span><br><span class="line">		Subject dynamicProxy = (Subject) Proxy.newProxyInstance(</span><br><span class="line">				subject.getClass().getClassLoader(), </span><br><span class="line">				subject.getClass().getInterfaces(), </span><br><span class="line">				<span class="keyword">new</span> DynamicProxy(subject));</span><br><span class="line">		dynamicProxy.buy();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>需要重命名某一个文件，可以使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git mv [oldname] [newname]</span></span><br></pre></td></tr></table></figure>
 
-<p>上面动态代理和静态代理的运行效果是一样的，而动态代理帮我们省去了重复编写代理类的麻烦。</p>
-<p>另外还需要提到的是，上面这种使用动态代理的方式是JDK层面的动态代理，除此之外CGLIB动态代理也经常被提到，Spring AOP可以使用JDK动态代理和CGLIB两种方式动态代理，默认使用JDK动态代理，如果对象没有实现接口，则使用CGLIB代理。CGLIB相对JDK动态代理一个最主要的优点在于JDK动态代理被代理的类不能是一个普通的类，一定得实现了一个接口。CGLIB则不同，它是动态生成代理类的子类，在子类中采用方法拦截的技术拦截父类方法的调用，这就要求被代理的类不能被final修饰，因为final修饰的类无法被继承。</p>
-<h2 id="AOP"><a href="#AOP" class="headerlink" title="AOP"></a>AOP</h2><p>学过Spring的同学肯定都听过AOP，但是AOP并不是Spring提出来的，只是Spring是AOP的一个典型应用。AOP全称是Aspect oriented programming，面向切面编程。在传统的面向对象编程中，业务逻辑会存在一些横切性问题，AOP的思想就是将核心代码和这些横切性的问题解耦合，提高代码的复用率。</p>
-<p>关于AOP，老外给取了很多名词，类似于阿里“抓手、赋能、沉淀”那套恶心的互联网话术，大家了解一下就好。</p>
-<h3 id="名词解释"><a href="#名词解释" class="headerlink" title="名词解释"></a>名词解释</h3><ul>
-<li><p><strong>Join point(连接点)</strong>。程序执行过程中的一点，例如方法执行或异常处理。在Spring AOP中，连接点始终代表方法的执行。</p>
-</li>
-<li><p><strong>Pointcut(切点)</strong>。与所有方法都是连接点不同，切点可以是具体的某一个方法。默认情况下，Spring使用AspectJ切入点表达语言。</p>
-</li>
-<li><p><strong>Advice(增强/通知)</strong>。在特定的连接点处采取的操作，不同类型的Advice包括如before()/after()等。</p>
-</li>
-<li><p><strong>Aspect(切面)</strong>。由Pointcut和Advice组成。</p>
-</li>
-<li><p><strong>Weaving(织入)</strong>。把Advice应用到目标类而创建出代理对象的这一过程。</p>
-</li>
-<li><p><strong>Introduction(引入)</strong>。允许向现有的类声明新的方法与字段。</p>
-</li>
-</ul>
-<h3 id="常见应用场景"><a href="#常见应用场景" class="headerlink" title="常见应用场景"></a>常见应用场景</h3><ul>
-<li><p>Spring声明式事务管理配置。</p>
-</li>
-<li><p>Controller层的参数校验。</p>
-</li>
-<li><p>登录权限检查。</p>
-</li>
-<li><p>日志打印。</p>
-</li>
-</ul>
+<p>需要从版本库中删除某一个文件，使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git rm [file]</span></span><br></pre></td></tr></table></figure>
+
+<p>查看版本库的提交日志，可以使用以下命令（如果不加后面的选项则显示完整的日志记录，包括提交作者以及时间等）：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">log</span> --oneline</span></span><br></pre></td></tr></table></figure>
+
+<p>需要查看所有分支的提交日志，并且以树形图案查看的命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">log</span> --all --graph</span></span><br></pre></td></tr></table></figure>
+
+<p>需要在某一次commit或某一个分支基础上创建一个新的分支并切换到新分支，可以使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git checkout -b [newbranch] [commit | branch]</span></span><br></pre></td></tr></table></figure>
+
+<p>如果只是单纯切换分支或切换到某一次commit，可以用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git checkout [commit | branch]</span></span><br></pre></td></tr></table></figure>
+
+<p>查看有哪些分支，使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git branch -av</span></span><br></pre></td></tr></table></figure>
+
+<p>删除分支的命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git branch -D [branch]</span></span><br></pre></td></tr></table></figure>
+
+<p>修改上一次commit的message，在输入以下命令后进行修改：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git commit --amend</span></span><br></pre></td></tr></table></figure>
+
+<p>需要修改比较老版本的commit的message，就比较复杂了，首先拿到要修改的commit的上一次commit，输入以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git rebase -i [commit]</span></span><br></pre></td></tr></table></figure>
+
+<p>进入编辑界面后找到对应的commit，然后将对应的pick修改为reword或r后退出。</p>
+<p><img src="https://img-blog.csdnimg.cn/f787c8a34756466d81672ea24347014b.png#pic_center" alt=""></p>
+<p>进入另一个界面，此时可以正式修改message，修改完退出即可。</p>
+<p><img src="https://img-blog.csdnimg.cn/b22c6514979c48c4a783bd731cb9f94b.png#pic_center" alt=""></p>
+<p>当需要将一些连续的commit合并为一个commit时，同样可以使用下面的命令，拿到最老的一次commit的上一次commit：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git rebase -i [commit]</span></span><br></pre></td></tr></table></figure>
+
+<p>进入编辑界面后找到对应的commit，留下一个pick，剩下的待合并的commit全部将pick改为squash或s后退出。</p>
+<p><img src="https://img-blog.csdnimg.cn/03ad02d6e5164b9f9424b67acbd7527e.png#pic_center" alt=""></p>
+<p>在下一个页面修改合并的message即可。</p>
+<p>上述是连续commit合并的方法，非连续commit合并依然需要以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git rebase -i [commit]</span></span><br></pre></td></tr></table></figure>
+
+<p>注意如果需要合并的commit之前已经没有更老的commit了，上面命令中的commit就使用最老的commit，然后在编辑页面中添加那个最老的commit即可。</p>
+<p>将不连续的commit上下移动到一起，然后修改pick为squash或s后退出。</p>
+<p><img src="https://img-blog.csdnimg.cn/61189d9b30cf4bd99e9d01cef72b400a.png#pic_center" alt=""></p>
+<p>下一个页面依然是修改commit的message即可。</p>
+<p>需要比较暂存区与HEAD指针之间的差异可以使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git diff --cached</span></span><br></pre></td></tr></table></figure>
+
+<p>需要比较工作区与暂存区之间的差异可以使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git diff</span></span><br></pre></td></tr></table></figure>
+
+<p>要查看不同分支或commit的差异，可以使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git diff [branch1 | commit1] [branch2 | commit2]</span></span><br></pre></td></tr></table></figure>
+
+<p>在上述不同分支或commit差异的基础上，如果要关注某个文件的差异，则使用下面的命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git diff [branch1 | commit1] [branch2 | commit2] -- [file]</span></span><br></pre></td></tr></table></figure>
+
+<p>当遇到紧急bug需要修复时，当前开发的内容只进行了一部分，则可以把工作区和暂存区的内容压栈，使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git stash</span></span><br></pre></td></tr></table></figure>
+
+<p>当修复完bug切换回当前分支，需要将保存的内容出栈，只恢复内容不把栈顶弹出使用下面的命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git stash apply</span></span><br></pre></td></tr></table></figure>
+
+<p>如果需要把栈顶内容弹出，则使用下面命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git stash pop</span></span><br></pre></td></tr></table></figure>
+
+<p>查看远程仓库，使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git remote -v</span></span><br></pre></td></tr></table></figure>
+
+<p>需要添加远程仓库使用下面的命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git remote add [remotehost] [url]</span></span><br></pre></td></tr></table></figure>
+
+<p>需要将远程仓库克隆到本地可以使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> [url]</span></span><br></pre></td></tr></table></figure>
+
+<p>将本地仓库所有分支推送到远程仓库的命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git push [remotehost] --all</span></span><br></pre></td></tr></table></figure>
+
+<p>将本地仓库某个分支推送到远程仓库的命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git push [remotehost] [branch]</span></span><br></pre></td></tr></table></figure>
+
+<p>如果想取回远程仓库的更新，使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git fetch [remotehost]</span></span><br></pre></td></tr></table></figure>
+
+<p>如果想取回远程仓库指定分支的更新，使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git fetch [remotehost] [branch]</span></span><br></pre></td></tr></table></figure>
+
+<p>需要将某个分支合并到当前分支，使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git merge --allow-unrelated-histories [branch]</span></span><br></pre></td></tr></table></figure>
+
+<p>当然上面的fetch和merge操作可以直接合并为一个pull操作：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git pull [remotehost] [branch]</span></span><br></pre></td></tr></table></figure>
+
+<p>当不同开发人员同时进行开发时，会出现冲突。一般冲突分为需要手动处理的冲突和不需要手动处理的冲突两种。</p>
+<p>不需要手动处理的冲突在push时无法成功，需要先pull最新的commit，然后再push。</p>
+<p>需要手动处理的冲突push时也无法成功，在pull时会显示冲突，这说明git无法自动解决冲突。在手动修复冲突之后需要重新add并commit，最后再push到远程仓库。</p>
 
       
       <!-- reward -->
@@ -227,14 +286,14 @@
     <a class="modal-close" href="javascript:;"><i class="ri-close-circle-line"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sky-ng.github.io/2021/01/30/%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86%E4%BA%86%E8%A7%A3%E4%B8%80%E4%B8%8B%EF%BC%9F/" alt="微信分享二维码">
+      <img src="//api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://sky-ng.github.io/2022/01/29/%E6%AF%95%E4%B8%9A%E5%89%8D%E5%AD%A6%E5%AD%A6git-2/" alt="微信分享二维码">
     </div>
 </div>
 
 <div id="share-mask"></div>
       
       
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Java/" rel="tag">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Spring/" rel="tag">Spring</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li></ul>
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Git/" rel="tag">Git</a></li></ul>
 
 
     </footer>
@@ -245,19 +304,10 @@
   
   <nav class="article-nav">
     
-      <a href="/2021/02/04/%E5%9B%BE%E8%A7%A3%E5%A0%86%E6%8E%92%E5%BA%8F/" class="article-nav-link">
-        <strong class="article-nav-caption">上一篇</strong>
-        <div class="article-nav-title">
-          
-            图解堆排序
-          
-        </div>
-      </a>
     
-    
-      <a href="/2021/01/21/HTTPS%E7%9A%84%E5%8E%9F%E7%90%86%E6%98%AF%E4%BB%80%E4%B9%88/" class="article-nav-link">
+      <a href="/2021/09/24/%E6%AF%95%E4%B8%9A%E5%89%8D%E5%AD%A6%E5%AD%A6git-1/" class="article-nav-link">
         <strong class="article-nav-caption">下一篇</strong>
-        <div class="article-nav-title">HTTPS的原理是什么</div>
+        <div class="article-nav-title">毕业前学学git(1)</div>
       </a>
     
   </nav>

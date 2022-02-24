@@ -2371,4 +2371,128 @@
         <tag>Git</tag>
       </tags>
   </entry>
+  <entry>
+    <title>毕业前学学git(2)</title>
+    <url>/2022/01/29/%E6%AF%95%E4%B8%9A%E5%89%8D%E5%AD%A6%E5%AD%A6git-2/</url>
+    <content><![CDATA[<p>接上次文章内容，这次本文主要介绍常用的Git命令。</p>
+<a id="more"></a>
+
+<p>为了将暂存区与工作区的文件恢复到HEAD指针指向的状态，可以使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git reset --hard</span></span><br></pre></td></tr></table></figure>
+
+<p>仅需要将暂存区的文件恢复到HEAD指针指向的状态，可以使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git reset HEAD</span></span><br></pre></td></tr></table></figure>
+
+<p>需要将暂存区的某个文件恢复到HEAD指针指向的状态，可以使用一下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git reset HEAD -- [file]</span></span><br></pre></td></tr></table></figure>
+
+<p>需要将工作区某个文件恢复到暂存区的状态，用一下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git checkout -- [file]</span></span><br></pre></td></tr></table></figure>
+
+<p>取消最近几次commit，也就是HEAD指针指向某一次commit：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git reset --hard [commit]</span></span><br></pre></td></tr></table></figure>
+
+<p>需要重命名某一个文件，可以使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git mv [oldname] [newname]</span></span><br></pre></td></tr></table></figure>
+
+<p>需要从版本库中删除某一个文件，使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git rm [file]</span></span><br></pre></td></tr></table></figure>
+
+<p>查看版本库的提交日志，可以使用以下命令（如果不加后面的选项则显示完整的日志记录，包括提交作者以及时间等）：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">log</span> --oneline</span></span><br></pre></td></tr></table></figure>
+
+<p>需要查看所有分支的提交日志，并且以树形图案查看的命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">log</span> --all --graph</span></span><br></pre></td></tr></table></figure>
+
+<p>需要在某一次commit或某一个分支基础上创建一个新的分支并切换到新分支，可以使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git checkout -b [newbranch] [commit | branch]</span></span><br></pre></td></tr></table></figure>
+
+<p>如果只是单纯切换分支或切换到某一次commit，可以用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git checkout [commit | branch]</span></span><br></pre></td></tr></table></figure>
+
+<p>查看有哪些分支，使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git branch -av</span></span><br></pre></td></tr></table></figure>
+
+<p>删除分支的命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git branch -D [branch]</span></span><br></pre></td></tr></table></figure>
+
+<p>修改上一次commit的message，在输入以下命令后进行修改：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git commit --amend</span></span><br></pre></td></tr></table></figure>
+
+<p>需要修改比较老版本的commit的message，就比较复杂了，首先拿到要修改的commit的上一次commit，输入以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git rebase -i [commit]</span></span><br></pre></td></tr></table></figure>
+
+<p>进入编辑界面后找到对应的commit，然后将对应的pick修改为reword或r后退出。</p>
+<p><img src="https://img-blog.csdnimg.cn/f787c8a34756466d81672ea24347014b.png#pic_center" alt=""></p>
+<p>进入另一个界面，此时可以正式修改message，修改完退出即可。</p>
+<p><img src="https://img-blog.csdnimg.cn/b22c6514979c48c4a783bd731cb9f94b.png#pic_center" alt=""></p>
+<p>当需要将一些连续的commit合并为一个commit时，同样可以使用下面的命令，拿到最老的一次commit的上一次commit：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git rebase -i [commit]</span></span><br></pre></td></tr></table></figure>
+
+<p>进入编辑界面后找到对应的commit，留下一个pick，剩下的待合并的commit全部将pick改为squash或s后退出。</p>
+<p><img src="https://img-blog.csdnimg.cn/03ad02d6e5164b9f9424b67acbd7527e.png#pic_center" alt=""></p>
+<p>在下一个页面修改合并的message即可。</p>
+<p>上述是连续commit合并的方法，非连续commit合并依然需要以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git rebase -i [commit]</span></span><br></pre></td></tr></table></figure>
+
+<p>注意如果需要合并的commit之前已经没有更老的commit了，上面命令中的commit就使用最老的commit，然后在编辑页面中添加那个最老的commit即可。</p>
+<p>将不连续的commit上下移动到一起，然后修改pick为squash或s后退出。</p>
+<p><img src="https://img-blog.csdnimg.cn/61189d9b30cf4bd99e9d01cef72b400a.png#pic_center" alt=""></p>
+<p>下一个页面依然是修改commit的message即可。</p>
+<p>需要比较暂存区与HEAD指针之间的差异可以使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git diff --cached</span></span><br></pre></td></tr></table></figure>
+
+<p>需要比较工作区与暂存区之间的差异可以使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git diff</span></span><br></pre></td></tr></table></figure>
+
+<p>要查看不同分支或commit的差异，可以使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git diff [branch1 | commit1] [branch2 | commit2]</span></span><br></pre></td></tr></table></figure>
+
+<p>在上述不同分支或commit差异的基础上，如果要关注某个文件的差异，则使用下面的命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git diff [branch1 | commit1] [branch2 | commit2] -- [file]</span></span><br></pre></td></tr></table></figure>
+
+<p>当遇到紧急bug需要修复时，当前开发的内容只进行了一部分，则可以把工作区和暂存区的内容压栈，使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git stash</span></span><br></pre></td></tr></table></figure>
+
+<p>当修复完bug切换回当前分支，需要将保存的内容出栈，只恢复内容不把栈顶弹出使用下面的命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git stash apply</span></span><br></pre></td></tr></table></figure>
+
+<p>如果需要把栈顶内容弹出，则使用下面命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git stash pop</span></span><br></pre></td></tr></table></figure>
+
+<p>查看远程仓库，使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git remote -v</span></span><br></pre></td></tr></table></figure>
+
+<p>需要添加远程仓库使用下面的命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git remote add [remotehost] [url]</span></span><br></pre></td></tr></table></figure>
+
+<p>需要将远程仓库克隆到本地可以使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git <span class="built_in">clone</span> [url]</span></span><br></pre></td></tr></table></figure>
+
+<p>将本地仓库所有分支推送到远程仓库的命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git push [remotehost] --all</span></span><br></pre></td></tr></table></figure>
+
+<p>将本地仓库某个分支推送到远程仓库的命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git push [remotehost] [branch]</span></span><br></pre></td></tr></table></figure>
+
+<p>如果想取回远程仓库的更新，使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git fetch [remotehost]</span></span><br></pre></td></tr></table></figure>
+
+<p>如果想取回远程仓库指定分支的更新，使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git fetch [remotehost] [branch]</span></span><br></pre></td></tr></table></figure>
+
+<p>需要将某个分支合并到当前分支，使用以下命令：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git merge --allow-unrelated-histories [branch]</span></span><br></pre></td></tr></table></figure>
+
+<p>当然上面的fetch和merge操作可以直接合并为一个pull操作：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git pull [remotehost] [branch]</span></span><br></pre></td></tr></table></figure>
+
+<p>当不同开发人员同时进行开发时，会出现冲突。一般冲突分为需要手动处理的冲突和不需要手动处理的冲突两种。</p>
+<p>不需要手动处理的冲突在push时无法成功，需要先pull最新的commit，然后再push。</p>
+<p>需要手动处理的冲突push时也无法成功，在pull时会显示冲突，这说明git无法自动解决冲突。在手动修复冲突之后需要重新add并commit，最后再push到远程仓库。</p>
+]]></content>
+      <tags>
+        <tag>Git</tag>
+      </tags>
+  </entry>
 </search>
